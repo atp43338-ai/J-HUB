@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate, useLocation } from "react-router";
 import ResetPasswordImage from "../asset/Reset-bg.png";
 import { resetPassword } from "../services/authService";
+import toast from "react-hot-toast";
 
 function ResetPassword() {
   const navigate = useNavigate();
@@ -19,34 +20,34 @@ function ResetPassword() {
     e.preventDefault();
 
     if (!password || !confirmPassword) {
-      alert("Please fill all fields");
+      toast.error("Please fill all fields");
       return;
     }
 
     if (password.length < 6) {
-      alert("Password must be at least 6 characters");
+      toast.error("Password must be at least 6 characters");
       return;
     }
 
     if (password !== confirmPassword) {
-      alert("Passwords do not match");
+      toast.error("Passwords do not match");
       return;
     }
 
     if (!email) {
-      alert("Email not found");
+      toast.error("Email not found");
       return;
     }
 
     try {
       const data = await resetPassword(email, password);
 
-      alert("Password reset successfully");
+      toast.success("Password reset successfully");
 
       navigate("/login");
     } catch (error) {
       console.error("Reset password error:", error);
-      alert(error.message);
+      toast.error(error.message);
     }
   };
 
@@ -72,13 +73,28 @@ function ResetPassword() {
 
       {/* Reset Password Content */}
 
-      <div className="absolute z-20 left-[12%] top-[24%] w-[30%]">
+      <div
+  className="
+    absolute
+    z-20
+    left-[32%]
+    top-[18%]
+    w-[35%]
+    bg-black
+    border
+    border-[#d90416]
+    rounded-[25px]
+    px-10
+    py-12
+  "
+>
 
-        <h2 className="mt-3 text-[15px] font-semibold !text-black">
-          Reset Password
+        <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3">
+          <span className="text-white">Reset </span>
+          <span className="text-[#d90416]">Password</span>
         </h2>
 
-        <p className="mt-3 text-[13px] text-[#555]">
+        <p className="mt-3 text-[13px] text-white">
           Create a new password for your account
         </p>
 
@@ -102,7 +118,7 @@ function ResetPassword() {
                 h-[52px]
                 rounded-[14px]
                 border
-                border-[#d5d5d5]
+                border border-[#d90416]
                 bg-white/75
                 px-5
                 pr-12
@@ -201,7 +217,7 @@ function ResetPassword() {
                 h-[52px]
                 rounded-[14px]
                 border
-                border-[#d5d5d5]
+                border border-[#d90416]
                 bg-white/75
                 px-5
                 pr-12

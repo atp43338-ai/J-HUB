@@ -1,4 +1,5 @@
 import User from "../../auth/models/User.js";
+
 import {
   getProfileService,
   updateProfileService,
@@ -7,17 +8,14 @@ import {
 } from "../services/profileService.js";
 
 
-// ==================================================
-// PROFILE FEATURE
 // GET LOGGED-IN USER PROFILE
-// ==================================================
 
 export const getProfile = async (req, res) => {
   try {
     const user = await getProfileService(req.user.id);
 
-    const users = await User.find({ isBlocked: true});
-    console.log(users);
+    // const result = await User.deleteOne({ email: "muflih@gmail.com"});
+    // console.log(result);
 
     res.status(200).json({
       user,
@@ -33,10 +31,7 @@ export const getProfile = async (req, res) => {
 };
 
 
-// ==================================================
-// PROFILE FEATURE
 // UPDATE PROFILE
-// ==================================================
 
 export const updateProfile = async (req, res) => {
   try {
@@ -74,10 +69,7 @@ export const updateProfile = async (req, res) => {
 };
 
 
-// ==================================================
-// PROFILE FEATURE
 // CHANGE EMAIL - SEND OTP
-// ==================================================
 
 export const changeEmail = async (req, res) => {
   try {
@@ -108,10 +100,8 @@ export const changeEmail = async (req, res) => {
 };
 
 
-// ==================================================
-// PROFILE FEATURE
+
 // VERIFY EMAIL CHANGE
-// ==================================================
 
 export const verifyEmailChange = async (req, res) => {
   try {

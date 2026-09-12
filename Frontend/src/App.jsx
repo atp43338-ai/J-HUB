@@ -26,8 +26,8 @@ import PublicRoute from "./middleware/PublicRoute";
 function App() {
   return (
     <Routes>
-      <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Register />} />
+      <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
+      <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
       <Route path="/otp-verification" element={<OTPVerification />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
@@ -41,8 +41,8 @@ function App() {
       <Route path="/address/edit/:id" element={<ProtectedRoute><AddEditAddress /></ProtectedRoute>} />
       <Route path="/email-verification" element={<ProtectedRoute><EmailVerification /></ProtectedRoute>} />
 
-      <Route path="/admin/login" element={<AdminLogin />} />
-      <Route path="/admin/users" element={<UserManagement />} />
+      <Route path="/admin/login" element={<PublicRoute><AdminLogin /></PublicRoute>} />
+      <Route path="/admin/users" element={<PublicRoute><UserManagement /></PublicRoute>} />
     </Routes>
   );
 }

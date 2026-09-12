@@ -2,6 +2,7 @@ import User from "../models/User.js";
 import {
   registerUserService,
   verifyOTPService,
+  resendOTPService,
   loginUserService,
   forgotPasswordService,
   resetPasswordService,
@@ -9,10 +10,7 @@ import {
 } from "../services/authService.js";
 
 
-// ==================================================
-// AUTH FEATURE
 // REGISTER USER
-// ==================================================
 
 export const registerUser = async (req, res) => {
   try {
@@ -45,10 +43,7 @@ export const registerUser = async (req, res) => {
 };
 
 
-// ==================================================
-// AUTH FEATURE
 // OTP VERIFICATION
-// ==================================================
 
 export const verifyOTP = async (req, res) => {
   try {
@@ -74,10 +69,33 @@ export const verifyOTP = async (req, res) => {
 };
 
 
-// ==================================================
-// AUTH FEATURE
+// RESEND OTP
+
+export const resendOTP = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({
+        message: "Email is required",
+      });
+    }
+
+    await resendOTPService(email);
+
+    res.status(200).json({
+      message: "OTP resent successfully",
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      message: error.message,
+    });
+  }
+};
+
+
 // LOGIN USER
-// ==================================================
 
 export const loginUser = async (req, res) => {
   try {
@@ -93,9 +111,7 @@ export const loginUser = async (req, res) => {
       email,
       password
     );
-
  
-
     res.status(200).json({
       message: "Login successful",
       token: result.token,
@@ -110,10 +126,9 @@ export const loginUser = async (req, res) => {
 };
 
 
-// ==================================================
+
 // AUTH FEATURE
 // FORGOT PASSWORD
-// ==================================================
 
 export const forgotPassword = async (req, res) => {
   try {
@@ -141,10 +156,8 @@ export const forgotPassword = async (req, res) => {
 };
 
 
-// ==================================================
 // AUTH FEATURE
 // RESET PASSWORD
-// ==================================================
 
 export const resetPassword = async (req, res) => {
   try {
@@ -173,10 +186,8 @@ export const resetPassword = async (req, res) => {
 };
 
 
-// ==================================================
 // AUTH FEATURE
 // GOOGLE LOGIN
-// ==================================================
 
 export const googleLogin = async (req, res) => {
   try {

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router";
 import EmailVerificationImage from "../asset/otp-bg.png";
 import { verifyEmailChange } from "../services/profileService";
+import toast from "react-hot-toast";
 
 function EmailVerification() {
   const navigate = useNavigate();
@@ -28,43 +29,43 @@ function EmailVerification() {
   }, [timer]);
 
   // OTP submit
-const handleSubmit = async (e) => {
-  e.preventDefault();
+  const handleSubmit = async (e) => {
+    e.preventDefault();
 
-  if (!otp) {
-    alert("Please enter OTP");
-    return;
-  }
-
-  if (otp.length !== 6) {
-    alert("OTP must be 6 digits");
-    return;
-  }
-
-  if (!email) {
-    alert("Email not found");
-    return;
-  }
-
-  try {
-    const token = localStorage.getItem("token");
-
-    if (!token) {
-      alert("Please login again");
-      navigate("/login");
+    if (!otp) {
+      toast.error("Please enter OTP");
       return;
     }
 
-    await verifyEmailChange(token, otp);
+    if (otp.length !== 6) {
+      toast.error("OTP must be 6 digits");
+      return;
+    }
 
-    alert("Email changed successfully");
+    if (!email) {
+      toast.error("Email not found");
+      return;
+    }
 
-    navigate("/profile");
-  } catch (error) {
-    console.error("Email verification error:", error);
-    alert(error.message);
-  }
-};
+    try {
+      const token = localStorage.getItem("token");
+
+      if (!token) {
+        toast.error("Please login again");
+        navigate("/login");
+        return;
+      }
+
+      await verifyEmailChange(token, otp);
+
+      toast.success("Email changed successfully");
+
+      navigate("/profile");
+    } catch (error) {
+      console.error("Email verification error:", error);
+      toast.error(error.message);
+    }
+  };
 
   // Resend OTP
   const handleResend = () => {
@@ -94,7 +95,7 @@ const handleSubmit = async (e) => {
           top-1/2
           -translate-x-1/2
           -translate-y-1/2
-          w-[730px]
+          w-[700px]
           min-h-[665px]
           rounded-[30px]
           border
@@ -111,8 +112,8 @@ const handleSubmit = async (e) => {
         <div
           className="
             mx-auto
-            w-[102px]
-            h-[102px]
+            w-[80px]
+            h-[80px]
             rounded-[25px]
             bg-[#d90416]
             flex
@@ -120,7 +121,7 @@ const handleSubmit = async (e) => {
             justify-center
           "
         >
-          <span className="text-[48px]">
+          <span className="text-[45px]">
             ✉️
           </span>
         </div>
@@ -185,6 +186,33 @@ const handleSubmit = async (e) => {
                   otpArray[index] = value;
 
                   setOtp(otpArray.join("").slice(0, 6));
+
+                  // Move to next box automatically
+                  if (value && index < 5) {
+                    e.target.nextElementSibling?.focus();
+                  }
+                }}
+                onKeyDown={(e) => {
+                  // Backspace
+                  if (e.key === "Backspace") {
+                    // If current box has a value,
+                    // just remove the value
+                    if (otp[index]) {
+                      const otpArray = otp.split("");
+
+                      otpArray[index] = "";
+
+                      setOtp(otpArray.join("").slice(0, 6));
+
+                      return;
+                    }
+
+                    // If current box is already empty,
+                    // move cursor to previous box
+                    if (index > 0) {
+                      e.target.previousElementSibling?.focus();
+                    }
+                  }
                 }}
                 className="
                   w-[82px]

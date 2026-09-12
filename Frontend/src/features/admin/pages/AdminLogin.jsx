@@ -1,8 +1,12 @@
 import { useState } from "react";
 import AdminLoginImage from "../asset/admin-login-bg.png";
 import { adminLogin } from "../services/adminService.js";
+import { useNavigate } from "react-router";
 
 function AdminLogin() {
+    const navigate = useNavigate();
+
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
@@ -22,6 +26,8 @@ function AdminLogin() {
       localStorage.setItem("adminToken", data.token);
 
       alert("Admin login successful");
+
+      navigate("/admin/users", { replace: true});
 
       console.log(data.admin);
     } catch (error) {

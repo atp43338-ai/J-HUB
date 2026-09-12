@@ -3,6 +3,7 @@ import express from "express";
 import {
   registerUser,
   verifyOTP,
+  resendOTP,
   loginUser,
   forgotPassword,
   resetPassword,
@@ -17,6 +18,9 @@ router.post("/register", registerUser);
 
 // OTP Verification
 router.post("/verify-otp", verifyOTP);
+
+//resend otp
+router.post("/resend-otp", resendOTP);
 
 // Login
 router.post("/login", loginUser);

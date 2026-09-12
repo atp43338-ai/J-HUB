@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router";
+import toast from "react-hot-toast";
+
 import RegisterImage from "../asset/Register-bg.png";
 import { registerUser } from "../services/authService.js";
 
@@ -19,17 +21,17 @@ function Register() {
     e.preventDefault();
 
     if (!name || !email || !password || !confirmPassword) {
-      alert("Please fill all fields");
+      toast.error("Please fill all fields");
       return;
     }
 
     if (password.length < 6) {
-      alert("Password must be at least 6 characters");
+      toast.error("Password must be at least 6 characters");
       return;
     }
 
     if (password !== confirmPassword) {
-      alert("Passwords do not match");
+      toast.error("Passwords do not match");
       return;
     }
 
@@ -40,7 +42,7 @@ function Register() {
         password
       );
 
-      alert("Registration successfully");
+       toast.success("Registration successful");
 
       navigate("/otp-verification", {
         state: {
@@ -51,7 +53,7 @@ function Register() {
 
     } catch (error) {
       console.error("Registration error:", error);
-      alert(error.message);
+      toast.error(error.message);
     }
   };
 
@@ -86,7 +88,7 @@ function Register() {
 
           {/* Registration Form */}
 
-          <form onSubmit={handleSubmit} className="mt-6 space-y-3">
+          <form onSubmit={handleSubmit} autoComplete="off" className="mt-6 space-y-3 ">
 
             {/* Name */}
 
@@ -100,7 +102,7 @@ function Register() {
                 h-[52px]
                 rounded-[14px]
                 border
-                border-[#d5d5d5]
+                border border-black
                 bg-white/75
                 px-5
                 text-[14px]
@@ -117,6 +119,7 @@ function Register() {
             <input
               type="email"
               value={email}
+              autoComplete="off"
               onChange={(e) => setEmail(e.target.value)}
               placeholder="Enter your email"
               className="
@@ -124,7 +127,7 @@ function Register() {
                 h-[52px]
                 rounded-[14px]
                 border
-                border-[#d5d5d5]
+                border border-black
                 bg-white/75
                 px-5
                 text-[14px]
@@ -142,6 +145,7 @@ function Register() {
               <input
                 type={showPassword ? "text" : "password"}
                 value={password}
+                autoComplete="new-password"
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Enter your password"
                 className="
@@ -149,7 +153,7 @@ function Register() {
                   h-[52px]
                   rounded-[14px]
                   border
-                  border-[#d5d5d5]
+                  border border-black
                   bg-white/75
                   px-5
                   pr-12
@@ -224,7 +228,7 @@ function Register() {
                   h-[52px]
                   rounded-[14px]
                   border
-                  border-[#d5d5d5]
+                  border border-black
                   bg-white/75
                   px-5
                   pr-12

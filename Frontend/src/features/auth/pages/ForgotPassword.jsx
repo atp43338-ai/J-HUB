@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router";
 import ForgotPasswordImage from "../asset/Forgot-bg.png";
 import { forgotPassword } from "../services/authService";
+import toast from "react-hot-toast";
 
 function ForgotPassword() {
   const navigate = useNavigate();
@@ -12,14 +13,14 @@ const handlesubmit = async (e) => {
   e.preventDefault();
 
   if (!email) {
-    alert("Please enter email");
+    toast.error("Please enter email");
     return;
   }
 
   try {
     const data = await forgotPassword(email);
 
-    alert("OTP sent successfully");
+    toast.success("OTP sent successfully");
 
     navigate("/otp-verification", {
       state: {
@@ -29,7 +30,7 @@ const handlesubmit = async (e) => {
     });
   } catch (error) {
     console.error("Forgot password error:", error);
-    alert(error.message);
+    toast.error(error.message);
   }
 };
 
@@ -57,13 +58,29 @@ const handlesubmit = async (e) => {
 
       {/* Forgot Password Content */}
 
-      <div className="absolute z-20 left-[12%] top-[24%] w-[30%]">
+      <div
+  className="
+    absolute
+    z-20
+    left-[30%]
+    top-[18%]
+    w-[40%]
+    bg-black
+    border
+    border-[#d90416]
+    rounded-[25px]
+    px-10
+    py-12
+  "
+>
+        
 
-        <h2 className="mt-3 text-[15px] font-semibold !text-black">
-          Forgot Password
+        <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3">
+          <span className="text-white">Forgot </span>
+          <span className="text-[#d90416]">Password</span>
         </h2>
 
-        <p className="mt-3 text-[13px] text-[#555]">
+        <p className="mt-3 text-[13px]">
           Enter your email to reset your password
         </p>
 
@@ -85,7 +102,7 @@ const handlesubmit = async (e) => {
                 h-[52px]
                 rounded-[14px]
                 border
-                border-[#d5d5d5]
+                border border-[#d90416]
                 bg-white/75
                 px-5
                 text-[14px]
@@ -124,7 +141,7 @@ const handlesubmit = async (e) => {
 
         {/* Login Link */}
 
-        <p className="text-center text-[15px] text-black font-semibold mt-4">
+        <p className="text-center text-[15px] text-white font-semibold mt-4">
           Remember your password?{" "}
           <Link
             to="/"

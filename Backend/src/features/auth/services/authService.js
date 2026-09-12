@@ -68,6 +68,30 @@ export const verifyOTPService = async (email, otp) => {
   return user;
 };
 
+
+// Resend OTP
+export const resendOTPService = async (email) => {
+  const user = await User.findOne({ email });
+
+  if (!user) {
+    throw new Error("User not found");
+  }
+
+  const otp = generateOTP();
+
+  const otpExpiresAt = new Date(
+    Date.now() + 60 * 1000
+  );
+
+  user.otp = otp;
+  user.otpExpiresAt = otpExpiresAt;
+
+  await user.save();
+
+  return user;
+};
+
+
 // Login User
 export const loginUserService = async (email, password) => {
   const user = await User.findOne({ email });
@@ -113,6 +137,7 @@ export const loginUserService = async (email, password) => {
     },
   };
 };
+
 
 // Forgot Password
 export const forgotPasswordService = async (email) => {

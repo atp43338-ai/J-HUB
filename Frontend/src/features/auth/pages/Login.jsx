@@ -1,12 +1,19 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router";
+import { Link, useNavigate, Navigate } from "react-router";
 import { GoogleLogin } from "@react-oauth/google";
+import toast from "react-hot-toast";
 
 import { loginUser, googleLoginUser } from "../services/authService.js";
 
 import loginImage from "../asset/Login-bg.png";
 
 function Login() {
+  const token = localStorage.getItem("token");
+
+  if (token) {
+    return <Navigate to="/" replace />;
+  }
+
   const navigate = useNavigate();
 
   const [email, setEmail] = useState("");
@@ -21,7 +28,7 @@ function Login() {
     e.preventDefault();
 
     if (!email || !password) {
-      alert("Please enter email and password");
+      toast.error("Please enter email and password");
       return;
     }
 
@@ -30,14 +37,15 @@ function Login() {
 
       const data = await loginUser(email, password);
 
-      alert("Login successful");
-
       localStorage.setItem("token", data.token);
 
-      navigate("/");
+      toast.success("Login successful");
+
+      navigate("/", { replace: true });
     } catch (error) {
       console.error("Login error:", error);
-      alert(error.message);
+
+      toast.error(error.message);
     } finally {
       setLoading(false);
     }
@@ -50,15 +58,15 @@ function Login() {
         credentialResponse.credential
       );
 
-      alert("Google login successful");
-
       localStorage.setItem("token", data.token);
 
-      navigate("/", { replace: true });
+      toast.success("Google login successful");
 
+      navigate("/", { replace: true });
     } catch (error) {
       console.error("Google login error:", error);
-      alert(error.message);
+
+      toast.error(error.message);
     }
   };
 
@@ -90,13 +98,14 @@ function Login() {
           Login
         </h2>
 
-        <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+        <form onSubmit={handleSubmit} autoComplete="off" className="mt-6 space-y-4">
 
           {/* Email */}
 
           <input
             type="email"
             value={email}
+            autoComplete="off"
             onChange={(e) => setEmail(e.target.value)}
             placeholder="Enter your email"
             className="
@@ -104,7 +113,7 @@ function Login() {
               h-[52px]
               rounded-[14px]
               border
-              border-[#d5d5d5]
+              border boarder-black
               bg-white/75
               px-5
               text-[14px]
@@ -123,6 +132,7 @@ function Login() {
             <input
               type={showPassword ? "text" : "password"}
               value={password}
+              autoComplete="new-password"
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Enter your password"
               className="
@@ -130,7 +140,7 @@ function Login() {
                 h-[52px]
                 rounded-[14px]
                 border
-                border-[#d5d5d5]
+                border-black
                 bg-white/75
                 px-5
                 pr-12
@@ -185,7 +195,7 @@ function Login() {
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
-                    d="M9.88 5.1A10.7 10.7 0 0 1 12 4.9c5.5 0 9 7.1 9 7.1a16.7 16.7 0 0 1-3.05 3.8M6.1 6.1C3.8 7.8 3 12 3 12s3.5 7 9 7c1.1 0 2.1-.2 3-.55"
+                    d="M9.88 5.1A10.7 10.7 0 0 1 12 4.9c5.5 0 9 7.1 9 7.1s-3.5 7-9 7c-1.1 0-2.1-.2-3-.55"
                   />
                 </svg>
 
@@ -278,7 +288,7 @@ function Login() {
             onSuccess={handleGoogleSuccess}
             onError={() => {
               console.log("Google Login Failed");
-              alert("Google login failed");
+              toast.error("Google login failed");
             }}
           />
 

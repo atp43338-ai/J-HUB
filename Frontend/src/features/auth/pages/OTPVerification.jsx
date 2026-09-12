@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import otpBg from "../asset/otp-bg.png";
 import { useNavigate, useLocation } from "react-router";
-import { verifyOTP } from "../services/authService";
+import { verifyOTP, resendOTP } from "../services/authService";
+import toast from "react-hot-toast";
 
 function OTPVerification() {
   const navigate = useNavigate();
@@ -23,32 +24,40 @@ function OTPVerification() {
     return () => clearInterval(interval);
   }, [timer]);
 
-  const handleResend = () => {
+  const handleResend = async () => {
+  try {
+    await resendOTP(email);
+
     setTimer(60);
     setOtp("");
-    console.log("otp resend");
-  };
+
+    toast.success("OTP resent successfully");
+  } catch (error) {
+    console.error("Resend OTP error:", error);
+    toast.error(error.message);
+  }
+};
 
  const handleSubmit = async (e) => {
   e.preventDefault();
 
   if (!otp) {
-    alert("Please enter OTP");
+    toast.error("Please enter OTP");
     return;
   }
 
   if (!email) {
-    alert("email not found");
+    toast.error("email not found");
     return;
   }
 
   try {
     const data = await verifyOTP(email, otp);
 
-    alert("OTP verified successfully");
+    toast.success("OTP verified successfully");
 
     if (from === "register") {
-      navigate("/login");
+      navigate("/login", { replace: true});
       return;
     }
 
@@ -62,7 +71,7 @@ function OTPVerification() {
     }
   } catch (error) {
     console.error("OTP verification error:", error);
-    alert(error.message);
+    toast.error(error.message);
   }
 };
 
@@ -84,9 +93,9 @@ function OTPVerification() {
       <div
         className="
           w-full
-          max-w-[680px]
+          max-w-[600px]
           text-center
-          bg-[#111214]
+          bg-black
           border
           border-[#d90416]
           rounded-[20px]
