@@ -8,6 +8,11 @@ import profileRoutes from "./features/profile/routes/profileRoutes.js";
 import addressRoutes from "./features/address/routes/addressRoutes.js";
 import adminRoutes from "./features/admin/routes/adminRoutes.js";
 
+import productRoutes from "./features/product/routes/productRoutes.js";
+import adminProductRoutes from "./features/admin/product/routes/adminProductRoutes.js";
+
+import adminCategoryRoutes from "./features/admin/category/routes/adminCategoryRoutes.js";
+
 
 dotenv.config();
 
@@ -31,7 +36,7 @@ app.use((req, res, next) => {
 
 app.use(express.json());
 
-app.use("/uploads", express.static("uploads"));
+app.use("/uploads", express.static("src/uploads"));
 
 connectDB();
 
@@ -43,10 +48,14 @@ app.get("/", (req, res) => {
 });
 
 app.use("/api/profile", profileRoutes);
-
 app.use("/api/address", addressRoutes);
 
 app.use("/api/admin", adminRoutes);
+
+app.use("/api/products", productRoutes);
+app.use("/api/admin/products", adminProductRoutes);
+
+app.use("/api/admin/categories", adminCategoryRoutes);
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
