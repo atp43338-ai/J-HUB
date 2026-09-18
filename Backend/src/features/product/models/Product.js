@@ -26,7 +26,7 @@ const productSchema = new mongoose.Schema(
     },
 
     collection: {
-    type: String,
+    type: [String],
     required: true,
     enum: ["Club", "National", "Legends", "New Season"],
     },
@@ -42,21 +42,19 @@ const productSchema = new mongoose.Schema(
       required: true,
     },
 
+    variants: [
+  {
+    size: {
+      type: String,
+      required: true,
+    },
     stock: {
       type: Number,
       required: true,
       default: 0,
     },
-
-    sizes: {
-      type: [String],
-      required: true,
-    },
-
-    colors: {
-      type: [String],
-      required: true,
-    },
+  },
+],
 
     discount: {
       type: Number,

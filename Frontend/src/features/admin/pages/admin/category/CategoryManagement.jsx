@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router";
 import toast from "react-hot-toast";
+import AdminMenu from "../../../components/AdminMenu";
+
+import AddCategoryModal from "../../../components/AddCategoryModal";
+import EditCategoryModal from "../../../components/EditCategoryModal";
 
 import {
   getCategories,
@@ -8,12 +11,14 @@ import {
 } from "../../../services/adminCategoryService";
 
 function CategoryManagement() {
-  const navigate = useNavigate();
-
   const [categories, setCategories] = useState([]);
-
   const [search, setSearch] = useState("");
+
   const [deleteCategoryId, setDeleteCategoryId] = useState(null);
+
+  // Modal states
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [editCategoryId, setEditCategoryId] = useState(null);
 
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -70,13 +75,20 @@ function CategoryManagement() {
   return (
     <div className="min-h-screen bg-gray-100 p-6">
 
+      <AdminMenu />
+
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
 
         <div>
           <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold">
-            <span className="text-black">Category </span>
-            <span className="text-[#d90416]">Management</span>
+            <span className="text-black">
+              Category{" "}
+            </span>
+
+            <span className="text-[#d90416]">
+              Management
+            </span>
           </h1>
 
           <p className="text-gray-500 mt-2">
@@ -84,8 +96,9 @@ function CategoryManagement() {
           </p>
         </div>
 
+        {/* Add Category */}
         <button
-          onClick={() => navigate("/admin/categories/add")}
+          onClick={() => setShowAddModal(true)}
           className="bg-[#d90416] hover:bg-[#b90312] text-white px-5 py-3 rounded-lg font-semibold transition"
         >
           + Add Category
@@ -123,6 +136,8 @@ function CategoryManagement() {
 
       </div>
 
+      
+
       {/* Category Table */}
       <div className="bg-white rounded-xl shadow-sm overflow-hidden">
 
@@ -152,6 +167,7 @@ function CategoryManagement() {
 
               {categories.length > 0 ? (
                 categories.map((category) => (
+
                   <tr
                     key={category._id}
                     className="border-b hover:bg-gray-50"
@@ -164,7 +180,9 @@ function CategoryManagement() {
                     </td>
 
                     <td className="px-6 py-4 text-gray-600">
-                      {new Date(category.createdAt).toLocaleDateString(
+                      {new Date(
+                        category.createdAt
+                      ).toLocaleDateString(
                         "en-GB",
                         {
                           day: "2-digit",
@@ -178,10 +196,11 @@ function CategoryManagement() {
 
                       <div className="flex items-center justify-center gap-3">
 
+                        {/* Edit */}
                         <button
                           onClick={() =>
-                            navigate(
-                              `/admin/categories/edit/${category._id}`
+                            setEditCategoryId(
+                              category._id
                             )
                           }
                           className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-100 transition"
@@ -189,9 +208,12 @@ function CategoryManagement() {
                           Edit
                         </button>
 
+                        {/* Delete */}
                         <button
                           onClick={() =>
-                            setDeleteCategoryId(category._id)
+                            setDeleteCategoryId(
+                              category._id
+                            )
                           }
                           className="px-4 py-2 bg-red-50 text-red-600 rounded-lg text-sm font-medium hover:bg-red-100 transition"
                         >
@@ -203,8 +225,10 @@ function CategoryManagement() {
                     </td>
 
                   </tr>
+
                 ))
               ) : (
+
                 <tr>
                   <td
                     colSpan="3"
@@ -213,6 +237,7 @@ function CategoryManagement() {
                     No categories found
                   </td>
                 </tr>
+
               )}
 
             </tbody>
@@ -227,28 +252,36 @@ function CategoryManagement() {
       <div className="flex items-center justify-between mt-6">
 
         <p className="text-sm text-gray-500">
-          Showing {categories.length} of {totalCategories} categories
+          Showing {categories.length} of{" "}
+          {totalCategories} categories
         </p>
 
         <div className="flex items-center gap-2">
 
+          {/* Previous */}
           <button
             type="button"
-            onClick={() => setCurrentPage(currentPage - 1)}
+            onClick={() =>
+              setCurrentPage(currentPage - 1)
+            }
             disabled={currentPage === 1}
             className="px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-500 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Previous
           </button>
 
+          {/* Page Numbers */}
           {Array.from(
             { length: totalPages },
             (_, index) => index + 1
           ).map((page) => (
+
             <button
               key={page}
               type="button"
-              onClick={() => setCurrentPage(page)}
+              onClick={() =>
+                setCurrentPage(page)
+              }
               className={`px-4 py-2 rounded-lg text-sm ${
                 currentPage === page
                   ? "bg-[#d90416] text-white"
@@ -257,11 +290,15 @@ function CategoryManagement() {
             >
               {page}
             </button>
+
           ))}
 
+          {/* Next */}
           <button
             type="button"
-            onClick={() => setCurrentPage(currentPage + 1)}
+            onClick={() =>
+              setCurrentPage(currentPage + 1)
+            }
             disabled={currentPage === totalPages}
             className="px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
           >
@@ -274,6 +311,7 @@ function CategoryManagement() {
 
       {/* Delete Confirmation Modal */}
       {deleteCategoryId && (
+
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
 
           <div className="bg-white rounded-xl w-full max-w-md p-6 shadow-xl">
@@ -290,7 +328,9 @@ function CategoryManagement() {
 
               <button
                 type="button"
-                onClick={() => setDeleteCategoryId(null)}
+                onClick={() =>
+                  setDeleteCategoryId(null)
+                }
                 className="px-5 py-2.5 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-100 transition"
               >
                 Cancel
@@ -309,6 +349,34 @@ function CategoryManagement() {
           </div>
 
         </div>
+
+      )}
+
+      {/* Add Category Modal */}
+      {showAddModal && (
+        <AddCategoryModal
+          onClose={() =>
+            setShowAddModal(false)
+          }
+          onAdded={() => {
+            setShowAddModal(false);
+            fetchCategories();
+          }}
+        />
+      )}
+
+      {/* Edit Category Modal */}
+      {editCategoryId && (
+        <EditCategoryModal
+          categoryId={editCategoryId}
+          onClose={() =>
+            setEditCategoryId(null)
+          }
+          onUpdated={() => {
+            setEditCategoryId(null);
+            fetchCategories();
+          }}
+        />
       )}
 
     </div>

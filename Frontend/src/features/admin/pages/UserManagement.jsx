@@ -1,5 +1,6 @@
 import { getUsers, updateUserBlockStatus } from "../services/adminService";
 import { useEffect, useState } from "react";
+import AdminMenu from "../components/AdminMenu";
 
 function UserManagement() {
   const [search, setSearch] = useState("");
@@ -74,353 +75,408 @@ function UserManagement() {
   });
 
   return (
-  <div className="fixed inset-0 z-50 w-screen min-h-screen overflow-auto bg-[#0f1012] text-white">
+    <div className="fixed inset-0 z-50 w-screen min-h-screen overflow-auto bg-white text-gray-700">
 
-    {/* Header */}
+      {/* Admin Menu */}
+      <AdminMenu />
 
-    <div className="w-full border-b border-[#292a2d] bg-[#141518] px-5 sm:px-8 lg:px-10 py-5">
+      {/* Header */}
+      <div className="w-full border-b border-red-100 bg-white px-5 sm:px-8 lg:px-10 py-7">
 
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
 
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold">
-            <span className="text-[#d90416]">User</span>{" "}
-            Management
-          </h1>
+          <div>
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold">
+              <span className="text-[#d90416]">
+                User
+              </span>{" "}
+              <span className="text-gray-800">
+                Management
+              </span>
+            </h1>
 
-          <p className="text-gray-400 text-sm mt-1">
-            Manage registered users
-          </p>
-        </div>
-
-        <div className="text-sm text-gray-400">
-          Total Users:{" "}
-          <span className="text-white font-semibold">
-            {users.length}
-          </span>
-        </div>
-
-      </div>
-
-    </div>
-
-    {/* Main Content */}
-
-    <div className="p-5 sm:p-8 lg:p-10">
-
-      {/* Search Section */}
-
-      <div
-        className="
-          bg-[#181a1d]
-          border border-[#2d2e31]
-          rounded-[16px]
-          p-5
-          mb-6
-        "
-      >
-
-        <div className="flex flex-col sm:flex-row gap-3">
-
-          <div className="relative flex-1">
-
-            <input
-              type="text"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search users by name or email"
-              className="
-                w-full
-                h-[48px]
-                rounded-[10px]
-                border border-[#3a3b3f]
-                bg-[#111214]
-                px-4
-                text-white
-                text-sm
-                placeholder-gray-500
-                outline-none
-                focus:border-[#d90416]
-              "
-            />
-
+            <p className="text-gray-500 text-sm mt-2">
+              Manage registered users
+            </p>
           </div>
 
-          <button
-            onClick={handleClear}
+          <div
             className="
-              h-[48px]
-              px-6
-              rounded-[10px]
-              border border-[#444]
-              bg-[#222326]
-              hover:border-[#d90416]
-              hover:text-[#d90416]
-              text-gray-300
               text-sm
-              font-semibold
-              transition
+              text-gray-500
+              border
+              border-red-100
+              bg-red-50
+              rounded-lg
+              px-4
+              py-2
             "
           >
-            Clear
-          </button>
+            Total Users:{" "}
+            <span className="text-[#d90416] font-bold">
+              {users.length}
+            </span>
+          </div>
 
         </div>
 
       </div>
 
-      {/* Users Table */}
+      {/* Main Content */}
+      <div className="p-5 sm:p-8 lg:p-10">
 
-      <div
-        className="
-          bg-[#181a1d]
-          border border-[#2d2e31]
-          rounded-[16px]
-          overflow-hidden
-        "
-      >
-
-        {/* Desktop Table */}
-
-        <div className="overflow-x-auto">
-
-          <table className="w-full min-w-[800px]">
-
-            <thead>
-              <tr className="border-b border-[#303136] bg-[#1d1f22]">
-
-                <th className="text-left px-6 py-4 text-gray-400 text-sm font-medium">
-                  #
-                </th>
-
-                <th className="text-left px-6 py-4 text-gray-400 text-sm font-medium">
-                  User
-                </th>
-
-                <th className="text-left px-6 py-4 text-gray-400 text-sm font-medium">
-                  Email
-                </th>
-
-                <th className="text-left px-6 py-4 text-gray-400 text-sm font-medium">
-                  Phone
-                </th>
-
-                <th className="text-left px-6 py-4 text-gray-400 text-sm font-medium">
-                  Status
-                </th>
-
-                <th className="text-center px-6 py-4 text-gray-400 text-sm font-medium">
-                  Action
-                </th>
-
-              </tr>
-            </thead>
-
-            <tbody>
-
-              {filteredUsers.map((user, index) => (
-
-                <tr
-                  key={user._id}
-                  className="
-                    border-b border-[#292a2d]
-                    last:border-b-0
-                    hover:bg-[#1d1f22]
-                    transition
-                  "
-                >
-
-                  <td className="px-6 py-5 text-gray-400 text-sm">
-                    {index + 1}
-                  </td>
-
-                  <td className="px-6 py-5">
-
-                    <div className="flex items-center gap-3">
-
-                      <div
-                        className="
-                          w-[40px]
-                          h-[40px]
-                          rounded-full
-                          bg-[#d90416]/15
-                          flex
-                          items-center
-                          justify-center
-                          text-[#d90416]
-                          font-semibold
-                        "
-                      >
-                        {user.name.charAt(0)}
-                      </div>
-
-                      <span className="text-white text-sm font-medium">
-                        {user.name}
-                      </span>
-
-                    </div>
-
-                  </td>
-
-                  <td className="px-6 py-5 text-gray-300 text-sm">
-                    {user.email}
-                  </td>
-
-                  <td className="px-6 py-5 text-gray-300 text-sm">
-                    {user.phone}
-                  </td>
-
-                  <td className="px-6 py-5">
-
-                    <span
-                      className={`
-                        inline-flex
-                        px-3
-                        py-1
-                        rounded-full
-                        text-xs
-                        font-semibold
-                        ${
-                          !user.isBlocked
-                            ? "bg-green-500/10 text-green-400"
-                            : "bg-red-500/10 text-red-400"
-                        }
-                      `}
-                    >
-                      {user.isBlocked ? "Blocked" : "Active"}
-                    </span>
-
-                  </td>
-
-                  <td className="px-6 py-5">
-
-                    <div className="flex justify-center">
-
-                      {!user.isBlocked ? (
-
-                        <button
-                          onClick={() => handleBlockToggle(user)}
-                          className="
-                            px-4
-                            h-[38px]
-                            rounded-[9px]
-                            border border-[#d90416]
-                            text-[#d90416]
-                            hover:bg-[#d90416]
-                            hover:text-white
-                            text-xs
-                            font-semibold
-                            transition
-                          "
-                        >
-                          Block
-                        </button>
-
-                      ) : (
-
-                        <button
-                          onClick={() => handleBlockToggle(user)}
-                          className="
-                            px-4
-                            h-[38px]
-                            rounded-[9px]
-                            bg-[#d90416]
-                            hover:bg-[#b90312]
-                            text-white
-                            text-xs
-                            font-semibold
-                            transition
-                          "
-                        >
-                          Unblock
-                        </button>
-
-                      )}
-
-                    </div>
-
-                  </td>
-
-                </tr>
-
-              ))}
-
-            </tbody>
-
-          </table>
-
-        </div>
-
-        {/* Pagination */}
-
+        {/* Search Section */}
         <div
           className="
-            border-t border-[#303136]
-            px-5 sm:px-6
-            py-4
-            flex
-            flex-col sm:flex-row
-            items-center
-            justify-between
-            gap-4
+            bg-white
+            border
+            border-red-100
+            rounded-2xl
+            p-5
+            mb-6
+            shadow-sm
           "
         >
 
-          <p className="text-gray-500 text-sm">
-            Showing 1–{filteredUsers.length} of {filteredUsers.length} users
-          </p>
+          <div className="flex flex-col sm:flex-row gap-3">
 
-          <div className="flex items-center gap-2">
+            <div className="relative flex-1">
+
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search users by name or email"
+                className="
+                  w-full
+                  h-[48px]
+                  rounded-lg
+                  border
+                  border-gray-200
+                  bg-white
+                  px-4
+                  text-gray-700
+                  text-sm
+                  placeholder-gray-400
+                  outline-none
+                  focus:border-[#d90416]
+                  focus:ring-1
+                  focus:ring-red-100
+                "
+              />
+
+            </div>
 
             <button
-  onClick={() => setPage(page - 1)}
-  disabled={page === 1}
-  className="
-    w-[38px]
-    h-[38px]
-    rounded-[8px]
-    border border-[#3a3b3f]
-    text-gray-400
-    hover:border-[#d90416]
-    hover:text-[#d90416]
-    disabled:text-gray-600
-    disabled:cursor-not-allowed
-  "
->
-  ←
-</button>
-
-            <button
+              onClick={handleClear}
               className="
-                w-[38px]
-                h-[38px]
-                rounded-[8px]
-                bg-[#d90416]
-                text-white
+                h-[48px]
+                px-6
+                rounded-lg
+                border
+                border-[#d90416]
+                bg-white
+                text-[#d90416]
                 text-sm
                 font-semibold
+                hover:bg-[#d90416]
+                hover:text-white
+                transition
               "
             >
-              {page}
+              Clear
             </button>
 
-            <button
-  onClick={() => setPage(page + 1)}
-  disabled={page === totalPages}
-  className="
-    w-[38px]
-    h-[38px]
-    rounded-[8px]
-    border border-[#3a3b3f]
-    text-gray-400
-    hover:border-[#d90416]
-    hover:text-[#d90416]
-    disabled:text-gray-600
-    disabled:cursor-not-allowed
-  "
->
-  →
-</button>
+          </div>
+
+        </div>
+
+        {/* Users Table */}
+        <div
+          className="
+            bg-white
+            border
+            border-red-100
+            rounded-2xl
+            overflow-hidden
+            shadow-sm
+          "
+        >
+
+          {/* Desktop Table */}
+          <div className="overflow-x-auto">
+
+            <table className="w-full min-w-[800px]">
+
+              <thead>
+                <tr className="border-b border-red-100 bg-red-50">
+
+                  <th className="text-left px-6 py-4 text-[#d90416] text-sm font-semibold">
+                    #
+                  </th>
+
+                  <th className="text-left px-6 py-4 text-[#d90416] text-sm font-semibold">
+                    User
+                  </th>
+
+                  <th className="text-left px-6 py-4 text-[#d90416] text-sm font-semibold">
+                    Email
+                  </th>
+
+                  <th className="text-left px-6 py-4 text-[#d90416] text-sm font-semibold">
+                    Phone
+                  </th>
+
+                  <th className="text-left px-6 py-4 text-[#d90416] text-sm font-semibold">
+                    Status
+                  </th>
+
+                  <th className="text-center px-6 py-4 text-[#d90416] text-sm font-semibold">
+                    Action
+                  </th>
+
+                </tr>
+              </thead>
+
+              <tbody>
+
+                {filteredUsers.map((user, index) => (
+
+                  <tr
+                    key={user._id}
+                    className="
+                      border-b
+                      border-red-50
+                      last:border-b-0
+                      hover:bg-red-50/50
+                      transition
+                    "
+                  >
+
+                    {/* Number */}
+                    <td className="px-6 py-5 text-gray-500 text-sm">
+                      {index + 1}
+                    </td>
+
+                    {/* User */}
+                    <td className="px-6 py-5">
+
+                      <div className="flex items-center gap-3">
+
+                        <div
+                          className="
+                            w-[40px]
+                            h-[40px]
+                            rounded-full
+                            bg-red-50
+                            border
+                            border-red-100
+                            flex
+                            items-center
+                            justify-center
+                            text-[#d90416]
+                            font-bold
+                          "
+                        >
+                          {user.name.charAt(0)}
+                        </div>
+
+                        <span className="text-gray-800 text-sm font-semibold">
+                          {user.name}
+                        </span>
+
+                      </div>
+
+                    </td>
+
+                    {/* Email */}
+                    <td className="px-6 py-5 text-gray-600 text-sm">
+                      {user.email}
+                    </td>
+
+                    {/* Phone */}
+                    <td className="px-6 py-5 text-gray-600 text-sm">
+                      {user.phone}
+                    </td>
+
+                    {/* Status */}
+                    <td className="px-6 py-5">
+
+                      <span
+                        className={`
+                          inline-flex
+                          px-3
+                          py-1
+                          rounded-full
+                          text-xs
+                          font-semibold
+                          ${
+                            !user.isBlocked
+                              ? "bg-red-50 text-[#d90416]"
+                              : "bg-red-100 text-[#b90312]"
+                          }
+                        `}
+                      >
+                        {user.isBlocked
+                          ? "Blocked"
+                          : "Active"}
+                      </span>
+
+                    </td>
+
+                    {/* Action */}
+                    <td className="px-6 py-5">
+
+                      <div className="flex justify-center">
+
+                        {!user.isBlocked ? (
+
+                          <button
+                            onClick={() =>
+                              handleBlockToggle(user)
+                            }
+                            className="
+                              px-5
+                              h-[38px]
+                              rounded-lg
+                              border
+                              border-[#d90416]
+                              bg-white
+                              text-[#d90416]
+                              hover:bg-[#d90416]
+                              hover:text-white
+                              text-xs
+                              font-semibold
+                              transition
+                            "
+                          >
+                            Block
+                          </button>
+
+                        ) : (
+
+                          <button
+                            onClick={() =>
+                              handleBlockToggle(user)
+                            }
+                            className="
+                              px-5
+                              h-[38px]
+                              rounded-lg
+                              bg-[#d90416]
+                              hover:bg-[#b90312]
+                              text-white
+                              text-xs
+                              font-semibold
+                              transition
+                            "
+                          >
+                            Unblock
+                          </button>
+
+                        )}
+
+                      </div>
+
+                    </td>
+
+                  </tr>
+
+                ))}
+
+              </tbody>
+
+            </table>
+
+          </div>
+
+          {/* Pagination */}
+          <div
+            className="
+              border-t
+              border-red-100
+              px-5
+              sm:px-6
+              py-4
+              flex
+              flex-col
+              sm:flex-row
+              items-center
+              justify-between
+              gap-4
+              bg-white
+            "
+          >
+
+            <p className="text-gray-500 text-sm">
+              Showing 1–{filteredUsers.length} of{" "}
+              {filteredUsers.length} users
+            </p>
+
+            <div className="flex items-center gap-2">
+
+              {/* Previous */}
+              <button
+                onClick={() => setPage(page - 1)}
+                disabled={page === 1}
+                className="
+                  w-[38px]
+                  h-[38px]
+                  rounded-lg
+                  border
+                  border-red-100
+                  bg-white
+                  text-[#d90416]
+                  hover:border-[#d90416]
+                  hover:bg-red-50
+                  disabled:text-gray-300
+                  disabled:border-gray-200
+                  disabled:cursor-not-allowed
+                  transition
+                "
+              >
+                ←
+              </button>
+
+              {/* Current Page */}
+              <button
+                className="
+                  w-[38px]
+                  h-[38px]
+                  rounded-lg
+                  bg-[#d90416]
+                  text-white
+                  text-sm
+                  font-semibold
+                "
+              >
+                {page}
+              </button>
+
+              {/* Next */}
+              <button
+                onClick={() => setPage(page + 1)}
+                disabled={page === totalPages}
+                className="
+                  w-[38px]
+                  h-[38px]
+                  rounded-lg
+                  border
+                  border-red-100
+                  bg-white
+                  text-[#d90416]
+                  hover:border-[#d90416]
+                  hover:bg-red-50
+                  disabled:text-gray-300
+                  disabled:border-gray-200
+                  disabled:cursor-not-allowed
+                  transition
+                "
+              >
+                →
+              </button>
+
+            </div>
 
           </div>
 
@@ -429,9 +485,7 @@ function UserManagement() {
       </div>
 
     </div>
-
-  </div>
-);
+  );
 }
 
 export default UserManagement;

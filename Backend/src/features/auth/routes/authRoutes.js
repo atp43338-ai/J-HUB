@@ -35,10 +35,7 @@ router.post("/reset-password", resetPassword);
 // Google Login
 router.post("/google-login", googleLogin);
 
-// router.get("/profile", authMiddleware, getProfile);
-// router.put("/update-profile", authMiddleware, updateProfile);
-// router.post("/change-email", authMiddleware, changeEmail);
-// router.post("/verify-email-change", authMiddleware,verifyEmailChange)
+
 
 
 export default router;

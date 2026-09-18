@@ -13,6 +13,8 @@ import adminProductRoutes from "./features/admin/product/routes/adminProductRout
 
 import adminCategoryRoutes from "./features/admin/category/routes/adminCategoryRoutes.js";
 
+import cartRoutes from "./features/cart/routes/cartRoutes.js";
+
 
 dotenv.config();
 
@@ -56,6 +58,8 @@ app.use("/api/products", productRoutes);
 app.use("/api/admin/products", adminProductRoutes);
 
 app.use("/api/admin/categories", adminCategoryRoutes);
+
+app.use("/api/cart", cartRoutes);
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);

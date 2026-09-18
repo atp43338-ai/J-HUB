@@ -2,10 +2,10 @@ import { useState } from "react";
 import AdminLoginImage from "../asset/admin-login-bg.png";
 import { adminLogin } from "../services/adminService.js";
 import { useNavigate } from "react-router";
+import toast from "react-hot-toast";
 
 function AdminLogin() {
-    const navigate = useNavigate();
-
+  const navigate = useNavigate();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -16,7 +16,7 @@ function AdminLogin() {
     e.preventDefault();
 
     if (!email || !password) {
-      alert("Please fill all fields");
+      toast.error("Please fill all fields");
       return;
     }
 
@@ -25,14 +25,15 @@ function AdminLogin() {
 
       localStorage.setItem("adminToken", data.token);
 
-      alert("Admin login successful");
+      toast.success("Admin login successful");
 
-      navigate("/admin/users", { replace: true});
+      navigate("/admin/users", { replace: true });
 
       console.log(data.admin);
     } catch (error) {
       console.error("Admin login error:", error);
-      alert(error.message);
+
+      toast.error(error.message || "Admin login failed");
     }
   };
 
@@ -92,7 +93,9 @@ function AdminLogin() {
 
           {/* Form */}
 
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <form onSubmit={handleSubmit}
+          autoComplete="off"
+           className="space-y-5">
 
             {/* Email */}
 
@@ -141,6 +144,7 @@ function AdminLogin() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Enter admin password"
+                  autoComplete="new-password"
                   className="
                     w-full
                     h-[52px]

@@ -54,7 +54,6 @@ export const updateProductService = async (productId, productData) => {
   return product;
 };
 
-
 export const deleteProductService = async (productId) => {
   const product = await Product.findByIdAndUpdate(
     productId,
@@ -65,6 +64,121 @@ export const deleteProductService = async (productId) => {
   if (!product) {
     throw new Error("Product not found");
   }
+
+  return product;
+};
+
+// Add Variant
+export const addVariantService = async (productId, variantData) => {
+  const product = await Product.findById(productId);
+
+  if (!product) {
+    throw new Error("Product not found");
+  }
+
+  const { size, stock } = variantData;
+
+  if (!size) {
+    throw new Error("Size is required");
+  }
+
+  if (stock < 0) {
+    throw new Error("Stock cannot be negative");
+  }
+
+  const existingVariant = product.variants.find(
+    (variant) => variant.size === size
+  );
+
+  if (existingVariant) {
+    throw new Error("This size already exists");
+  }
+
+  product.variants.push({
+    size,
+    stock: Number(stock),
+  });
+
+  await product.save();
+
+  return product;
+};
+
+export const getVariantsService = async (productId) => {
+  const product = await Product.findById(productId);
+
+  if (!product) {
+    throw new Error("Product not found");
+  }
+
+  return product.variants;
+};
+
+
+export const updateVariantService = async (
+  productId,
+  variantId,
+  variantData
+) => {
+  const product = await Product.findById(productId);
+
+  if (!product) {
+    throw new Error("Product not found");
+  }
+
+  const variant = product.variants.id(variantId);
+
+  if (!variant) {
+    throw new Error("Variant not found");
+  }
+
+  const { size, stock } = variantData;
+
+  if (!size) {
+    throw new Error("Size is required");
+  }
+
+  if (stock < 0) {
+    throw new Error("Stock cannot be negative");
+  }
+
+  const existingVariant = product.variants.find(
+    (item) =>
+      item.size === size &&
+      item._id.toString() !== variantId
+  );
+
+  if (existingVariant) {
+    throw new Error("This size already exists");
+  }
+
+  variant.size = size;
+  variant.stock = Number(stock);
+
+  await product.save();
+
+  return product;
+};
+
+
+
+
+export const deleteVariantService = async (productId, variantId) => {
+  const product = await Product.findById(productId);
+
+  if (!product) {
+    throw new Error("Product not found");
+  }
+
+  const variant = product.variants.id(variantId);
+
+  if (!variant) {
+    throw new Error("Variant not found");
+  }
+
+  product.variants.pull(variantId);
+
+  await product.save();
 
   return product;
 };

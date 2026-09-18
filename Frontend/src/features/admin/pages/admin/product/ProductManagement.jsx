@@ -1,16 +1,23 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router";
 import {
   getProducts,
   deleteProduct,
 } from "../../../services/adminProductService";
 import toast from "react-hot-toast";
+import AdminMenu from "../../../components/AdminMenu";
+
+import AddProductModal from "../../../components/AddProductModal";
+import EditProductModal from "../../../components/EditProductModal";
+
+import VariantManagementModal from "../../../components/VariantManagementModal";
 
 const ProductManagement = () => {
-  const navigate = useNavigate();
-
   const [products, setProducts] = useState([]);
   const [deleteProductId, setDeleteProductId] = useState(null);
+
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [editProductId, setEditProductId] = useState(null);
+  const [variantProductId, setVariantProductId] = useState(null);
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
@@ -20,22 +27,22 @@ const ProductManagement = () => {
   const productsPerPage = 5;
 
   // Fetch products
+  const fetchProducts = async () => {
+    try {
+      const data = await getProducts(
+        currentPage,
+        productsPerPage
+      );
+
+      setProducts(data.products);
+      setTotalPages(data.totalPages);
+      setTotalProducts(data.totalProducts);
+    } catch (error) {
+      console.log(error.message);
+    }
+  };
+
   useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        const data = await getProducts(
-          currentPage,
-          productsPerPage
-        );
-
-        setProducts(data.products);
-        setTotalPages(data.totalPages);
-        setTotalProducts(data.totalProducts);
-      } catch (error) {
-        console.log(error.message);
-      }
-    };
-
     fetchProducts();
   }, [currentPage]);
 
@@ -66,31 +73,36 @@ const ProductManagement = () => {
     } catch (error) {
       console.error("Delete product error:", error);
 
-      toast.error(error.message || "Failed to delete product");
+      toast.error(
+        error.message || "Failed to delete product"
+      );
     }
   };
 
   return (
     <div className="min-h-screen bg-gray-100 p-6">
 
+      <AdminMenu />
+
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
 
         <div>
-
           <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-8">
             <span className="text-black">Product </span>
-            <span className="text-[#d90416]">Management</span>
+            <span className="text-[#d90416]">
+              Management
+            </span>
           </h1>
 
-          <p className="!text-black-500 mt-1">
+          <p className="text-black mt-1">
             Manage your products
           </p>
-
         </div>
 
+        {/* Add Product */}
         <button
-          onClick={() => navigate("/admin/products/add")}
+          onClick={() => setShowAddModal(true)}
           className="bg-[#d90416] hover:bg-[#b90312] text-white px-5 py-3 rounded-lg font-semibold transition"
         >
           + Add Product
@@ -188,12 +200,21 @@ const ProductManagement = () => {
 
                     <div className="flex items-center justify-center gap-3">
 
+                      {/*variant */}
+
+                      <button
+                        onClick={() =>
+                          setVariantProductId(product._id)}
+
+                        className="px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-100 transition"
+                      >
+                        Variant
+                      </button>
+
                       {/* Edit */}
                       <button
                         onClick={() =>
-                          navigate(
-                            `/admin/products/edit/${product._id}`
-                          )
+                          setEditProductId(product._id)
                         }
                         className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-100 transition"
                       >
@@ -301,7 +322,7 @@ const ProductManagement = () => {
 
           <div className="bg-white rounded-xl w-full max-w-md p-6 shadow-xl">
 
-            <h2 className="text-xl font-bold !text-black">
+            <h2 className="text-xl font-bold text-black">
               Delete Product
             </h2>
 
@@ -310,6 +331,7 @@ const ProductManagement = () => {
             </p>
 
             <div className="flex justify-end gap-3 mt-6">
+
 
               {/* Cancel */}
               <button
@@ -334,6 +356,36 @@ const ProductManagement = () => {
         </div>
 
       )}
+
+      {/* Add Product Modal */}
+      {showAddModal && (
+        <AddProductModal
+          onClose={() => setShowAddModal(false)}
+          onAdded={() => {
+            setShowAddModal(false);
+            fetchProducts();
+          }}
+        />
+      )}
+
+      {/* Edit Product Modal */}
+      {editProductId && (
+        <EditProductModal
+          productId={editProductId}
+          onClose={() => setEditProductId(null)}
+          onUpdated={() => {
+            setEditProductId(null);
+            fetchProducts();
+          }}
+        />
+      )}
+      {/*variant */}
+      {variantProductId && (
+      <VariantManagementModal
+      productId={variantProductId}
+      onClose={() => setVariantProductId(null)}
+   />
+)}
 
     </div>
   );

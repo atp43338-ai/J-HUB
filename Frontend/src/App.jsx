@@ -20,13 +20,13 @@ import AdminLogin from "./features/admin/pages/AdminLogin";
 import UserManagement from "./features/admin/pages/UserManagement";
 
 import ProductManagement from "./features/admin/pages/admin/product/ProductManagement";
-import AddProduct from "./features/admin/pages/admin/product/AddProduct";
-import EditProduct from "./features/admin/pages/admin/product/EditProduct";
 import ProductListing from "./features/product/pages/ProductListing";
 
+import ProductDetails from "./features/product/pages/ProductDetails";
+
 import CategoryManagement from "./features/admin/pages/admin/category/CategoryManagement";
-import AddCategory from "./features/admin/pages/admin/category/AddCategory";
-import EditCategory from "./features/admin/pages/admin/category/EditCategory";
+
+import Cart from "./features/cart/pages/Cart";
 
 import ProtectedRoute from "./middleware/ProtectedRoute";
 import PublicRoute from "./middleware/PublicRoute";
@@ -55,13 +55,13 @@ function App() {
       <Route path="/admin/users" element={<PublicRoute><UserManagement /></PublicRoute>} />
 
       <Route path="/admin/products" element={<ProductManagement />}/>
-      <Route path="/admin/products/add" element={<AddProduct />} />
-      <Route path="/admin/products/edit/:id" element={<EditProduct />} />
+
       <Route path="/products" element={<ProductListing />} />
+      <Route path="/products/:id" element={<ProductDetails />} />
 
       <Route path="/admin/categories" element={<CategoryManagement />} />
-      <Route path="/admin/categories/add" element={<AddCategory />} />
-      <Route path="/admin/categories/edit/:id" element={<EditCategory />} />
+
+      <Route path="/cart" element={<Cart />} />
       
       
     </Routes>

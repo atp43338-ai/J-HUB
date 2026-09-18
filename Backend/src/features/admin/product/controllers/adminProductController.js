@@ -4,7 +4,13 @@ import {
   getProductByIdService,
   updateProductService,
   deleteProductService,
+  addVariantService,
+  getVariantsService,
+  updateVariantService,
+  deleteVariantService,
 } from "../services/adminProductService.js";
+
+
 
 export const createProduct = async (req, res) => {
   try {
@@ -31,6 +37,8 @@ export const createProduct = async (req, res) => {
 };
 
 
+
+
 export const getProducts = async (req, res) => {
   try {
     const page = Number(req.query.page) || 1;
@@ -46,6 +54,8 @@ export const getProducts = async (req, res) => {
   }
 };
 
+
+
 export const getProductById = async (req, res) => {
   try {
     const product = await getProductByIdService(req.params.id);
@@ -59,6 +69,8 @@ export const getProductById = async (req, res) => {
     });
   }
 };
+
+
 
 export const updateProduct = async (req, res) => {
   try {
@@ -91,6 +103,7 @@ export const updateProduct = async (req, res) => {
 };
 
 
+
 export const deleteProduct = async (req, res) => {
   try {
     const product = await deleteProductService(req.params.id);
@@ -101,6 +114,99 @@ export const deleteProduct = async (req, res) => {
     });
   } catch (error) {
     res.status(404).json({
+      message: error.message,
+    });
+  }
+};
+
+
+
+export const addVariant = async (req, res) => {
+  try {
+    const productId = req.params.id;
+
+    const { size, stock } = req.body;
+
+    const product = await addVariantService(productId, {
+      size,
+      stock,
+    });
+
+    res.status(201).json({
+      message: "Variant added successfully",
+      product,
+    });
+  } catch (error) {
+    res.status(400).json({
+      message: error.message,
+    });
+  }
+};
+
+
+
+export const getVariants = async (req, res) => {
+  try {
+    const productId = req.params.id;
+
+    const variants = await getVariantsService(productId);
+
+    res.status(200).json({
+      variants,
+    });
+  } catch (error) {
+    res.status(404).json({
+      message: error.message,
+    });
+  }
+};
+
+
+
+export const updateVariant = async (req, res) => {
+  try {
+    const productId = req.params.id;
+    const variantId = req.params.variantId;
+
+    const { size, stock } = req.body;
+
+    const product = await updateVariantService(
+      productId,
+      variantId,
+      {
+        size,
+        stock,
+      }
+    );
+
+    res.status(200).json({
+      message: "Variant updated successfully",
+      product,
+    });
+  } catch (error) {
+    res.status(400).json({
+      message: error.message,
+    });
+  }
+};
+
+
+export const deleteVariant = async (req, res) => {
+  try {
+    const productId = req.params.id;
+    const variantId = req.params.variantId;
+
+    const product = await deleteVariantService(
+      productId,
+      variantId
+    );
+
+    res.status(200).json({
+      message: "Variant deleted successfully",
+      product,
+    });
+  } catch (error) {
+    res.status(400).json({
       message: error.message,
     });
   }

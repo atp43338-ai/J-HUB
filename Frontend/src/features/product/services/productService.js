@@ -1,7 +1,25 @@
 const API_URL = "http://localhost:5000/api/products";
 
-export const getProducts = async () => {
-  const response = await fetch(API_URL);
+export const getProducts = async (
+  page = 1,
+  limit = 6,
+  search = "",
+  sort = "",
+  category = "",
+  minPrice = "",
+  maxPrice = "",
+  brand = ""
+) => {
+  const response = await fetch(
+    `${API_URL}?page=${page}&limit=${limit}&search=${encodeURIComponent(
+      search
+    )}&sort=${sort}&category=${encodeURIComponent(
+      category
+    )}&minPrice=${minPrice}&maxPrice=${maxPrice}&brand=${encodeURIComponent(
+      brand
+    )}`
+  );
+  
 
   const data = await response.json();
 
@@ -9,7 +27,7 @@ export const getProducts = async () => {
     throw new Error(data.message || "Failed to fetch products");
   }
 
-  return data.products;
+  return data;
 };
 
 
@@ -37,7 +55,7 @@ export const getProductById = async (id) => {
     throw new Error(data.message || "Failed to fetch product");
   }
 
-  return data.product;
+  return data;
 };
 
 

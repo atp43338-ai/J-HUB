@@ -30,11 +30,28 @@ export const createProduct = async (req, res) => {
 
 export const getProducts = async (req, res) => {
   try {
-    const products = await getProductsService();
+    const page = Number(req.query.page) || 1;
+    const limit = Number(req.query.limit) || 6;
 
-    res.status(200).json({
-      products,
-    });
+    const search = req.query.search || "";
+    const sort = req.query.sort || "";
+    const category = req.query.category || "";
+    const minPrice = req.query.minPrice || "";
+    const maxPrice = req.query.maxPrice || "";
+    const brand = req.query.brand || "";
+
+    const data = await getProductsService(
+      page,
+      limit,
+      search,
+      sort,
+      category,
+      minPrice,
+      maxPrice,
+      brand,
+    );
+
+    res.status(200).json(data);
   } catch (error) {
     res.status(500).json({
       message: error.message,

@@ -69,3 +69,87 @@ export const deleteProduct = async (id) => {
 
   return data;
 };
+
+
+
+export const addVariant = async (productId, variantData) => {
+  const response = await fetch(
+    `http://localhost:5000/api/admin/products/${productId}/variants`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(variantData),
+    }
+  );
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.message || "Failed to add variant");
+  }
+
+  return data;
+};
+
+
+export const getVariants = async (productId) => {
+  const response = await fetch(
+    `http://localhost:5000/api/admin/products/${productId}/variants`
+  );
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.message || "Failed to fetch variants");
+  }
+
+  return data;
+};
+
+
+
+export const updateVariant = async (
+  productId,
+  variantId,
+  variantData
+) => {
+  const response = await fetch(
+    `http://localhost:5000/api/admin/products/${productId}/variants/${variantId}`,
+    {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(variantData),
+    }
+  );
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.message || "Failed to update variant");
+  }
+
+  return data;
+};
+
+
+
+export const deleteVariant = async (productId, variantId) => {
+  const response = await fetch(
+    `http://localhost:5000/api/admin/products/${productId}/variants/${variantId}`,
+    {
+      method: "DELETE",
+    }
+  );
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.message || "Failed to delete variant");
+  }
+
+  return data;
+};
