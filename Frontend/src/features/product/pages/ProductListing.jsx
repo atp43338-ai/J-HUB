@@ -11,22 +11,16 @@ import Footer from "../../home/components/Footer";
 
 function ProductListing() {
   const [products, setProducts] = useState([]);
-
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState("");
-
   const [category, setCategory] = useState("");
   const [brand, setBrand] = useState("");
-
   const [minPrice, setMinPrice] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
-
   const [subCategory, setSubCategory] = useState("");
-
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalProducts, setTotalProducts] = useState(0);
-
   const productsPerPage = 6;
 
   useEffect(() => {
@@ -41,6 +35,7 @@ function ProductListing() {
           minPrice,
           maxPrice,
           brand,
+          subCategory
         );
 
         setProducts(data.products);
@@ -60,13 +55,8 @@ function ProductListing() {
     minPrice,
     maxPrice,
     brand,
+    subCategory,
   ]);
-
-  const filteredProducts = subCategory
-    ? products.filter((product) =>
-        product.collection?.includes(subCategory)
-      )
-    : products;
 
   const clearFilters = () => {
     setSearch("");
@@ -80,27 +70,14 @@ function ProductListing() {
   };
 
   const collectionItems = [
-    {
-      name: "National",
-      image: "/national-img.png",
-    },
-    {
-      name: "Club",
-      image: "/club-img.png",
-    },
-    {
-      name: "Legends",
-      image: "/legends-img.png",
-    },
-    {
-      name: "New Season",
-      image: "/new-img.png",
-    },
+    { name: "National", image: "/national-img.png" },
+    { name: "Club", image: "/club-img.png" },
+    { name: "Legends", image: "/legends-img.png" },
+    { name: "New Season", image: "/new-img.png" },
   ];
 
   return (
     <div className="min-h-screen bg-white text-black">
-
       <Navbar />
 
       <ProductHero />
@@ -113,7 +90,6 @@ function ProductListing() {
       />
 
       <section className="pb-16 px-6 md:px-10">
-
         <div className="max-w-[1400px] mx-auto">
 
           <ProductSearchSort
@@ -169,7 +145,7 @@ function ProductListing() {
                 </div>
               )}
 
-              {filteredProducts.length === 0 ? (
+              {products.length === 0 ? (
                 <div className="text-center py-20">
                   <p className="text-gray-500">
                     No products available.
@@ -178,7 +154,7 @@ function ProductListing() {
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
 
-                  {filteredProducts.map((product) => (
+                  {products.map((product) => (
                     <ProductCard
                       key={product._id}
                       product={product}
@@ -197,13 +173,10 @@ function ProductListing() {
             </div>
 
           </div>
-
         </div>
-
       </section>
 
       <Footer />
-
     </div>
   );
 }

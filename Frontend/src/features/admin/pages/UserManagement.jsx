@@ -1,6 +1,5 @@
 import { getUsers, updateUserBlockStatus } from "../services/adminService";
 import { useEffect, useState } from "react";
-import AdminMenu from "../components/AdminMenu";
 
 function UserManagement() {
   const [search, setSearch] = useState("");
@@ -55,7 +54,10 @@ function UserManagement() {
       setUsers((prevUsers) =>
         prevUsers.map((item) =>
           item._id === user._id
-            ? { ...item, isBlocked: !item.isBlocked }
+            ? {
+                ...item,
+                isBlocked: !item.isBlocked,
+              }
             : item
         )
       );
@@ -75,30 +77,34 @@ function UserManagement() {
   });
 
   return (
-    <div className="fixed inset-0 z-50 w-screen min-h-screen overflow-auto bg-white text-gray-700">
-
-      {/* Admin Menu */}
-      <AdminMenu />
+    <div className="min-h-screen overflow-auto bg-white text-gray-700">
 
       {/* Header */}
+
       <div className="w-full border-b border-red-100 bg-white px-5 sm:px-8 lg:px-10 py-7">
 
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
 
           <div>
+
             <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold">
+
               <span className="text-[#d90416]">
                 User
               </span>{" "}
+
               <span className="text-gray-800">
                 Management
               </span>
+
             </h1>
 
             <p className="text-gray-500 text-sm mt-2">
               Manage registered users
             </p>
+
           </div>
+
 
           <div
             className="
@@ -112,20 +118,26 @@ function UserManagement() {
               py-2
             "
           >
+
             Total Users:{" "}
+
             <span className="text-[#d90416] font-bold">
               {users.length}
             </span>
+
           </div>
 
         </div>
 
       </div>
 
+
       {/* Main Content */}
+
       <div className="p-5 sm:p-8 lg:p-10">
 
         {/* Search Section */}
+
         <div
           className="
             bg-white
@@ -145,7 +157,9 @@ function UserManagement() {
               <input
                 type="text"
                 value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                onChange={(e) =>
+                  setSearch(e.target.value)
+                }
                 placeholder="Search users by name or email"
                 className="
                   w-full
@@ -166,6 +180,7 @@ function UserManagement() {
               />
 
             </div>
+
 
             <button
               onClick={handleClear}
@@ -191,7 +206,9 @@ function UserManagement() {
 
         </div>
 
+
         {/* Users Table */}
+
         <div
           className="
             bg-white
@@ -204,11 +221,13 @@ function UserManagement() {
         >
 
           {/* Desktop Table */}
+
           <div className="overflow-x-auto">
 
             <table className="w-full min-w-[800px]">
 
               <thead>
+
                 <tr className="border-b border-red-100 bg-red-50">
 
                   <th className="text-left px-6 py-4 text-[#d90416] text-sm font-semibold">
@@ -236,7 +255,9 @@ function UserManagement() {
                   </th>
 
                 </tr>
+
               </thead>
+
 
               <tbody>
 
@@ -254,11 +275,14 @@ function UserManagement() {
                   >
 
                     {/* Number */}
+
                     <td className="px-6 py-5 text-gray-500 text-sm">
                       {index + 1}
                     </td>
 
+
                     {/* User */}
+
                     <td className="px-6 py-5">
 
                       <div className="flex items-center gap-3">
@@ -289,17 +313,23 @@ function UserManagement() {
 
                     </td>
 
+
                     {/* Email */}
+
                     <td className="px-6 py-5 text-gray-600 text-sm">
                       {user.email}
                     </td>
 
+
                     {/* Phone */}
+
                     <td className="px-6 py-5 text-gray-600 text-sm">
                       {user.phone}
                     </td>
 
+
                     {/* Status */}
+
                     <td className="px-6 py-5">
 
                       <span
@@ -324,7 +354,9 @@ function UserManagement() {
 
                     </td>
 
+
                     {/* Action */}
+
                     <td className="px-6 py-5">
 
                       <div className="flex justify-center">
@@ -390,7 +422,9 @@ function UserManagement() {
 
           </div>
 
+
           {/* Pagination */}
+
           <div
             className="
               border-t
@@ -413,9 +447,11 @@ function UserManagement() {
               {filteredUsers.length} users
             </p>
 
+
             <div className="flex items-center gap-2">
 
               {/* Previous */}
+
               <button
                 onClick={() => setPage(page - 1)}
                 disabled={page === 1}
@@ -438,7 +474,9 @@ function UserManagement() {
                 ←
               </button>
 
+
               {/* Current Page */}
+
               <button
                 className="
                   w-[38px]
@@ -453,7 +491,9 @@ function UserManagement() {
                 {page}
               </button>
 
+
               {/* Next */}
+
               <button
                 onClick={() => setPage(page + 1)}
                 disabled={page === totalPages}

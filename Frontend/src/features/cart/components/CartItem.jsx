@@ -1,12 +1,27 @@
 function CartItem({ item, onQuantityChange, onRemove }) {
+
+  const selectedVariant = item.product?.variants?.find(
+    (variant) => variant.size === item.size
+  );
+
+  const stock = selectedVariant?.stock ?? 0;
+
+  const isOutOfStock = stock === 0;
+
+  const quantityExceeded = item.quantity > stock;
+
+  const unavailable = isOutOfStock || quantityExceeded;
+
   const handleDecrease = () => {
-    if (item.quantity > 1) {
+    if (!unavailable && item.quantity > 1) {
       onQuantityChange(item._id, item.quantity - 1);
     }
   };
 
   const handleIncrease = () => {
-    onQuantityChange(item._id, item.quantity + 1);
+    if (!unavailable && item.quantity < stock) {
+      onQuantityChange(item._id, item.quantity + 1);
+    }
   };
 
   return (
@@ -36,13 +51,28 @@ function CartItem({ item, onQuantityChange, onRemove }) {
           ₹{item.product.price}
         </p>
 
+        {/* Stock Status */}
+        {isOutOfStock && (
+          <p className="mt-2 text-red-600 font-semibold">
+            Out of Stock
+          </p>
+        )}
+
+        {!isOutOfStock && quantityExceeded && (
+          <p className="mt-2 text-red-600 font-semibold">
+            Only {stock} available
+          </p>
+        )}
+
         {/* Quantity */}
         <div className="flex items-center gap-3 mt-4">
 
           <button
             type="button"
             onClick={handleDecrease}
-            disabled={item.quantity === 1}
+            disabled={
+              unavailable || item.quantity === 1
+            }
             className="
               w-8 h-8
               border
@@ -62,11 +92,16 @@ function CartItem({ item, onQuantityChange, onRemove }) {
           <button
             type="button"
             onClick={handleIncrease}
+            disabled={
+              unavailable || item.quantity >= stock
+            }
             className="
               w-8 h-8
               border
               rounded-lg
               text-black
+              disabled:opacity-40
+              disabled:cursor-not-allowed
             "
           >
             +
@@ -78,12 +113,12 @@ function CartItem({ item, onQuantityChange, onRemove }) {
 
       {/* Remove */}
       <button
-       type="button"
-      onClick={() => onRemove(item._id)}
-      className="text-red-600 hover:text-red-800"
-   >
-     Remove
-   </button>
+        type="button"
+        onClick={() => onRemove(item._id)}
+        className="text-red-600 hover:text-red-800"
+      >
+        Remove
+      </button>
 
     </div>
   );

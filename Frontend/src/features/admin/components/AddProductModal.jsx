@@ -1,6 +1,6 @@
 import { useState } from "react";
 import Cropper from "react-easy-crop";
-import { createProduct } from "../../product/services/productService";
+import { createProduct } from "../services/adminProductService";
 import toast from "react-hot-toast";
 
 function AddProductModal({ onClose, onAdded }) {

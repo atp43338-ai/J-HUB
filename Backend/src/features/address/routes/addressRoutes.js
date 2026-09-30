@@ -3,28 +3,54 @@ import express from "express";
 import {
   addAddress,
   getAddresses,
+  getSingleAddress,
   updateAddress,
   deleteAddress,
-  getSingleAddress
 } from "../controllers/addressController.js";
 
 import authMiddleware from "../../auth/middleware/authMiddleware.js";
 
 const router = express.Router();
 
-// Get all addresses
-router.get("/", authMiddleware, getAddresses);
 
-// Add new address
-router.post("/", authMiddleware, addAddress);
+// GET ALL
+router.get(
+  "/",
+  authMiddleware,
+  getAddresses
+);
 
-// Update address
-router.put("/:id", authMiddleware, updateAddress);
 
-// Delete address
-router.delete("/:id", authMiddleware, deleteAddress);
+// GET SINGLE
+router.get(
+  "/:id",
+  authMiddleware,
+  getSingleAddress
+);
 
-//getsingle address
-router.get("/:id", authMiddleware, getSingleAddress);
+
+// ADD
+router.post(
+  "/",
+  authMiddleware,
+  addAddress
+);
+
+
+// UPDATE
+router.put(
+  "/:id",
+  authMiddleware,
+  updateAddress
+);
+
+
+// DELETE
+router.delete(
+  "/:id",
+  authMiddleware,
+  deleteAddress
+);
+
 
 export default router;

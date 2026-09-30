@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
-import AdminMenu from "../../../components/AdminMenu";
+// import AdminMenu from "../../../components/AdminMenu";
 
 import AddCategoryModal from "../../../components/AddCategoryModal";
 import EditCategoryModal from "../../../components/EditCategoryModal";
@@ -75,7 +75,7 @@ function CategoryManagement() {
   return (
     <div className="min-h-screen bg-gray-100 p-6">
 
-      <AdminMenu />
+      {/* <AdminMenu /> */}
 
       {/* Header */}
       <div className="flex items-center justify-between mb-6">

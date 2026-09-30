@@ -4,7 +4,7 @@ import {
   deleteProduct,
 } from "../../../services/adminProductService";
 import toast from "react-hot-toast";
-import AdminMenu from "../../../components/AdminMenu";
+// import AdminMenu from "../../../components/AdminMenu";
 
 import AddProductModal from "../../../components/AddProductModal";
 import EditProductModal from "../../../components/EditProductModal";
@@ -82,7 +82,7 @@ const ProductManagement = () => {
   return (
     <div className="min-h-screen bg-gray-100 p-6">
 
-      <AdminMenu />
+      {/* <AdminMenu /> */}
 
       {/* Header */}
       <div className="flex items-center justify-between mb-6">

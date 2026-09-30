@@ -5,7 +5,12 @@ import CartItem from "../components/CartItem";
 import CartSummary from "../components/CartSummary";
 import EmptyCart from "../components/EmptyCart";
 
-import { getCart, updateCartItem, removeCartItem  } from "../services/cartService";
+import {
+  getCart,
+  updateCartItem,
+  removeCartItem,
+} from "../services/cartService";
+
 import { useCart } from "../context/CartContext";
 
 import Navbar from "../../home/components/Navbar";
@@ -17,33 +22,32 @@ function Cart() {
   const { refreshCartCount } = useCart();
 
   const handleQuantityChange = async (itemId, quantity) => {
-  try {
-    await updateCartItem(itemId, quantity);
+    try {
+      await updateCartItem(itemId, quantity);
 
-    const data = await getCart();
-    setCart(data.cart);
+      const data = await getCart();
+      setCart(data.cart);
 
-    await refreshCartCount();
+      await refreshCartCount();
+    } catch (error) {
+      toast.error(error.message);
+    }
+  };
 
-  } catch (error) {
-    toast.error(error.message);
-  }
-};
+  const handleRemove = async (itemId) => {
+    try {
+      await removeCartItem(itemId);
 
-const handleRemove = async (itemId) => {
-  try {
-    await removeCartItem(itemId);
+      const data = await getCart();
+      setCart(data.cart);
 
-    const data = await getCart();
-    setCart(data.cart);
+      await refreshCartCount();
 
-    await refreshCartCount();
-
-    toast.success("Item removed from cart");
-  } catch (error) {
-    toast.error(error.message);
-  }
-};
+      toast.success("Item removed from cart");
+    } catch (error) {
+      toast.error(error.message);
+    }
+  };
 
   useEffect(() => {
     const fetchCart = async () => {
@@ -74,6 +78,17 @@ const handleRemove = async (itemId) => {
     return <EmptyCart />;
   }
 
+  // Check whether any cart item is out of stock
+  const hasOutOfStockItem = cart.items.some((item) => {
+    const variant = item.product?.variants?.find(
+      (variant) => variant.size === item.size
+    );
+
+    const stock = variant?.stock ?? 0;
+
+    return stock === 0 || item.quantity > stock;
+  });
+
   // Calculate subtotal
   const subtotal = cart.items.reduce(
     (total, item) =>
@@ -83,7 +98,7 @@ const handleRemove = async (itemId) => {
 
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-6">
-        <Navbar/>
+      <Navbar />
 
       <div className="max-w-[1200px] mx-auto">
 
@@ -122,13 +137,12 @@ const handleRemove = async (itemId) => {
               subtotal={subtotal}
               discount={0}
               delivery={100}
+              hasOutOfStockItem={hasOutOfStockItem}
             />
           </div>
 
-          
-
         </div>
-        
+
       </div>
     </div>
   );

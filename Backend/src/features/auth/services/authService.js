@@ -139,6 +139,41 @@ export const loginUserService = async (email, password) => {
 };
 
 
+
+// Change Password
+export const changePasswordService = async (
+  userId,
+  currentPassword,
+  newPassword
+) => {
+  const user = await User.findById(userId);
+
+  if (!user) {
+    throw new Error("User not found");
+  }
+
+  const isPasswordMatch = await bcrypt.compare(
+    currentPassword,
+    user.password
+  );
+
+  if (!isPasswordMatch) {
+    throw new Error("Current password is incorrect");
+  }
+
+  const hashPassword = await bcrypt.hash(
+    newPassword,
+    10
+  );
+
+  user.password = hashPassword;
+
+  await user.save();
+
+  return user;
+};
+
+
 // Forgot Password
 export const forgotPasswordService = async (email) => {
   const user = await User.findOne({ email });

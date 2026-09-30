@@ -6,6 +6,7 @@ import {
   getProductById,
   updateProduct,
   deleteProduct,
+  getRelatedProducts,
 } from "../controllers/productController.js";
 import upload from "../middleware/upload.js";
 
@@ -20,5 +21,8 @@ router.get("/:id", getProductById);
 router.put("/:id", updateProduct);
 
 router.delete("/:id", deleteProduct);
+
+router.get("/:id/related", getRelatedProducts);
+
 
 export default router;

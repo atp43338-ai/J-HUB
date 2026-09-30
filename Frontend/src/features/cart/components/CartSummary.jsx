@@ -1,4 +1,9 @@
-function CartSummary({ subtotal, discount, delivery }) {
+function CartSummary({
+  subtotal,
+  discount,
+  delivery,
+  hasOutOfStockItem,
+}) {
   const total = subtotal - discount + delivery;
 
   return (
@@ -55,9 +60,17 @@ function CartSummary({ subtotal, discount, delivery }) {
         </span>
       </div>
 
+      {/* Out of stock message */}
+      {hasOutOfStockItem && (
+        <p className="mt-4 text-sm text-red-600 font-semibold">
+          Remove unavailable items before checkout.
+        </p>
+      )}
+
       {/* Checkout */}
       <button
         type="button"
+        disabled={hasOutOfStockItem}
         className="
           w-full
           mt-6
@@ -68,6 +81,9 @@ function CartSummary({ subtotal, discount, delivery }) {
           text-white
           font-semibold
           transition
+          disabled:opacity-40
+          disabled:cursor-not-allowed
+          disabled:hover:bg-[#d90416]
         "
       >
         Proceed to Checkout

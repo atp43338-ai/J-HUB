@@ -1,10 +1,13 @@
 import Product from "../models/Product.js";
 
+
 export const createProductService = async (productData) => {
   const product = await Product.create(productData);
   return product;
 };
 
+
+//get all product form ui
 export const getProductsService = async (
   page = 1,
   limit = 6,
@@ -14,8 +17,19 @@ export const getProductsService = async (
   minPrice = "",
   maxPrice = "",
   brand = "",
+  collection = ""
 ) => {
+
+
+  // const result = await Product.find({
+  //   price: { $gt: 2500 },
+  // });
+  // console.log(result);
+
+
+
   const skip = (page - 1) * limit;
+
 
   const query = {
     isListed: true,
@@ -33,7 +47,13 @@ export const getProductsService = async (
     query.category = category;
   }
 
-  if (brand) query.brand = brand;
+  if (brand) {
+    query.brand = brand;
+  }
+
+  if (collection) {
+    query.collection = collection;
+  }
 
   if (minPrice || maxPrice) {
     query.price = {};
@@ -46,8 +66,6 @@ export const getProductsService = async (
       query.price.$lte = Number(maxPrice);
     }
   }
-
-
 
   let sortOption = { createdAt: -1 };
 
@@ -67,6 +85,7 @@ export const getProductsService = async (
     sortOption = { name: -1 };
   }
 
+
   const products = await Product.find(query)
     .sort(sortOption)
     .skip(skip)
@@ -76,6 +95,7 @@ export const getProductsService = async (
 
   const totalPages = Math.ceil(totalProducts / limit);
 
+
   return {
     products,
     currentPage: page,
@@ -83,6 +103,9 @@ export const getProductsService = async (
     totalProducts,
   };
 };
+
+
+
 
 export const getProductByIdService = async (productId) => {
   const product = await Product.findById(productId);
@@ -93,6 +116,9 @@ export const getProductByIdService = async (productId) => {
 
   return product;
 };
+
+
+
 
 export const updateProductService = async (productId, productData) => {
   const product = await Product.findByIdAndUpdate(
@@ -108,6 +134,9 @@ export const updateProductService = async (productId, productData) => {
   return product;
 };
 
+
+
+
 export const deleteProductService = async (productId) => {
   const product = await Product.findByIdAndUpdate(
     productId,
@@ -119,5 +148,32 @@ export const deleteProductService = async (productId) => {
     throw new Error("Product not found");
   }
 
+  // const result = await Product.find({
+  //   is
+  // })
+
   return product;
 };
+
+
+
+
+export const getRelatedProductsService = async (productId) => {
+  const product = await Product.findById(productId);
+
+  if (!product) {
+    throw new Error("Product not found");
+  }
+
+  const relatedProducts = await Product.find({
+    _id: { $ne: productId },
+    category: product.category,
+    isListed: true,
+    isBlocked: false,
+  })
+    .sort({ createdAt: -1 })
+    .limit(4);
+
+  return relatedProducts;
+};
+

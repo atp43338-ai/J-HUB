@@ -1,4 +1,8 @@
+import { useNavigate } from "react-router";
+
 function RelatedProducts({ products }) {
+  const navigate = useNavigate();
+
   return (
     <section className="mt-16 border-t border-gray-200 pt-10">
 
@@ -31,7 +35,7 @@ function RelatedProducts({ products }) {
               <img
                 src={`http://localhost:5000${product.images?.[0]}`}
                 alt={product.name}
-                className="w-full h-64 object-contain"
+                className="w-full h-auto object-contain"
               />
 
               <div className="p-4">
@@ -45,6 +49,10 @@ function RelatedProducts({ products }) {
                 </p>
 
                 <button
+                  type="button"
+                  onClick={() =>
+                    navigate(`/products/${product._id}`)
+                  }
                   className="
                     w-full
                     mt-4

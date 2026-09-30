@@ -1,6 +1,8 @@
 import express from "express";
 import dotenv from "dotenv";
 import connectDB from "./config/db.js";
+
+//frontend-inu backend API access cheyyan permission/control kodukkan use cheyyunna package.
 import cors from "cors";
 
 import authRoutes from "./features/auth/routes/authRoutes.js";
@@ -15,7 +17,16 @@ import adminCategoryRoutes from "./features/admin/category/routes/adminCategoryR
 
 import cartRoutes from "./features/cart/routes/cartRoutes.js";
 
+import wishlistRoutes from "./features/wishlist/routes/wishlistRoutes.js";
 
+import orderRoutes from "./features/order/routes/orderRoutes.js";
+
+import adminOrderRoutes from "./features/admin/routes/adminOrderRoutes.js";
+
+
+
+
+//.env file-ilulla values eduthu backend-il available aakku.
 dotenv.config();
 
 const app = express();
@@ -26,7 +37,7 @@ console.log("CORS CONFIG LOADED");
 app.use(
   cors({
     origin: "http://localhost:5173",
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
@@ -53,13 +64,19 @@ app.use("/api/profile", profileRoutes);
 app.use("/api/address", addressRoutes);
 
 app.use("/api/admin", adminRoutes);
+app.use("/api/admin/orders", adminOrderRoutes);
 
 app.use("/api/products", productRoutes);
+
 app.use("/api/admin/products", adminProductRoutes);
 
 app.use("/api/admin/categories", adminCategoryRoutes);
 
 app.use("/api/cart", cartRoutes);
+
+app.use("/api/wishlist", wishlistRoutes);
+
+app.use("/api/orders", orderRoutes);
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);

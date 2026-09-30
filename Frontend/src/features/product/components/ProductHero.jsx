@@ -90,6 +90,7 @@ function ProductHero() {
               lg:text-7xl
               font-extrabold
               leading-tight
+              !text-white
             "
           >
             All Jerseys

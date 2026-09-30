@@ -5,6 +5,7 @@ import {
   updateProfileService,
   changeEmailService,
   verifyEmailChangeService,
+  resendEmailChangeOTPService,
 } from "../services/profileService.js";
 
 
@@ -14,7 +15,9 @@ export const getProfile = async (req, res) => {
   try {
     const user = await getProfileService(req.user.id);
 
-    // const result = await User.deleteOne({ email: "muflih@gmail.com"});
+    // const result = await User.find({
+    //   isBlocked: true
+    // });
     // console.log(result);
 
     res.status(200).json({
@@ -125,6 +128,25 @@ export const verifyEmailChange = async (req, res) => {
 
   } catch (error) {
     console.error("Verify email change error:", error);
+
+    res.status(500).json({
+      message: error.message,
+    });
+  }
+};
+
+// RESEND EMAIL CHANGE OTP
+
+export const resendEmailChangeOTP = async (req, res) => {
+  try {
+    await resendEmailChangeOTPService(req.user.id);
+
+    res.status(200).json({
+      message: "New OTP sent successfully",
+    });
+
+  } catch (error) {
+    console.error("Resend email change OTP error:", error);
 
     res.status(500).json({
       message: error.message,

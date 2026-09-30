@@ -1,5 +1,9 @@
+
+//this is product list address.
 const API_URL = "http://localhost:5000/api/products";
 
+
+// Get all products with search, sort, filters and pagination
 export const getProducts = async (
   page = 1,
   limit = 6,
@@ -8,7 +12,8 @@ export const getProducts = async (
   category = "",
   minPrice = "",
   maxPrice = "",
-  brand = ""
+  brand = "",
+  collection = ""
 ) => {
   const response = await fetch(
     `${API_URL}?page=${page}&limit=${limit}&search=${encodeURIComponent(
@@ -17,9 +22,8 @@ export const getProducts = async (
       category
     )}&minPrice=${minPrice}&maxPrice=${maxPrice}&brand=${encodeURIComponent(
       brand
-    )}`
+    )}&collection=${encodeURIComponent(collection)}`
   );
-  
 
   const data = await response.json();
 
@@ -31,21 +35,8 @@ export const getProducts = async (
 };
 
 
-export const createProduct = async (productData) => {
-  const response = await fetch("http://localhost:5000/api/products", {
-    method: "POST",
-    body: productData,
-  });
 
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(data.message || "Failed to create product");
-  }
-
-  return data;
-};
-
+// Get one product using its ID
 export const getProductById = async (id) => {
   const response = await fetch(`${API_URL}/${id}`);
 
@@ -59,30 +50,19 @@ export const getProductById = async (id) => {
 };
 
 
-export const updateProduct = async (id, productData) => {
-  const response = await fetch(`${API_URL}/${id}`, {
-    method: "PUT",
-    body: productData,
-  });
+
+// Get related products for a specific product
+export const getRelatedProducts = async (productId) => {
+  const response = await fetch(
+    `${API_URL}/${productId}/related`
+  );
 
   const data = await response.json();
 
   if (!response.ok) {
-    throw new Error(data.message || "Failed to update product");
-  }
-
-  return data;
-};
-
-export const deleteProduct = async (id) => {
-  const response = await fetch(`${API_URL}/${id}`, {
-    method: "DELETE",
-  });
-
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(data.message || "Failed to delete product");
+    throw new Error(
+      data.message || "Failed to fetch related products"
+    );
   }
 
   return data;

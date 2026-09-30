@@ -1,4 +1,3 @@
-
 import jwt from "jsonwebtoken";
 
 const authMiddleware = (req, res, next) => {
@@ -13,6 +12,7 @@ const authMiddleware = (req, res, next) => {
 
     const token = authHeader.split(" ")[1];
 
+    // authentication
     const decoded = jwt.verify(
       token,
       process.env.JWT_SECRET

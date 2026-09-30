@@ -10,6 +10,11 @@ function ChangePassword() {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
+  // Password visibility
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
   // Profile Image
   const [profileImage, setProfileImage] = useState(ProfileImage);
 
@@ -359,10 +364,15 @@ function ChangePassword() {
 
               <div>
 
-               <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3">
-                 <span className="text-black">Change </span>
-                 <span className="text-[#d90416]">Password</span>
-               </h2>
+                <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3">
+                  <span className="text-black">
+                    Change
+                  </span>
+
+                  <span className="text-[#d90416] ml-2">
+                    Password
+                  </span>
+                </h2>
 
                 <p className="text-[11px] text-gray-500 mt-1">
                   Update your account password
@@ -409,7 +419,7 @@ function ChangePassword() {
                 <div className="relative">
 
                   <input
-                    type="password"
+                    type={showCurrentPassword ? "text" : "password"}
                     value={currentPassword}
                     onChange={(e) =>
                       setCurrentPassword(e.target.value)
@@ -431,38 +441,86 @@ function ChangePassword() {
                     "
                   />
 
-                  {/* Lock Icon */}
+                  {/* Eye Icon */}
 
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.7"
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setShowCurrentPassword(!showCurrentPassword)
+                    }
                     className="
                       absolute
                       right-3
                       top-1/2
                       -translate-y-1/2
-                      w-4
-                      h-4
                       text-[#d90416]
+                      hover:text-[#b90312]
                     "
                   >
-                    <rect
-                      x="5"
-                      y="10"
-                      width="14"
-                      height="10"
-                      rx="2"
-                    />
+                    {showCurrentPassword ? (
 
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M8 10V7a4 4 0 0 1 8 0v3"
-                    />
-                  </svg>
+                      /* Eye Off */
+
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.7"
+                        className="w-5 h-5"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M3 3l18 18"
+                        />
+
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M10.6 10.6a2 2 0 0 0 2.8 2.8"
+                        />
+
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M9.9 4.2A10.8 10.8 0 0 1 12 4c5 0 8.8 4.2 10 8-0.4 1.4-1.2 2.7-2.2 3.8"
+                        />
+
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M6.1 6.1C4.4 7.4 3.3 9.2 2 12c1.2 3.8 5 8 10 8 1.6 0 3-.4 4.3-1"
+                        />
+                      </svg>
+
+                    ) : (
+
+                      /* Eye */
+
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.7"
+                        className="w-5 h-5"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"
+                        />
+
+                        <circle
+                          cx="12"
+                          cy="12"
+                          r="3"
+                        />
+                      </svg>
+
+                    )}
+                  </button>
 
                 </div>
 
@@ -479,7 +537,7 @@ function ChangePassword() {
                 <div className="relative">
 
                   <input
-                    type="password"
+                    type={showNewPassword ? "text" : "password"}
                     value={newPassword}
                     onChange={(e) =>
                       setNewPassword(e.target.value)
@@ -501,38 +559,86 @@ function ChangePassword() {
                     "
                   />
 
-                  {/* Lock Icon */}
+                  {/* Eye Icon */}
 
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.7"
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setShowNewPassword(!showNewPassword)
+                    }
                     className="
                       absolute
                       right-3
                       top-1/2
                       -translate-y-1/2
-                      w-4
-                      h-4
                       text-[#d90416]
+                      hover:text-[#b90312]
                     "
                   >
-                    <rect
-                      x="5"
-                      y="10"
-                      width="14"
-                      height="10"
-                      rx="2"
-                    />
+                    {showNewPassword ? (
 
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M8 10V7a4 4 0 0 1 8 0v3"
-                    />
-                  </svg>
+                      /* Eye Off */
+
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.7"
+                        className="w-5 h-5"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M3 3l18 18"
+                        />
+
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M10.6 10.6a2 2 0 0 0 2.8 2.8"
+                        />
+
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M9.9 4.2A10.8 10.8 0 0 1 12 4c5 0 8.8 4.2 10 8-0.4 1.4-1.2 2.7-2.2 3.8"
+                        />
+
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M6.1 6.1C4.4 7.4 3.3 9.2 2 12c1.2 3.8 5 8 10 8 1.6 0 3-.4 4.3-1"
+                        />
+                      </svg>
+
+                    ) : (
+
+                      /* Eye */
+
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.7"
+                        className="w-5 h-5"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"
+                        />
+
+                        <circle
+                          cx="12"
+                          cy="12"
+                          r="3"
+                        />
+                      </svg>
+
+                    )}
+                  </button>
 
                 </div>
 
@@ -549,7 +655,11 @@ function ChangePassword() {
                 <div className="relative">
 
                   <input
-                    type="password"
+                    type={
+                      showConfirmPassword
+                        ? "text"
+                        : "password"
+                    }
                     value={confirmPassword}
                     onChange={(e) =>
                       setConfirmPassword(e.target.value)
@@ -571,38 +681,86 @@ function ChangePassword() {
                     "
                   />
 
-                  {/* Lock Icon */}
+                  {/* Eye Icon */}
 
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.7"
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setShowConfirmPassword(!showConfirmPassword)
+                    }
                     className="
                       absolute
                       right-3
                       top-1/2
                       -translate-y-1/2
-                      w-4
-                      h-4
                       text-[#d90416]
+                      hover:text-[#b90312]
                     "
                   >
-                    <rect
-                      x="5"
-                      y="10"
-                      width="14"
-                      height="10"
-                      rx="2"
-                    />
+                    {showConfirmPassword ? (
 
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M8 10V7a4 4 0 0 1 8 0v3"
-                    />
-                  </svg>
+                      /* Eye Off */
+
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.7"
+                        className="w-5 h-5"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M3 3l18 18"
+                        />
+
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M10.6 10.6a2 2 0 0 0 2.8 2.8"
+                        />
+
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M9.9 4.2A10.8 10.8 0 0 1 12 4c5 0 8.8 4.2 10 8-0.4 1.4-1.2 2.7-2.2 3.8"
+                        />
+
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M6.1 6.1C4.4 7.4 3.3 9.2 2 12c1.2 3.8 5 8 10 8 1.6 0 3-.4 4.3-1"
+                        />
+                      </svg>
+
+                    ) : (
+
+                      /* Eye */
+
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.7"
+                        className="w-5 h-5"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"
+                        />
+
+                        <circle
+                          cx="12"
+                          cy="12"
+                          r="3"
+                        />
+                      </svg>
+
+                    )}
+                  </button>
 
                 </div>
 

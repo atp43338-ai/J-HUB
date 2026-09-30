@@ -7,8 +7,11 @@ import {
   loginUser,
   forgotPassword,
   resetPassword,
-  googleLogin
+  googleLogin,
+  changePassword,
 } from "../controllers/authController.js";
+import authMiddleware from "../middleware/authMiddleware.js";
+
 
 const router = express.Router();
 
@@ -35,7 +38,7 @@ router.post("/reset-password", resetPassword);
 // Google Login
 router.post("/google-login", googleLogin);
 
-
+router.patch("/change-password", authMiddleware, changePassword);
 
 
 export default router;

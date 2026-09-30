@@ -1,7 +1,10 @@
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router";
 import EmailVerificationImage from "../asset/otp-bg.png";
-import { verifyEmailChange } from "../services/profileService";
+import {
+  verifyEmailChange,
+  resendEmailChangeOTP,
+} from "../services/profileService";
 import toast from "react-hot-toast";
 
 function EmailVerification() {
@@ -68,11 +71,30 @@ function EmailVerification() {
   };
 
   // Resend OTP
-  const handleResend = () => {
-    setTimer(60);
-    setOtp("");
+  const handleResend = async () => {
+    try {
+      const token = localStorage.getItem("token");
 
-    alert("OTP resent successfully");
+      if (!token) {
+        toast.error("Please login again");
+        navigate("/login");
+        return;
+      }
+
+      await resendEmailChangeOTP(token);
+
+      // Reset timer
+      setTimer(60);
+
+      // Clear old OTP
+      setOtp("");
+
+      toast.success("New OTP sent successfully");
+
+    } catch (error) {
+      console.error("Resend OTP error:", error);
+      toast.error(error.message);
+    }
   };
 
   return (
@@ -195,6 +217,7 @@ function EmailVerification() {
                 onKeyDown={(e) => {
                   // Backspace
                   if (e.key === "Backspace") {
+
                     // If current box has a value,
                     // just remove the value
                     if (otp[index]) {
@@ -252,6 +275,7 @@ function EmailVerification() {
             "
           >
             Verify Email
+
             <span className="ml-4">
               →
             </span>

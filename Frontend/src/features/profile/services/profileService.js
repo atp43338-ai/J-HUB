@@ -100,3 +100,25 @@ export const verifyEmailChange = async (token, otp) => {
 
   return data;
 };
+
+// RESEND EMAIL CHANGE OTP
+
+export const resendEmailChangeOTP = async (token) => {
+  const response = await fetch(
+    "http://localhost:5000/api/profile/resend-email-change-otp",
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.message);
+  }
+
+  return data;
+};

@@ -1,7 +1,15 @@
 import { useNavigate } from "react-router";
+import toast from "react-hot-toast";
+import { useWishlist } from "../../wishlist/context/WishlistContext";
 
 function ProductCard({ product }) {
   const navigate = useNavigate();
+
+  const {
+    addToWishlist,
+    removeFromWishlist,
+    isInWishlist,
+  } = useWishlist();
 
   const handleProductClick = () => {
     navigate(`/products/${product._id}`);
@@ -10,7 +18,19 @@ function ProductCard({ product }) {
   const handleWishlistClick = (e) => {
     e.stopPropagation();
 
-    // Wishlist functionality will be added here
+    if (isInWishlist(product._id)) {
+      removeFromWishlist(product._id);
+      toast.success("Removed from wishlist");
+    } else {
+      addToWishlist(product);
+      // toast.success("Added to wishlist");
+    }
+  };
+
+  const handleAddToCart = (e) => {
+    e.stopPropagation();
+
+    navigate(`/products/${product._id}`);
   };
 
   return (
@@ -67,12 +87,20 @@ function ProductCard({ product }) {
             transition
             z-10
           "
-          title="Add to Wishlist"
+          title={
+            isInWishlist(product._id)
+              ? "Remove from Wishlist"
+              : "Add to Wishlist"
+          }
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
             className="w-5 h-5"
-            fill="none"
+            fill={
+              isInWishlist(product._id)
+                ? "#d90416"
+                : "none"
+            }
             viewBox="0 0 24 24"
             stroke="currentColor"
             strokeWidth="2"
@@ -98,6 +126,7 @@ function ProductCard({ product }) {
           ₹{product.price}
         </p>
 
+        {/* Buy Now */}
         <button
           type="button"
           onClick={handleProductClick}
@@ -116,12 +145,10 @@ function ProductCard({ product }) {
           Buy Now
         </button>
 
+        {/* Add to Cart */}
         <button
           type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            // Add to cart functionality
-          }}
+          onClick={handleAddToCart}
           className="
             w-full
             mt-5

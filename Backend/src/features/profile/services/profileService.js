@@ -154,3 +154,39 @@ export const verifyEmailChangeService = async (
     profileImage: user.profileImage,
   };
 };
+
+// ==================================================
+// PROFILE FEATURE
+// RESEND EMAIL CHANGE OTP
+// ==================================================
+
+export const resendEmailChangeOTPService = async (userId) => {
+  const user = await User.findById(userId);
+
+  if (!user) {
+    throw new Error("User not found");
+  }
+
+  if (!user.pendingEmail) {
+    throw new Error("No email change request found");
+  }
+
+  // Generate NEW OTP
+  const otp = generateOTP();
+
+  // New 60 second expiry
+  const otpExpiresAt = new Date(
+    Date.now() + 60 * 1000
+  );
+
+  user.otp = otp;
+  user.otpExpiresAt = otpExpiresAt;
+
+  await user.save();
+
+  console.log("New email change OTP:", otp);
+
+  return {
+    message: "New OTP generated successfully",
+  };
+};

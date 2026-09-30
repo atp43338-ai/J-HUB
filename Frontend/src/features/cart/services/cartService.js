@@ -5,6 +5,7 @@ const getToken = () => {
   return localStorage.getItem("token");
 };
 
+
 // Add item to cart
 export const addToCart = async (cartData) => {
   const response = await fetch(API_URL, {
@@ -42,6 +43,7 @@ export const getCart = async () => {
   return data;
 };
 
+
 // Update cart quantity
 export const updateCartItem = async (itemId, quantity) => {
   const response = await fetch(
@@ -68,6 +70,8 @@ export const updateCartItem = async (itemId, quantity) => {
 
   return data;
 };
+
+
 
 // Remove cart item
 export const removeCartItem = async (itemId) => {

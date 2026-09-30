@@ -211,3 +211,57 @@ export const deleteVariant = async (req, res) => {
     });
   }
 };
+
+
+
+export const updateProductStock = async (req, res) => {
+  try {
+    const { productId } = req.params;
+    const { size, stock } = req.body;
+
+    if (!size || stock === undefined) {
+      return res.status(400).json({
+        message: "Size and stock are required",
+      });
+    }
+
+    if (stock < 0) {
+      return res.status(400).json({
+        message: "Stock cannot be negative",
+      });
+    }
+
+    const product = await Product.findById(productId);
+
+    if (!product) {
+      return res.status(404).json({
+        message: "Product not found",
+      });
+    }
+
+    const variant = product.variants.find(
+      (item) => item.size === size
+    );
+
+    if (!variant) {
+      return res.status(404).json({
+        message: "Variant not found",
+      });
+    }
+
+    variant.stock = stock;
+
+    await product.save();
+
+    res.status(200).json({
+      message: "Stock updated successfully",
+      product,
+    });
+  } catch (error) {
+    console.error("Update stock error:", error);
+
+    res.status(500).json({
+      message: "Failed to update stock",
+    });
+  }
+};

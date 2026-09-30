@@ -5,6 +5,7 @@ import {
   updateProfile,
   changeEmail,
   verifyEmailChange,
+  resendEmailChangeOTP,
 } from "../controllers/profileController.js";
 
 import authMiddleware from "../../auth/middleware/authMiddleware.js";
@@ -31,6 +32,12 @@ router.post(
   "/verify-email-change",
   authMiddleware,
   verifyEmailChange
+);
+
+router.post(
+  "/resend-email-change-otp",
+  authMiddleware,
+  resendEmailChangeOTP
 );
 
 

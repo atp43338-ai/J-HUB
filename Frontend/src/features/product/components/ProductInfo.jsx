@@ -1,17 +1,34 @@
 import { useState } from "react";
 import toast from "react-hot-toast";
+import { useNavigate } from "react-router";
+
 import { addToCart } from "../../cart/services/cartService";
 import { useCart } from "../../cart/context/CartContext";
 
+import { useWishlist } from "../../wishlist/context/WishlistContext";
+
 function ProductInfo({ product }) {
+  const navigate = useNavigate();
+
   const [selectedSize, setSelectedSize] = useState("");
   const [quantity, setQuantity] = useState(1);
 
   const { refreshCartCount } = useCart();
 
+  const {
+    wishlist,
+    addToWishlist,
+    removeFromWishlist,
+  } = useWishlist();
+
   // Find selected variant
   const selectedVariant = product.variants?.find(
     (variant) => variant.size === selectedSize
+  );
+
+  // Check whether product is in wishlist
+  const isInWishlist = wishlist.some(
+    (item) => item._id === product._id
   );
 
   // Add to Cart
@@ -32,14 +49,67 @@ function ProductInfo({ product }) {
     }
 
     try {
+      // Add product to cart
       await addToCart({
         productId: product._id,
         size: selectedSize,
         quantity,
       });
-       await refreshCartCount();
+
+      // Refresh cart count
+      await refreshCartCount();
+
+      // Remove from wishlist if it exists there
+      if (isInWishlist) {
+        await removeFromWishlist(product._id);
+      }
 
       toast.success("Product added to cart");
+    } catch (error) {
+      toast.error(error.message);
+    }
+  };
+
+  // Buy Now
+  const handleBuyNow = () => {
+    if (!selectedSize) {
+      toast.error("Please select a size");
+      return;
+    }
+
+    if (!selectedVariant) {
+      toast.error("Selected size is not available");
+      return;
+    }
+
+    if (selectedVariant.stock < quantity) {
+      toast.error("Not enough stock");
+      return;
+    }
+
+    navigate("/checkout", {
+      state: {
+        items: [
+          {
+            product,
+            size: selectedSize,
+            quantity,
+          },
+        ],
+      },
+    });
+  };
+
+  // Wishlist
+  const handleWishlist = async () => {
+    try {
+      if (isInWishlist) {
+        await removeFromWishlist(product._id);
+        toast.success("Removed from wishlist");
+      } else {
+        await addToWishlist(product._id);
+        toast.success("Added to wishlist");
+      }
     } catch (error) {
       toast.error(error.message);
     }
@@ -174,7 +244,9 @@ function ProductInfo({ product }) {
               <button
                 type="button"
                 onClick={() =>
-                  setQuantity((prev) => Math.max(1, prev - 1))
+                  setQuantity((prev) =>
+                    Math.max(1, prev - 1)
+                  )
                 }
                 className="
                   w-10
@@ -198,7 +270,10 @@ function ProductInfo({ product }) {
                 type="button"
                 onClick={() =>
                   setQuantity((prev) =>
-                    Math.min(selectedVariant.stock, prev + 1)
+                    Math.min(
+                      selectedVariant.stock,
+                      prev + 1
+                    )
                   )
                 }
                 className="
@@ -223,7 +298,7 @@ function ProductInfo({ product }) {
         {/* Actions */}
         <div className="mt-8 flex flex-col gap-3">
 
-          {/* Add to Cart */}
+          {/* Add to Cart - BIG */}
           <button
             type="button"
             onClick={handleAddToCart}
@@ -233,12 +308,13 @@ function ProductInfo({ product }) {
             }
             className="
               w-full
-              py-3
+              py-4
               rounded-lg
               bg-[#d90416]
               hover:bg-[#b90312]
               text-white
               font-semibold
+              text-lg
               transition
               disabled:opacity-50
               disabled:cursor-not-allowed
@@ -247,30 +323,64 @@ function ProductInfo({ product }) {
             Add to Cart
           </button>
 
-          {/* Buy Now */}
-          <button
-            type="button"
-            disabled={
-              !selectedVariant ||
-              selectedVariant.stock === 0
-            }
-            className="
-              w-full
-              py-3
-              rounded-lg
-              border
-              border-black
-              text-black
-              font-semibold
-              hover:bg-black
-              hover:text-white
-              transition
-              disabled:opacity-50
-              disabled:cursor-not-allowed
-            "
-          >
-            Buy Now
-          </button>
+          {/* Buy Now + Wishlist */}
+          <div className="flex gap-3">
+
+            {/* Buy Now */}
+            <button
+              type="button"
+              onClick={handleBuyNow}
+              disabled={
+                !selectedVariant ||
+                selectedVariant.stock === 0
+              }
+              className="
+                flex-1
+                py-4
+                rounded-lg
+                border
+                border-black
+                text-black
+                font-semibold
+                text-lg
+                hover:bg-black
+                hover:text-white
+                transition
+                disabled:opacity-50
+                disabled:cursor-not-allowed
+              "
+            >
+              Buy Now
+            </button>
+
+            {/* Wishlist */}
+            <button
+              type="button"
+              onClick={handleWishlist}
+              aria-label={
+                isInWishlist
+                  ? "Remove from wishlist"
+                  : "Add to wishlist"
+              }
+              className="
+                w-14
+                rounded-lg
+                border
+                border-[#d90416]
+                text-[#d90416]
+                text-2xl
+                flex
+                items-center
+                justify-center
+                hover:bg-[#d90416]
+                hover:text-white
+                transition
+              "
+            >
+              {isInWishlist ? "♥" : "♡"}
+            </button>
+
+          </div>
 
         </div>
 

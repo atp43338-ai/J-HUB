@@ -1,4 +1,5 @@
 import express from "express";
+import adminMiddleware from "../../middleware/adminMiddleware.js";
 
 import {
   createProduct,
@@ -10,6 +11,7 @@ import {
   getVariants,
   updateVariant,
   deleteVariant,
+  updateProductStock,
 } from "../controllers/adminProductController.js";
 import upload from "../middleware/uplod.js";
 
@@ -32,5 +34,11 @@ router.get("/:id/variants", getVariants);
 router.put("/:id/variants/:variantId", updateVariant);
 
 router.delete("/:id/variants/:variantId", deleteVariant);
+
+router.patch(
+  "/:productId/stock",
+  adminMiddleware,
+  updateProductStock
+);
 
 export default router;

@@ -4,6 +4,7 @@ import {
   getProductByIdService,
   updateProductService,
   deleteProductService,
+  getRelatedProductsService,
 } from "../services/productService.js";
 
 export const createProduct = async (req, res) => {
@@ -28,6 +29,8 @@ export const createProduct = async (req, res) => {
   }
 };
 
+
+
 export const getProducts = async (req, res) => {
   try {
     const page = Number(req.query.page) || 1;
@@ -39,6 +42,7 @@ export const getProducts = async (req, res) => {
     const minPrice = req.query.minPrice || "";
     const maxPrice = req.query.maxPrice || "";
     const brand = req.query.brand || "";
+    const collection = req.query.collection || "";
 
     const data = await getProductsService(
       page,
@@ -49,6 +53,7 @@ export const getProducts = async (req, res) => {
       minPrice,
       maxPrice,
       brand,
+      collection,
     );
 
     res.status(200).json(data);
@@ -58,6 +63,8 @@ export const getProducts = async (req, res) => {
     });
   }
 };
+
+
 
 export const getProductById = async (req, res) => {
   try {
@@ -72,6 +79,8 @@ export const getProductById = async (req, res) => {
     });
   }
 };
+
+
 
 export const updateProduct = async (req, res) => {
   try {
@@ -91,6 +100,8 @@ export const updateProduct = async (req, res) => {
   }
 };
 
+
+
 export const deleteProduct = async (req, res) => {
   try {
     const product = await deleteProductService(req.params.id);
@@ -105,3 +116,18 @@ export const deleteProduct = async (req, res) => {
     });
   }
 };
+
+
+
+export const getRelatedProducts = async (req, res) => {
+  try {
+    const products = await getRelatedProductsService(req.params.id);
+
+    res.status(200).json({ products });
+  } catch (error) {
+    res.status(404).json({
+      message: error.message,
+    });
+  }
+};
+
