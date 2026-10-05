@@ -45,6 +45,8 @@ import AdminDashboard from "./features/admin/pages/admin/dashboard/AdminDashboar
 
 import InventoryManagement from "./features/admin/pages/admin/inventory/InventoryManagement";
 
+import ReturnManagement from "./features/admin/pages/admin/return/ReturnManagement";
+
 import ProtectedRoute from "./middleware/ProtectedRoute";
 import PublicRoute from "./middleware/PublicRoute";
 
@@ -175,18 +177,18 @@ function App() {
       <Route
         path="/admin/login"
         element={
-          <PublicRoute>
+          <PublicRoute admin>
             <AdminLogin />
           </PublicRoute>
         }
       />
 
 
-      {/* =========================
-          ADMIN LAYOUT
-      ========================= */}
+{/* =========================
+    ADMIN LAYOUT
+========================= */}
 
-      <Route
+<Route
   path="/admin"
   element={
     <ProtectedRoute admin>
@@ -194,50 +196,54 @@ function App() {
     </ProtectedRoute>
   }
 >
+  {/* Dashboard */}
+  <Route
+    index
+    element={<AdminDashboard />}
+  />
 
-        {/* Dashboard */}
-        <Route
-        index
-        element={<AdminDashboard />}
-      />
+  {/* Users */}
+  <Route
+    path="users"
+    element={<UserManagement />}
+  />
 
-        {/* Users */}
-        <Route
-          path="users"
-          element={<UserManagement />}
-        />
+  {/* Products */}
+  <Route
+    path="products"
+    element={<ProductManagement />}
+  />
 
-        {/* Products */}
-        <Route
-          path="products"
-          element={<ProductManagement />}
-        />
+  {/* Categories */}
+  <Route
+    path="categories"
+    element={<CategoryManagement />}
+  />
 
-        {/* Categories */}
-        <Route
-          path="categories"
-          element={<CategoryManagement />}
-        />
+  {/* Orders */}
+  <Route
+    path="orders"
+    element={<OrderManagement />}
+  />
 
-        {/* Orders */}
-        <Route
-          path="orders"
-          element={<OrderManagement />}
-        />
+  {/* Order Details */}
+  <Route
+    path="orders/:id"
+    element={<AdminOrderDetails />}
+  />
 
-        {/* Order Details */}
-        <Route
-          path="orders/:id"
-          element={<AdminOrderDetails />}
-        />
+  {/* Inventory */}
+  <Route
+    path="inventory"
+    element={<InventoryManagement />}
+  />
 
-        {/* Inventory */}
-        <Route
-          path="inventory"
-          element={<InventoryManagement />}
-        />
-
-      </Route>
+  {/* Returns */}
+  <Route
+    path="returns"
+    element={<ReturnManagement />}
+  />
+</Route>
 
 
       {/* =========================

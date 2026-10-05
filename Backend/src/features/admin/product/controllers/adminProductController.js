@@ -4,6 +4,7 @@ import {
   getProductByIdService,
   updateProductService,
   deleteProductService,
+  updateProductStatusService,
   addVariantService,
   getVariantsService,
   updateVariantService,
@@ -109,11 +110,40 @@ export const deleteProduct = async (req, res) => {
     const product = await deleteProductService(req.params.id);
 
     res.status(200).json({
-      message: "Product deleted successfully",
+      message: "Product permanently deleted successfully",
       product,
     });
   } catch (error) {
-    res.status(404).json({
+    res.status(400).json({
+      message: error.message,
+    });
+  }
+};
+
+
+export const updateProductStatus = async (req, res) => {
+  try {
+    const { isListed } = req.body;
+
+    if (typeof isListed !== "boolean") {
+      return res.status(400).json({
+        message: "isListed must be true or false",
+      });
+    }
+
+    const product = await updateProductStatusService(
+      req.params.id,
+      isListed
+    );
+
+    res.status(200).json({
+      message: isListed
+        ? "Product activated successfully"
+        : "Product deactivated successfully",
+      product,
+    });
+  } catch (error) {
+    res.status(400).json({
       message: error.message,
     });
   }

@@ -1,8 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router";
 
-import Navbar from "../../home/components/Navbar";
-import Footer from "../../home/components/Footer";
+import ProfileLayout from "../../profile/components/ProfileLayout";
 
 import OrderSearch from "../components/OrderSearch";
 import OrderCard from "../components/OrderCard";
@@ -25,7 +24,6 @@ function MyOrders() {
   const [currentPage, setCurrentPage] = useState(1);
 
   const ordersPerPage = 3;
-
 
   // FETCH ORDERS
   useEffect(() => {
@@ -57,7 +55,6 @@ function MyOrders() {
     fetchOrders();
   }, [navigate]);
 
-
   // SEARCH
   const filteredOrders = useMemo(() => {
     if (!search.trim()) {
@@ -70,7 +67,6 @@ function MyOrders() {
       order.orderId.toLowerCase().includes(value)
     );
   }, [orders, search]);
-
 
   // PAGINATION
   const totalPages = Math.ceil(
@@ -86,144 +82,99 @@ function MyOrders() {
       startIndex + ordersPerPage
     );
 
-
   // LOADING
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 text-black">
-
-        <Navbar />
-
-        <main className="px-6 md:px-10 py-10">
-
-          <div className="max-w-[1200px] mx-auto">
-
-            <div className="flex justify-center items-center min-h-[50vh]">
-
-              <p className="text-gray-500">
-                Loading orders...
-              </p>
-
-            </div>
-
-          </div>
-
-        </main>
-
-        <Footer />
-
-      </div>
+      <ProfileLayout
+        title="My"
+        highlight="Orders"
+        description="View and manage your orders."
+      >
+        <div className="min-h-[450px] flex items-center justify-center">
+          <p className="text-gray-500">
+            Loading orders...
+          </p>
+        </div>
+      </ProfileLayout>
     );
   }
 
-
   return (
-    <div className="min-h-screen bg-gray-50 text-black">
+    <ProfileLayout
+      title="My"
+      highlight="Orders"
+      description="View and manage your orders."
+    >
+      {/* Header */}
+      <div className="mb-8">
+        <h2 className="text-2xl md:text-3xl font-bold text-black">
+          My <span className="text-[#d90416]">Orders</span>
+        </h2>
 
-      <Navbar />
+        <p className="text-gray-500 mt-2">
+          View and manage your orders.
+        </p>
+      </div>
 
-      <main className="px-6 md:px-10 py-10">
+      {/* Search */}
+      <div className="bg-white rounded-xl border border-gray-200 p-5 mb-6">
+        <OrderSearch
+          search={search}
+          setSearch={setSearch}
+          setCurrentPage={setCurrentPage}
+        />
+      </div>
 
-        <div className="max-w-[1200px] mx-auto">
+      {/* Orders */}
+      <div className="space-y-5">
+        {paginatedOrders.length > 0 ? (
+          paginatedOrders.map((order) => (
+            <OrderCard
+              key={order._id}
+              order={{
+                ...order,
+                id: order.orderId,
+                date: order.createdAt,
+                status: order.status,
+                totalAmount: order.finalPrice,
+                items: order.items?.map((item) => ({
+                  ...item,
+                  id: item._id,
+                  canCancel:
+                    order.status === "pending",
+                  canReturn:
+                    order.status === "delivered",
+                })),
+              }}
+            />
+          ))
+        ) : (
+          <div className="bg-white border border-gray-200 rounded-xl py-20 text-center">
+            <div className="text-6xl mb-5">
+              📦
+            </div>
 
-          {/* Header */}
-
-          <div className="mb-8">
-
-            <h1 className="text-3xl md:text-4xl font-bold">
-              My Orders
-            </h1>
+            <h2 className="text-2xl font-bold">
+              No Orders Found
+            </h2>
 
             <p className="text-gray-500 mt-2">
-              View and manage your orders.
+              We couldn't find any orders matching
+              your search.
             </p>
-
           </div>
+        )}
+      </div>
 
-
-          {/* Search */}
-
-          <div className="bg-white rounded-xl border border-gray-200 p-5 mb-6">
-
-            <OrderSearch
-              search={search}
-              setSearch={setSearch}
-              setCurrentPage={setCurrentPage}
-            />
-
-          </div>
-
-
-          {/* Orders */}
-
-          <div className="space-y-5">
-
-            {paginatedOrders.length > 0 ? (
-
-              paginatedOrders.map((order) => (
-
-                <OrderCard
-                  key={order._id}
-                  order={{
-                    ...order,
-                    id: order.orderId,
-                    date: order.createdAt,
-                    status: order.status,
-                    totalAmount: order.finalPrice,
-                    items: order.items?.map((item) => ({
-                      ...item,
-                      id: item._id,
-                      canCancel:
-                        order.status === "pending",
-                      canReturn:
-                        order.status === "delivered",
-                    })),
-                  }}
-                />
-
-              ))
-
-            ) : (
-
-              <div className="bg-white border border-gray-200 rounded-xl py-20 text-center">
-
-                <div className="text-6xl mb-5">
-                  📦
-                </div>
-
-                <h2 className="text-2xl font-bold">
-                  No Orders Found
-                </h2>
-
-                <p className="text-gray-500 mt-2">
-                  We couldn't find any orders matching
-                  your search.
-                </p>
-
-              </div>
-
-            )}
-
-          </div>
-
-
-          {/* Pagination */}
-
-          {totalPages > 0 && (
-            <OrderPagination
-              currentPage={currentPage}
-              totalPages={totalPages}
-              setCurrentPage={setCurrentPage}
-            />
-          )}
-
-        </div>
-
-      </main>
-
-      <Footer />
-
-    </div>
+      {/* Pagination */}
+      {totalPages > 0 && (
+        <OrderPagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          setCurrentPage={setCurrentPage}
+        />
+      )}
+    </ProfileLayout>
   );
 }
 

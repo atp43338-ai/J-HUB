@@ -7,6 +7,7 @@ import {
   getProductById,
   updateProduct,
   deleteProduct,
+  updateProductStatus,
   addVariant,
   getVariants,
   updateVariant,
@@ -25,7 +26,9 @@ router.get("/:id", getProductById);
 
 router.put("/:id", upload.array("images",5 ), updateProduct);
 
-router.delete("/:id", deleteProduct);
+router.delete("/:id",adminMiddleware, deleteProduct);
+
+router.patch("/:id/status",adminMiddleware, updateProductStatus);
 
 router.post("/:id/variants", addVariant);
 

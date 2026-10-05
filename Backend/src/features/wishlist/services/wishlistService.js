@@ -5,14 +5,16 @@ import Product from "../../product/models/Product.js";
 export const getWishlistService = async (userId) => {
   let wishlist = await Wishlist.findOne({
     user: userId,
-  }).populate("products");
+  }).populate("products.product");
 
-  // If wishlist doesn't exist, return empty wishlist
+  // If wishlist doesn't exist, create empty wishlist
   if (!wishlist) {
     wishlist = await Wishlist.create({
       user: userId,
       products: [],
     });
+
+    return wishlist;
   }
 
   return wishlist;
@@ -21,8 +23,14 @@ export const getWishlistService = async (userId) => {
 // Add product to wishlist
 export const addToWishlistService = async (
   userId,
-  productId
+  productId,
+  size
 ) => {
+  // Check size
+  if (!size) {
+    throw new Error("Please select a size");
+  }
+
   // Check product
   const product = await Product.findById(productId);
 
@@ -35,6 +43,20 @@ export const addToWishlistService = async (
     throw new Error("Product is not available");
   }
 
+  // Check selected variant
+  const selectedVariant = product.variants?.find(
+    (variant) => variant.size === size
+  );
+
+  if (!selectedVariant) {
+    throw new Error("Selected size is not available");
+  }
+
+  // Check stock
+  if (selectedVariant.stock <= 0) {
+    throw new Error("Selected size is out of stock");
+  }
+
   // Find user's wishlist
   let wishlist = await Wishlist.findOne({
     user: userId,
@@ -44,27 +66,36 @@ export const addToWishlistService = async (
   if (!wishlist) {
     wishlist = await Wishlist.create({
       user: userId,
-      products: [productId],
+      products: [
+        {
+          product: productId,
+          size: size,
+        },
+      ],
     });
 
-    return wishlist.populate("products");
+    return wishlist.populate("products.product");
   }
 
   // Check if product already exists
   const alreadyExists = wishlist.products.some(
-    (item) => item.toString() === productId
+    (item) =>
+      item.product.toString() === productId
   );
 
   if (alreadyExists) {
     throw new Error("Product already in wishlist");
   }
 
-  // Add product
-  wishlist.products.push(productId);
+  // Add product with selected size
+  wishlist.products.push({
+    product: productId,
+    size: size,
+  });
 
   await wishlist.save();
 
-  return wishlist.populate("products");
+  return wishlist.populate("products.product");
 };
 
 // Remove product from wishlist
@@ -81,7 +112,8 @@ export const removeFromWishlistService = async (
   }
 
   const productExists = wishlist.products.some(
-    (item) => item.toString() === productId
+    (item) =>
+      item.product.toString() === productId
   );
 
   if (!productExists) {
@@ -89,12 +121,13 @@ export const removeFromWishlistService = async (
   }
 
   wishlist.products = wishlist.products.filter(
-    (item) => item.toString() !== productId
+    (item) =>
+      item.product.toString() !== productId
   );
 
   await wishlist.save();
 
-  return wishlist.populate("products");
+  return wishlist.populate("products.product");
 };
 
 // Clear wishlist

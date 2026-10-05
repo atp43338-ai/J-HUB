@@ -14,6 +14,7 @@ import {
 import { useCart } from "../context/CartContext";
 
 import Navbar from "../../home/components/Navbar";
+import Footer from "../../home/components/Footer";
 
 function Cart() {
   const [cart, setCart] = useState(null);
@@ -21,11 +22,15 @@ function Cart() {
 
   const { refreshCartCount } = useCart();
 
+  // -----------------------------
+  // UPDATE QUANTITY
+  // -----------------------------
   const handleQuantityChange = async (itemId, quantity) => {
     try {
       await updateCartItem(itemId, quantity);
 
       const data = await getCart();
+
       setCart(data.cart);
 
       await refreshCartCount();
@@ -34,11 +39,15 @@ function Cart() {
     }
   };
 
+  // -----------------------------
+  // REMOVE ITEM
+  // -----------------------------
   const handleRemove = async (itemId) => {
     try {
       await removeCartItem(itemId);
 
       const data = await getCart();
+
       setCart(data.cart);
 
       await refreshCartCount();
@@ -49,10 +58,14 @@ function Cart() {
     }
   };
 
+  // -----------------------------
+  // GET CART
+  // -----------------------------
   useEffect(() => {
     const fetchCart = async () => {
       try {
         const data = await getCart();
+
         setCart(data.cart);
       } catch (error) {
         toast.error(error.message);
@@ -64,21 +77,49 @@ function Cart() {
     fetchCart();
   }, []);
 
+  // -----------------------------
+  // LOADING
+  // -----------------------------
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-gray-500">
-          Loading cart...
-        </p>
+      <div className="min-h-screen bg-gray-50">
+
+        <Navbar />
+
+        <main className="min-h-screen flex items-center justify-center pt-[100px]">
+          <p className="text-gray-500">
+            Loading cart...
+          </p>
+        </main>
+
+        <Footer />
+
       </div>
     );
   }
 
+  // -----------------------------
+  // EMPTY CART
+  // -----------------------------
   if (!cart || cart.items.length === 0) {
-    return <EmptyCart />;
+    return (
+      <div className="min-h-screen bg-gray-50">
+
+        <Navbar />
+
+        <main className="min-h-screen pt-[100px]">
+          <EmptyCart />
+        </main>
+
+        <Footer />
+
+      </div>
+    );
   }
 
-  // Check whether any cart item is out of stock
+  // -----------------------------
+  // OUT OF STOCK CHECK
+  // -----------------------------
   const hasOutOfStockItem = cart.items.some((item) => {
     const variant = item.product?.variants?.find(
       (variant) => variant.size === item.size
@@ -89,61 +130,91 @@ function Cart() {
     return stock === 0 || item.quantity > stock;
   });
 
-  // Calculate subtotal
+  // -----------------------------
+  // SUBTOTAL
+  // -----------------------------
   const subtotal = cart.items.reduce(
     (total, item) =>
       total + item.product.price * item.quantity,
     0
   );
 
+  // -----------------------------
+  // CART PAGE
+  // -----------------------------
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-6">
+    <div className="min-h-screen bg-gray-50">
+
+      {/* NAVBAR */}
       <Navbar />
 
-      <div className="max-w-[1200px] mx-auto">
+      <main className="pt-[110px] pb-12 px-6">
 
-        {/* Title */}
-        <div className="mb-10">
-          <h1 className="text-3xl font-bold !text-black">
-            <span className="text-black">My</span>
-            <span className="text-[#d90416]"> Cart</span>
-          </h1>
+        <div className="max-w-[1200px] mx-auto">
 
-          <p className="mt-2 !text-black">
-            Review your selected jerseys
-          </p>
-        </div>
+          {/* TITLE */}
+          <div className="mb-10">
 
-        {/* Cart Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <h1 className="text-3xl font-bold">
+              <span className="text-black">
+                My
+              </span>
 
-          {/* Cart Items */}
-          <div className="lg:col-span-2 h-[650px] overflow-y-auto pr-4 space-y-5 scrollbar-hide">
+              <span className="text-[#d90416]">
+                {" "}Cart
+              </span>
+            </h1>
 
-            {cart.items.map((item) => (
-              <CartItem
-                key={item._id}
-                item={item}
-                onQuantityChange={handleQuantityChange}
-                onRemove={handleRemove}
+            <p className="mt-2 text-gray-500">
+              Review your selected jerseys
+            </p>
+
+          </div>
+
+          {/* CART LAYOUT */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+            {/* CART ITEMS */}
+            <div
+              className="
+                lg:col-span-2
+                max-h-[650px]
+                overflow-y-auto
+                pr-4
+                space-y-5
+                scrollbar-hide
+              "
+            >
+              {cart.items.map((item) => (
+                <CartItem
+                  key={item._id}
+                  item={item}
+                  onQuantityChange={handleQuantityChange}
+                  onRemove={handleRemove}
+                />
+              ))}
+            </div>
+
+            {/* CART SUMMARY */}
+            <div>
+              <CartSummary
+                subtotal={subtotal}
+                discount={0}
+                delivery={100}
+                hasOutOfStockItem={hasOutOfStockItem}
+                cartItems={cart.items}
               />
-            ))}
+            </div>
 
-          </div>
-
-          {/* Cart Summary */}
-          <div>
-            <CartSummary
-              subtotal={subtotal}
-              discount={0}
-              delivery={100}
-              hasOutOfStockItem={hasOutOfStockItem}
-            />
           </div>
 
         </div>
 
-      </div>
+      </main>
+
+      {/* FOOTER */}
+      <Footer />
+
     </div>
   );
 }

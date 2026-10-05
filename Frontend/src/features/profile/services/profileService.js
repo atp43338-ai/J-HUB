@@ -51,6 +51,36 @@ export const changeEmail = async (token, name, phone, newEmail) => {
   return data;
 };
 
+
+export const changePassword = async (
+  token,
+  currentPassword,
+  newPassword
+) => {
+  const response = await fetch(
+    "http://localhost:5000/api/auth/change-password",
+    {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        currentPassword,
+        newPassword,
+      }),
+    }
+  );
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.message);
+  }
+
+  return data;
+};
+
 // for update email.
 
 

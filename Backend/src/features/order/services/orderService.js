@@ -159,7 +159,7 @@ export const createOrderService = async (
     });
 
 
-    // Decrease stock
+    // DECREASE STOCK
 
     variant.stock -= quantity;
 
@@ -186,7 +186,6 @@ export const createOrderService = async (
 
   let orderId = generateOrderId();
 
-  // Very small protection against duplicate ID
   let existingOrder = await Order.findOne({
     orderId,
   });
@@ -243,7 +242,12 @@ export const createOrderService = async (
 
 
 // GET ORDER BY ID
-export const getOrderByIdService = async (userId, orderId) => {
+
+export const getOrderByIdService = async (
+  userId,
+  orderId
+) => {
+
   const order = await Order.findOne({
     orderId,
     user: userId,
@@ -257,21 +261,16 @@ export const getOrderByIdService = async (userId, orderId) => {
 };
 
 
+
 // GET ALL USER ORDERS
 
-export const getOrdersService = async (userId) => {
+export const getOrdersService = async (
+  userId
+) => {
+
   const orders = await Order.find({
     user: userId,
   }).sort({ createdAt: -1 });
-
-
-
-  // const result = await Order.find({
-  // status: "Pending"
-  // });
-  // console.log(result);
-
-
 
   return orders;
 };
@@ -285,6 +284,7 @@ export const cancelOrderService = async (
   orderId,
   reason
 ) => {
+
   const order = await Order.findOne({
     orderId,
     user: userId,
@@ -294,15 +294,15 @@ export const cancelOrderService = async (
     throw new Error("Order not found");
   }
 
+
   // CHECK ORDER STATUS
 
-  if (
-    order.status !== "pending"
-  ) {
+  if (order.status !== "pending") {
     throw new Error(
       "This order cannot be cancelled"
     );
   }
+
 
   // CANCEL ORDER
 
@@ -313,9 +313,22 @@ export const cancelOrderService = async (
 
   order.cancelledAt = new Date();
 
+
   // RESTORE STOCK
 
   for (const item of order.items) {
+
+    // IMPORTANT:
+    // If this item was already cancelled,
+    // its stock has already been restored.
+    //
+    // So DO NOT restore it again.
+
+    if (item.cancelled) {
+      continue;
+    }
+
+
     const product =
       await Product.findById(item.product);
 
@@ -323,18 +336,22 @@ export const cancelOrderService = async (
       continue;
     }
 
+
     const variant =
       product.variants.find(
         (variant) =>
           variant.size === item.size
       );
 
+
     if (variant) {
+
       variant.stock += item.quantity;
 
       await product.save();
     }
   }
+
 
   await order.save();
 
@@ -351,6 +368,7 @@ export const cancelOrderItemService = async (
   itemId,
   reason
 ) => {
+
   const order = await Order.findOne({
     orderId,
     user: userId,
@@ -360,6 +378,7 @@ export const cancelOrderItemService = async (
     throw new Error("Order not found");
   }
 
+
   // CHECK ORDER STATUS
 
   if (order.status !== "pending") {
@@ -367,6 +386,7 @@ export const cancelOrderItemService = async (
       "Products can only be cancelled while the order is pending"
     );
   }
+
 
   // FIND ORDER ITEM
 
@@ -376,6 +396,7 @@ export const cancelOrderItemService = async (
     throw new Error("Order item not found");
   }
 
+
   // CHECK IF ALREADY CANCELLED
 
   if (item.cancelled) {
@@ -384,13 +405,16 @@ export const cancelOrderItemService = async (
     );
   }
 
+
   // CANCEL ITEM
 
   item.cancelled = true;
 
-  item.cancellationReason = reason || "";
+  item.cancellationReason =
+    reason || "";
 
   item.cancelledAt = new Date();
+
 
   // RESTORE STOCK
 
@@ -399,31 +423,42 @@ export const cancelOrderItemService = async (
   );
 
   if (product) {
-    const variant = product.variants.find(
-      (variant) =>
-        variant.size === item.size
-    );
+
+    const variant =
+      product.variants.find(
+        (variant) =>
+          variant.size === item.size
+      );
 
     if (variant) {
+
       variant.stock += item.quantity;
 
       await product.save();
     }
   }
 
+
   // RECALCULATE ORDER PRICE
 
-  const activeItems = order.items.filter(
-    (orderItem) => !orderItem.cancelled
-  );
+  const activeItems =
+    order.items.filter(
+      (orderItem) =>
+        !orderItem.cancelled
+    );
 
-  const newSubtotal = activeItems.reduce(
-    (total, orderItem) =>
-      total + orderItem.total,
-    0
-  );
 
-  order.subtotal = newSubtotal;
+  const newSubtotal =
+    activeItems.reduce(
+      (total, orderItem) =>
+        total + orderItem.total,
+      0
+    );
+
+
+  order.subtotal =
+    newSubtotal;
+
 
   order.finalPrice =
     newSubtotal -
@@ -431,14 +466,19 @@ export const cancelOrderItemService = async (
     order.tax +
     order.shipping;
 
+
   // IF ALL ITEMS ARE CANCELLED
 
   if (activeItems.length === 0) {
+
     order.status = "cancelled";
+
     order.cancelledAt = new Date();
+
     order.cancellationReason =
       "All products in the order were cancelled";
   }
+
 
   await order.save();
 

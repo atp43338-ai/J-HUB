@@ -81,6 +81,25 @@ function Navbar() {
     }
   };
 
+  /*
+    White pages:
+    → Black text/icons before scrolling
+
+    Home dark hero:
+    → White text/icons before scrolling
+
+    After scrolling:
+    → Black text/icons
+  */
+
+  const isHomePage = location.pathname === "/";
+
+  const useWhiteText = isHomePage && !isScrolled;
+
+  const textColor = useWhiteText
+    ? "text-white"
+    : "text-black";
+
   return (
     <nav
       className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ${
@@ -93,22 +112,15 @@ function Navbar() {
 
         {/* Logo */}
         <button
+          type="button"
           onClick={handleHome}
           className="text-2xl md:text-3xl font-extrabold tracking-wide"
         >
-          <span
-            className={
-              isScrolled ? "text-black" : "text-white"
-            }
-          >
+          <span className={textColor}>
             J
           </span>
 
-          <span
-            className={
-              isScrolled ? "text-black" : "text-white"
-            }
-          >
+          <span className={textColor}>
             {" - "}
           </span>
 
@@ -120,46 +132,38 @@ function Navbar() {
         {/* Navigation */}
         <div className="hidden md:flex items-center gap-8">
 
+          {/* Home */}
           <button
+            type="button"
             onClick={handleHome}
-            className={`font-medium transition ${
-              isScrolled
-                ? "text-black hover:text-[#d90416]"
-                : "text-white hover:text-[#d90416]"
-            }`}
+            className={`font-medium transition ${textColor} hover:text-[#d90416]`}
           >
             Home
           </button>
 
+          {/* Shop */}
           <button
+            type="button"
             onClick={handleShop}
-            className={`font-medium transition ${
-              isScrolled
-                ? "text-black hover:text-[#d90416]"
-                : "text-white hover:text-[#d90416]"
-            }`}
+            className={`font-medium transition ${textColor} hover:text-[#d90416]`}
           >
             Shop
           </button>
 
+          {/* About */}
           <button
+            type="button"
             onClick={handleAbout}
-            className={`font-medium transition ${
-              isScrolled
-                ? "text-black hover:text-[#d90416]"
-                : "text-white hover:text-[#d90416]"
-            }`}
+            className={`font-medium transition ${textColor} hover:text-[#d90416]`}
           >
             About
           </button>
 
+          {/* Contact */}
           <button
+            type="button"
             onClick={handleContact}
-            className={`font-medium transition ${
-              isScrolled
-                ? "text-black hover:text-[#d90416]"
-                : "text-white hover:text-[#d90416]"
-            }`}
+            className={`font-medium transition ${textColor} hover:text-[#d90416]`}
           >
             Contact Us
           </button>
@@ -172,11 +176,7 @@ function Navbar() {
           {/* Search */}
           <Link
             to="/products"
-            className={`transition ${
-              isScrolled
-                ? "text-black hover:text-[#d90416]"
-                : "text-white hover:text-[#d90416]"
-            }`}
+            className={`transition ${textColor} hover:text-[#d90416]`}
             title="Search"
           >
             <svg
@@ -198,11 +198,7 @@ function Navbar() {
           {/* Wishlist */}
           <Link
             to="/wishlist"
-            className={`transition ${
-              isScrolled
-                ? "text-black hover:text-[#d90416]"
-                : "text-white hover:text-[#d90416]"
-            }`}
+            className={`transition ${textColor} hover:text-[#d90416]`}
             title="Wishlist"
           >
             <svg
@@ -225,11 +221,7 @@ function Navbar() {
           <div className="relative">
             <Link
               to="/cart"
-              className={`transition ${
-                isScrolled
-                  ? "text-black hover:text-[#d90416]"
-                  : "text-white hover:text-[#d90416]"
-              }`}
+              className={`transition ${textColor} hover:text-[#d90416]`}
               title="Cart"
             >
               <svg
@@ -245,8 +237,18 @@ function Navbar() {
                   strokeLinejoin="round"
                   d="M3 3h2l2.4 11.2a2 2 0 0 0 2 1.6h7.8a2 2 0 0 0 2-1.6L21 7H6"
                 />
-                <circle cx="10" cy="20" r="1" />
-                <circle cx="18" cy="20" r="1" />
+
+                <circle
+                  cx="10"
+                  cy="20"
+                  r="1"
+                />
+
+                <circle
+                  cx="18"
+                  cy="20"
+                  r="1"
+                />
               </svg>
             </Link>
 
@@ -268,7 +270,11 @@ function Navbar() {
           ) : (
             <Link
               to="/profile"
-              className="w-11 h-11 rounded-full bg-black text-white flex items-center justify-center hover:bg-[#d90416] transition"
+              className={`w-11 h-11 rounded-full flex items-center justify-center transition ${
+                useWhiteText
+                  ? "bg-white text-black hover:bg-[#d90416] hover:text-white"
+                  : "bg-black text-white hover:bg-[#d90416]"
+              }`}
             >
               👤
             </Link>

@@ -50,10 +50,16 @@ export const WishlistProvider = ({ children }) => {
     );
   };
 
-  // Add product
-  const handleAddToWishlist = async (productId) => {
+  // Add product with selected size
+  const handleAddToWishlist = async (
+    productId,
+    size
+  ) => {
     try {
-      const data = await addToWishlist(productId);
+      const data = await addToWishlist(
+        productId,
+        size
+      );
 
       setWishlist(data.wishlist?.products || []);
 
@@ -64,9 +70,13 @@ export const WishlistProvider = ({ children }) => {
   };
 
   // Remove product
-  const handleRemoveFromWishlist = async (productId) => {
+  const handleRemoveFromWishlist = async (
+    productId
+  ) => {
     try {
-      const data = await removeFromWishlist(productId);
+      const data = await removeFromWishlist(
+        productId
+      );
 
       setWishlist(data.wishlist?.products || []);
 
@@ -101,7 +111,8 @@ export const WishlistProvider = ({ children }) => {
         fetchWishlist,
         isInWishlist,
         addToWishlist: handleAddToWishlist,
-        removeFromWishlist: handleRemoveFromWishlist,
+        removeFromWishlist:
+          handleRemoveFromWishlist,
         clearWishlist: handleClearWishlist,
       }}
     >

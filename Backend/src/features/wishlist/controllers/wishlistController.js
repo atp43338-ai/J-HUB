@@ -12,8 +12,16 @@ export const getWishlist = async (req, res) => {
 
     const wishlist = await getWishlistService(userId);
 
+    const products = wishlist.products.map((item) => ({
+      ...item.product.toObject(),
+      size: item.size,
+    }));
+
     res.status(200).json({
-      wishlist,
+      wishlist: {
+        ...wishlist.toObject(),
+        products,
+      },
     });
   } catch (error) {
     res.status(400).json({
@@ -26,7 +34,8 @@ export const getWishlist = async (req, res) => {
 export const addToWishlist = async (req, res) => {
   try {
     const userId = req.user.id;
-    const { productId } = req.body;
+
+    const { productId, size } = req.body;
 
     if (!productId) {
       return res.status(400).json({
@@ -34,14 +43,29 @@ export const addToWishlist = async (req, res) => {
       });
     }
 
+    if (!size) {
+      return res.status(400).json({
+        message: "Please select a size",
+      });
+    }
+
     const wishlist = await addToWishlistService(
       userId,
-      productId
+      productId,
+      size
     );
+
+    const products = wishlist.products.map((item) => ({
+      ...item.product.toObject(),
+      size: item.size,
+    }));
 
     res.status(201).json({
       message: "Product added to wishlist",
-      wishlist,
+      wishlist: {
+        ...wishlist.toObject(),
+        products,
+      },
     });
   } catch (error) {
     res.status(400).json({
@@ -65,9 +89,19 @@ export const removeFromWishlist = async (
         productId
       );
 
+    const products = wishlist.products.map(
+      (item) => ({
+        ...item.product.toObject(),
+        size: item.size,
+      })
+    );
+
     res.status(200).json({
       message: "Product removed from wishlist",
-      wishlist,
+      wishlist: {
+        ...wishlist.toObject(),
+        products,
+      },
     });
   } catch (error) {
     res.status(400).json({

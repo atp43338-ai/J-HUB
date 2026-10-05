@@ -1,27 +1,36 @@
 import { useEffect, useState } from "react";
+
 import {
   getProducts,
+  updateProductStatus,
   deleteProduct,
 } from "../../../services/adminProductService";
+
 import toast from "react-hot-toast";
+
 // import AdminMenu from "../../../components/AdminMenu";
 
 import AddProductModal from "../../../components/AddProductModal";
 import EditProductModal from "../../../components/EditProductModal";
-
 import VariantManagementModal from "../../../components/VariantManagementModal";
 
 const ProductManagement = () => {
   const [products, setProducts] = useState([]);
-  const [deleteProductId, setDeleteProductId] = useState(null);
 
   const [showAddModal, setShowAddModal] = useState(false);
+
   const [editProductId, setEditProductId] = useState(null);
+
   const [variantProductId, setVariantProductId] = useState(null);
+
+  // Permanent delete popup
+  const [deleteProductData, setDeleteProductData] = useState(null);
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
+
   const [totalPages, setTotalPages] = useState(1);
+
   const [totalProducts, setTotalProducts] = useState(0);
 
   const productsPerPage = 5;
@@ -35,7 +44,9 @@ const ProductManagement = () => {
       );
 
       setProducts(data.products);
+
       setTotalPages(data.totalPages);
+
       setTotalProducts(data.totalProducts);
     } catch (error) {
       console.log(error.message);
@@ -46,35 +57,61 @@ const ProductManagement = () => {
     fetchProducts();
   }, [currentPage]);
 
-  // Delete product
-  const handleDelete = async () => {
+  // Change product active/inactive status
+  const handleStatusChange = async (product) => {
     try {
-      await deleteProduct(deleteProductId);
+      const newStatus = !product.isListed;
 
-      toast.success("Product deleted successfully");
-
-      setDeleteProductId(null);
-
-      // Refresh current page
-      const data = await getProducts(
-        currentPage,
-        productsPerPage
+      await updateProductStatus(
+        product._id,
+        newStatus
       );
 
-      setProducts(data.products);
-      setTotalPages(data.totalPages);
-      setTotalProducts(data.totalProducts);
+      toast.success(
+        newStatus
+          ? "Product activated successfully"
+          : "Product deactivated successfully"
+      );
 
-      // If current page becomes empty,
-      // go back to previous page
-      if (data.products.length === 0 && currentPage > 1) {
-        setCurrentPage(currentPage - 1);
-      }
+      fetchProducts();
     } catch (error) {
-      console.error("Delete product error:", error);
+      console.error("Status update error:", error);
 
       toast.error(
-        error.message || "Failed to delete product"
+        error.message || "Failed to update product status"
+      );
+    }
+  };
+
+  // Open permanent delete popup
+  const handleDeleteClick = (product) => {
+    setDeleteProductData(product);
+  };
+
+  // Close permanent delete popup
+  const handleDeleteCancel = () => {
+    setDeleteProductData(null);
+  };
+
+  // Permanently delete product
+  const handlePermanentDelete = async () => {
+    if (!deleteProductData) return;
+
+    try {
+      await deleteProduct(deleteProductData._id);
+
+      toast.success("Product permanently deleted");
+
+      // Close popup
+      setDeleteProductData(null);
+
+      // Refresh products
+      fetchProducts();
+    } catch (error) {
+      console.error("Permanent delete error:", error);
+
+      toast.error(
+        error.message || "Failed to permanently delete product"
       );
     }
   };
@@ -89,7 +126,10 @@ const ProductManagement = () => {
 
         <div>
           <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-8">
-            <span className="text-black">Product </span>
+            <span className="text-black">
+              Product{" "}
+            </span>
+
             <span className="text-[#d90416]">
               Management
             </span>
@@ -118,6 +158,7 @@ const ProductManagement = () => {
           <table className="w-full">
 
             <thead>
+
               <tr className="border-b bg-gray-50">
 
                 <th className="text-left px-6 py-4 text-sm font-semibold text-gray-700">
@@ -140,11 +181,18 @@ const ProductManagement = () => {
                   Price
                 </th>
 
+                {/* Status */}
+                <th className="text-center px-6 py-4 text-sm font-semibold text-gray-700">
+                  Status
+                </th>
+
+                {/* Actions */}
                 <th className="text-center px-6 py-4 text-sm font-semibold text-gray-700">
                   Actions
                 </th>
 
               </tr>
+
             </thead>
 
             <tbody>
@@ -195,18 +243,34 @@ const ProductManagement = () => {
                     ₹{product.price}
                   </td>
 
+                  {/* Status */}
+                  <td className="px-6 py-4 text-center">
+
+                    <span
+                      className={`px-3 py-1 rounded-full text-sm font-medium ${
+                        product.isListed
+                          ? "bg-green-100 text-green-700"
+                          : "bg-gray-100 text-gray-600"
+                      }`}
+                    >
+                      {product.isListed
+                        ? "Active"
+                        : "Inactive"}
+                    </span>
+
+                  </td>
+
                   {/* Actions */}
-                  <td className="px-6 py-4">
+                  <td className="px-4 py-4">
 
-                    <div className="flex items-center justify-center gap-3">
+                    <div className="grid grid-cols-2 gap-2 w-[190px] mx-auto">
 
-                      {/*variant */}
-
+                      {/* Variant */}
                       <button
                         onClick={() =>
-                          setVariantProductId(product._id)}
-
-                        className="px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-100 transition"
+                          setVariantProductId(product._id)
+                        }
+                        className="w-full px-2 py-2 border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-100 transition"
                       >
                         Variant
                       </button>
@@ -216,17 +280,33 @@ const ProductManagement = () => {
                         onClick={() =>
                           setEditProductId(product._id)
                         }
-                        className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-100 transition"
+                        className="w-full px-2 py-2 border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-100 transition"
                       >
                         Edit
                       </button>
 
-                      {/* Delete */}
+                      {/* Active / Inactive */}
                       <button
                         onClick={() =>
-                          setDeleteProductId(product._id)
+                          handleStatusChange(product)
                         }
-                        className="px-4 py-2 bg-red-50 text-red-600 rounded-lg text-sm font-medium hover:bg-red-100 transition"
+                        className={`w-full px-2 py-2 rounded-lg text-sm font-medium transition ${
+                          product.isListed
+                            ? "bg-red-50 text-red-600 hover:bg-red-100"
+                            : "bg-green-50 text-green-600 hover:bg-green-100"
+                        }`}
+                      >
+                        {product.isListed
+                          ? "Deactivate"
+                          : "Activate"}
+                      </button>
+
+                      {/* Permanent Delete */}
+                      <button
+                        onClick={() =>
+                          handleDeleteClick(product)
+                        }
+                        className="w-full px-2 py-2 rounded-lg text-sm font-medium bg-red-600 text-white hover:bg-red-700 transition"
                       >
                         Delete
                       </button>
@@ -315,48 +395,6 @@ const ProductManagement = () => {
 
       </div>
 
-      {/* Delete Confirmation Modal */}
-      {deleteProductId && (
-
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-
-          <div className="bg-white rounded-xl w-full max-w-md p-6 shadow-xl">
-
-            <h2 className="text-xl font-bold text-black">
-              Delete Product
-            </h2>
-
-            <p className="text-gray-600 mt-3">
-              Are you sure you want to delete this product?
-            </p>
-
-            <div className="flex justify-end gap-3 mt-6">
-
-
-              {/* Cancel */}
-              <button
-                onClick={() => setDeleteProductId(null)}
-                className="px-5 py-2.5 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-100 transition"
-              >
-                Cancel
-              </button>
-
-              {/* Confirm Delete */}
-              <button
-                onClick={handleDelete}
-                className="px-5 py-2.5 bg-[#d90416] text-white rounded-lg font-medium hover:bg-[#b90312] transition"
-              >
-                Delete
-              </button>
-
-            </div>
-
-          </div>
-
-        </div>
-
-      )}
-
       {/* Add Product Modal */}
       {showAddModal && (
         <AddProductModal
@@ -379,13 +417,108 @@ const ProductManagement = () => {
           }}
         />
       )}
-      {/*variant */}
+
+      {/* Variant Modal */}
       {variantProductId && (
-      <VariantManagementModal
-      productId={variantProductId}
-      onClose={() => setVariantProductId(null)}
-   />
-)}
+        <VariantManagementModal
+          productId={variantProductId}
+          onClose={() => setVariantProductId(null)}
+        />
+      )}
+
+      {/* ================================================= */}
+      {/* PERMANENT DELETE CONFIRMATION POPUP */}
+      {/* ================================================= */}
+
+      {deleteProductData && (
+
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
+
+          <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl p-6">
+
+            {/* Popup Header */}
+            <div className="flex items-center gap-4 mb-5">
+
+              <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
+
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="w-6 h-6 text-red-600"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3m-4 0h14"
+                  />
+                </svg>
+
+              </div>
+
+              <div>
+
+                <h2 className="text-xl font-bold text-gray-900">
+                  Delete Product
+                </h2>
+
+                <p className="text-sm text-gray-500">
+                  Permanent action
+                </p>
+
+              </div>
+
+            </div>
+
+            {/* Popup Message */}
+            <div className="mb-6">
+
+              <p className="text-gray-700 leading-6">
+                Are you sure you want to permanently delete
+                {" "}
+                <span className="font-semibold text-black">
+                  "{deleteProductData.name}"
+                </span>
+                ?
+              </p>
+
+              <p className="text-sm text-red-600 mt-3">
+                This action cannot be undone. The product will be
+                permanently removed from the database.
+              </p>
+
+            </div>
+
+            {/* Popup Buttons */}
+            <div className="flex justify-end gap-3">
+
+              {/* Cancel */}
+              <button
+                type="button"
+                onClick={handleDeleteCancel}
+                className="px-5 py-2.5 rounded-lg border border-gray-300 text-gray-700 font-medium hover:bg-gray-100 transition"
+              >
+                Cancel
+              </button>
+
+              {/* Confirm Delete */}
+              <button
+                type="button"
+                onClick={handlePermanentDelete}
+                className="px-5 py-2.5 rounded-lg bg-red-600 text-white font-medium hover:bg-red-700 transition"
+              >
+                Delete
+              </button>
+
+            </div>
+
+          </div>
+
+        </div>
+
+      )}
 
     </div>
   );

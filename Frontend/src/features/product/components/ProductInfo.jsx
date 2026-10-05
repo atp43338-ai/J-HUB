@@ -101,19 +101,39 @@ function ProductInfo({ product }) {
   };
 
   // Wishlist
-  const handleWishlist = async () => {
-    try {
-      if (isInWishlist) {
-        await removeFromWishlist(product._id);
-        toast.success("Removed from wishlist");
-      } else {
-        await addToWishlist(product._id);
-        toast.success("Added to wishlist");
-      }
-    } catch (error) {
-      toast.error(error.message);
+const handleWishlist = async () => {
+  try {
+    if (isInWishlist) {
+      await removeFromWishlist(product._id);
+      toast.success("Removed from wishlist");
+      return;
     }
-  };
+
+    if (!selectedSize) {
+      toast.error("Please select a size");
+      return;
+    }
+
+    if (!selectedVariant) {
+      toast.error("Selected size is not available");
+      return;
+    }
+
+    if (selectedVariant.stock <= 0) {
+      toast.error("Selected size is out of stock");
+      return;
+    }
+
+    await addToWishlist(
+      product._id,
+      selectedSize
+    );
+
+    toast.success("Added to wishlist");
+  } catch (error) {
+    toast.error(error.message);
+  }
+};
 
   return (
     <div className="h-[650px] overflow-y-auto pr-4 scrollbar-hide">

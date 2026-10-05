@@ -83,8 +83,18 @@ function EditProductModal({
       return;
     }
 
-    if (!price || Number(price) < 0) {
-      toast.error("Please enter a valid price");
+    // Price validation
+    const priceValue = Number(price);
+
+    if (
+      price === "" ||
+      !Number.isFinite(priceValue) ||
+      priceValue < 1 ||
+      priceValue > 1000000
+    ) {
+      toast.error(
+        "Price must be between ₹1 and ₹10,00,000"
+      );
       return;
     }
 
@@ -281,9 +291,15 @@ function EditProductModal({
                 setPrice(e.target.value)
               }
               placeholder="Enter price"
-              min="0"
+              min="1"
+              max="1000000"
+              step="1"
               className="w-full border border-gray-300 rounded-lg px-4 py-3 outline-none focus:border-[#d90416]"
             />
+
+            <p className="mt-2 text-sm text-gray-500">
+              Price must be between ₹1 and ₹10,00,000.
+            </p>
 
           </div>
 

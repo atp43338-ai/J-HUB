@@ -16,12 +16,21 @@ const generateOTP = () => {
 export const registerUserService = async (
   name,
   email,
-  password,
+  password
 ) => {
   const existingUser = await User.findOne({ email });
 
   if (existingUser) {
     throw new Error("User already exists");
+  }
+
+  const passwordRegex =
+    /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+
+  if (!passwordRegex.test(password)) {
+    throw new Error(
+      "Password must contain 8 characters, uppercase, lowercase, number and special character"
+    );
   }
 
   const hashPassword = await bcrypt.hash(password, 10);
@@ -42,6 +51,7 @@ export const registerUserService = async (
 
   return user;
 };
+
 
 // Verify OTP
 export const verifyOTPService = async (email, otp) => {

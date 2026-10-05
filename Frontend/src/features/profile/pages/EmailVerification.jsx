@@ -1,11 +1,15 @@
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router";
-import EmailVerificationImage from "../asset/otp-bg.png";
+
 import {
   verifyEmailChange,
   resendEmailChangeOTP,
 } from "../services/profileService";
+
 import toast from "react-hot-toast";
+
+import ProfileLayout from "../components/ProfileLayout";
+import ProfileHeader from "../components/ProfileHeader";
 
 function EmailVerification() {
   const navigate = useNavigate();
@@ -83,14 +87,10 @@ function EmailVerification() {
 
       await resendEmailChangeOTP(token);
 
-      // Reset timer
       setTimer(60);
-
-      // Clear old OTP
       setOtp("");
 
       toast.success("New OTP sent successfully");
-
     } catch (error) {
       console.error("Resend OTP error:", error);
       toast.error(error.message);
@@ -98,101 +98,80 @@ function EmailVerification() {
   };
 
   return (
-    <div className="fixed inset-0 w-full h-full overflow-hidden">
-
-      {/* Background Image */}
-
-      <img
-        src={EmailVerificationImage}
-        alt="Email verification background"
-        className="absolute inset-0 w-full h-full object-fill"
+    <ProfileLayout
+      title="Email"
+      highlight="Verification"
+      description="Verify your new email address"
+    >
+      <ProfileHeader
+        title="Email"
+        highlight="Verification"
+        description="Enter the verification code sent to your new email"
       />
 
-      {/* Center Verification Box */}
-
-      <div
-        className="
-          absolute
-          left-1/2
-          top-1/2
-          -translate-x-1/2
-          -translate-y-1/2
-          w-[700px]
-          min-h-[665px]
-          rounded-[30px]
-          border
-          border-[#d90416]
-          bg-[#111214]
-          shadow-[0_20px_50px_rgba(0,0,0,0.35)]
-          px-[58px]
-          py-[58px]
-        "
-      >
+      {/* Verification Card */}
+      <div className="max-w-[700px] mx-auto">
 
         {/* Mail Icon */}
-
-        <div
-          className="
-            mx-auto
-            w-[80px]
-            h-[80px]
-            rounded-[25px]
-            bg-[#d90416]
+        <div className="flex justify-center">
+          <div className="
+            w-16
+            h-16
+            rounded-2xl
+            bg-red-50
+            border
+            border-red-100
             flex
             items-center
             justify-center
-          "
-        >
-          <span className="text-[45px]">
-            ✉️
-          </span>
+          ">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              className="w-7 h-7 text-[#d90416]"
+            >
+              <rect
+                x="3"
+                y="5"
+                width="18"
+                height="14"
+                rx="2"
+              />
+
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M3 7l9 6 9-6"
+              />
+            </svg>
+          </div>
         </div>
 
-        {/* Title */}
-
-        <h2
-          className="
-            text-center
-            text-[27px]
-            font-bold
-            mt-[38px]
-          "
-        >
-          <span className="text-white">
-            Email
-          </span>
-
-          <span className="text-[#d90416] ml-2">
-            Verification
-          </span>
-        </h2>
-
         {/* Description */}
+        <div className="text-center mt-6">
 
-        <p
-          className="
-            text-center
-            text-[17px]
-            text-gray-400
-            mt-3
-            leading-7
-          "
-        >
-          Enter the 6-digit verification code sent to your
-          <br />
+          <h3 className="text-xl md:text-2xl font-bold text-black">
+            Verify Your <span className="text-[#d90416]">Email</span>
+          </h3>
 
-          <span className="text-white font-semibold">
+          <p className="mt-2 text-sm text-gray-500 leading-6">
+            Enter the 6-digit verification code sent to
+          </p>
+
+          <p className="mt-1 text-sm font-semibold text-gray-800 break-all">
             {email || "your email"}
-          </span>
-        </p>
+          </p>
+
+        </div>
 
         {/* OTP Form */}
+        <form onSubmit={handleSubmit} className="mt-8">
 
-        <form onSubmit={handleSubmit}>
-
-          {/* OTP Input */}
-
-          <div className="flex justify-center gap-[18px] mt-[30px]">
+          {/* OTP Inputs */}
+          <div className="flex justify-center gap-2 sm:gap-4">
 
             {[0, 1, 2, 3, 4, 5].map((index) => (
               <input
@@ -201,56 +180,63 @@ function EmailVerification() {
                 maxLength={1}
                 value={otp[index] || ""}
                 onChange={(e) => {
-                  const value = e.target.value.replace(/\D/g, "");
+                  const value = e.target.value.replace(
+                    /\D/g,
+                    ""
+                  );
 
                   const otpArray = otp.split("");
 
                   otpArray[index] = value;
 
-                  setOtp(otpArray.join("").slice(0, 6));
+                  setOtp(
+                    otpArray.join("").slice(0, 6)
+                  );
 
-                  // Move to next box automatically
+                  // Move to next box
                   if (value && index < 5) {
                     e.target.nextElementSibling?.focus();
                   }
                 }}
                 onKeyDown={(e) => {
-                  // Backspace
                   if (e.key === "Backspace") {
 
-                    // If current box has a value,
-                    // just remove the value
                     if (otp[index]) {
                       const otpArray = otp.split("");
 
                       otpArray[index] = "";
 
-                      setOtp(otpArray.join("").slice(0, 6));
+                      setOtp(
+                        otpArray.join("").slice(0, 6)
+                      );
 
                       return;
                     }
 
-                    // If current box is already empty,
-                    // move cursor to previous box
                     if (index > 0) {
                       e.target.previousElementSibling?.focus();
                     }
                   }
                 }}
                 className="
-                  w-[82px]
-                  h-[82px]
-                  rounded-[17px]
+                  w-[48px]
+                  h-[56px]
+                  sm:w-[60px]
+                  sm:h-[64px]
+                  rounded-lg
                   border
-                  border-[#36383c]
-                  bg-[#1c1f22]
-                  text-white
+                  border-gray-200
+                  bg-white
+                  text-black
                   text-center
-                  text-[28px]
+                  text-xl
+                  sm:text-2xl
                   font-semibold
                   outline-none
+                  transition
                   focus:border-[#d90416]
-                  focus:shadow-[0_0_12px_rgba(217,4,22,0.45)]
+                  focus:ring-2
+                  focus:ring-[#d90416]/10
                 "
               />
             ))}
@@ -258,66 +244,55 @@ function EmailVerification() {
           </div>
 
           {/* Verify Button */}
-
           <button
             type="submit"
             className="
-              mt-[38px]
+              mt-8
               w-full
-              h-[73px]
-              rounded-[16px]
+              h-[50px]
+              rounded-lg
               bg-[#d90416]
               hover:bg-[#b90312]
               text-white
-              text-[22px]
-              font-bold
+              text-sm
+              font-semibold
               transition
             "
           >
             Verify Email
-
-            <span className="ml-4">
-              →
-            </span>
           </button>
 
           {/* Timer */}
+          <div className="
+            mt-6
+            flex
+            justify-center
+            items-center
+            gap-2
+            text-sm
+            text-gray-500
+          ">
 
-          <div
-            className="
-              flex
-              justify-center
-              items-center
-              gap-3
-              mt-[42px]
-              text-[17px]
-              text-gray-400
-            "
-          >
-            <span className="text-[#d90416] text-[20px]">
-              ●
-            </span>
+            <span className="w-2 h-2 rounded-full bg-[#d90416]" />
 
             <span>
               Code expires in
             </span>
 
-            <span className="text-[#d90416] font-bold">
+            <span className="font-bold text-[#d90416]">
               {String(Math.floor(timer / 60)).padStart(2, "0")}:
               {String(timer % 60).padStart(2, "0")}
             </span>
+
           </div>
 
           {/* Resend */}
-
-          <div
-            className="
-              text-center
-              mt-3
-              text-[17px]
-              text-gray-400
-            "
-          >
+          <div className="
+            mt-4
+            text-center
+            text-sm
+            text-gray-500
+          ">
             Didn't receive the code?
 
             <button
@@ -326,10 +301,11 @@ function EmailVerification() {
               disabled={timer > 0}
               className={`
                 ml-2
-                font-medium
+                font-semibold
+                transition
                 ${
                   timer > 0
-                    ? "text-gray-600 cursor-not-allowed"
+                    ? "text-gray-400 cursor-not-allowed"
                     : "text-[#d90416] hover:text-[#b90312]"
                 }
               `}
@@ -339,8 +315,25 @@ function EmailVerification() {
           </div>
 
         </form>
+
+        {/* Security Note */}
+        <div className="
+          mt-8
+          p-4
+          rounded-xl
+          bg-gray-50
+          border
+          border-gray-200
+          text-center
+        ">
+          <p className="text-xs text-gray-500">
+            For your security, never share your verification
+            code with anyone.
+          </p>
+        </div>
+
       </div>
-    </div>
+    </ProfileLayout>
   );
 }
 

@@ -14,7 +14,24 @@ function Register() {
   const [confirmPassword, setConfirmPassword] = useState("");
 
   const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] =
+    useState(false);
+
+  // Password rules
+  const passwordRules = {
+    length: password.length >= 8,
+    uppercase: /[A-Z]/.test(password),
+    lowercase: /[a-z]/.test(password),
+    number: /[0-9]/.test(password),
+    special: /[@$!%*?&]/.test(password),
+  };
+
+  const isPasswordValid =
+    passwordRules.length &&
+    passwordRules.uppercase &&
+    passwordRules.lowercase &&
+    passwordRules.number &&
+    passwordRules.special;
 
   // Normal registration
   const handleSubmit = async (e) => {
@@ -25,24 +42,25 @@ function Register() {
       return;
     }
 
-    if (password.length < 6) {
-      toast.error("Password must be at least 6 characters");
+    // Strong password validation
+    if (!isPasswordValid) {
       return;
     }
 
+    // Confirm password validation
     if (password !== confirmPassword) {
       toast.error("Passwords do not match");
       return;
     }
 
     try {
-      const data = await registerUser(
+      await registerUser(
         name,
         email,
         password
       );
 
-       toast.success("Registration successful");
+      toast.success("Registration successful");
 
       navigate("/otp-verification", {
         state: {
@@ -50,7 +68,6 @@ function Register() {
           email: email,
         },
       });
-
     } catch (error) {
       console.error("Registration error:", error);
       toast.error(error.message);
@@ -73,8 +90,13 @@ function Register() {
 
         <div className="absolute top-[0%] left-[7%] z-10">
           <h1 className="text-[42px] leading-none font-black tracking-tight">
-            <span className="text-black">J-</span>
-            <span className="text-[#d90416]">HUB</span>
+            <span className="text-black">
+              J-
+            </span>
+
+            <span className="text-[#d90416]">
+              HUB
+            </span>
           </h1>
         </div>
 
@@ -88,21 +110,27 @@ function Register() {
 
           {/* Registration Form */}
 
-          <form onSubmit={handleSubmit} autoComplete="off" className="mt-6 space-y-3 ">
+          <form
+            onSubmit={handleSubmit}
+            autoComplete="off"
+            className="mt-6 space-y-3"
+          >
 
             {/* Name */}
 
             <input
               type="text"
               value={name}
-              onChange={(e) => setName(e.target.value)}
+              onChange={(e) =>
+                setName(e.target.value)
+              }
               placeholder="Enter your name"
               className="
                 w-full
                 h-[52px]
                 rounded-[14px]
                 border
-                border border-black
+                border-black
                 bg-white/75
                 px-5
                 text-[14px]
@@ -120,14 +148,16 @@ function Register() {
               type="email"
               value={email}
               autoComplete="off"
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) =>
+                setEmail(e.target.value)
+              }
               placeholder="Enter your email"
               className="
                 w-full
                 h-[52px]
                 rounded-[14px]
                 border
-                border border-black
+                border-black
                 bg-white/75
                 px-5
                 text-[14px]
@@ -141,94 +171,140 @@ function Register() {
 
             {/* Password */}
 
-            <div className="relative">
-              <input
-                type={showPassword ? "text" : "password"}
-                value={password}
-                autoComplete="new-password"
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Enter your password"
-                className="
-                  w-full
-                  h-[52px]
-                  rounded-[14px]
-                  border
-                  border border-black
-                  bg-white/75
-                  px-5
-                  pr-12
-                  text-[14px]
-                  text-black
-                  placeholder-[#777]
-                  outline-none
-                  focus:border-[#d90416]
-                  transition
-                "
-              />
+            <div>
 
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-black"
-              >
-                {showPassword ? (
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.8"
-                    className="w-5 h-5"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M3.98 8.5C2.9 10.04 2.5 12 2.5 12s3.5 7 9.5 7c1.25 0 2.4-.25 3.43-.67M6.42 6.42C7.9 5.5 9.58 5 12 5c6 0 9.5 7 9.5 7s-.9 1.8-2.5 3.42M3 3l18 18"
-                    />
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M9.88 9.88a3 3 0 1 0 4.24 4.24"
-                    />
-                  </svg>
-                ) : (
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.8"
-                    className="w-5 h-5"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M2.5 12s3.5-7 9.5-7 9.5 7 9.5 7-3.5 7-9.5 7-9.5-7-9.5-7Z"
-                    />
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"
-                    />
-                  </svg>
-                )}
-              </button>
+              <div className="relative">
+
+                <input
+                  type={
+                    showPassword
+                      ? "text"
+                      : "password"
+                  }
+                  value={password}
+                  autoComplete="new-password"
+                  onChange={(e) =>
+                    setPassword(e.target.value)
+                  }
+                  placeholder="Enter your password"
+                  className="
+                    w-full
+                    h-[52px]
+                    rounded-[14px]
+                    border
+                    border-black
+                    bg-white/75
+                    px-5
+                    pr-12
+                    text-[14px]
+                    text-black
+                    placeholder-[#777]
+                    outline-none
+                    focus:border-[#d90416]
+                    transition
+                  "
+                />
+
+                {/* Show / Hide Password */}
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    setShowPassword(!showPassword)
+                  }
+                  className="
+                    absolute
+                    right-4
+                    top-1/2
+                    -translate-y-1/2
+                    text-gray-500
+                    hover:text-black
+                  "
+                >
+                  {showPassword ? (
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.8"
+                      className="w-5 h-5"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M3.98 8.5C2.9 10.04 2.5 12 2.5 12s3.5 7 9.5 7c1.25 0 2.4-.25 3.43-.67M6.42 6.42C7.9 5.5 9.58 5 12 5c6 0 9.5 7 9.5 7s-.9 1.8-2.5 3.42M3 3l18 18"
+                      />
+
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M9.88 9.88a3 3 0 1 0 4.24 4.24"
+                      />
+                    </svg>
+                  ) : (
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.8"
+                      className="w-5 h-5"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M2.5 12s3.5-7 9.5-7 9.5 7 9.5 7-3.5 7-9.5 7-9.5-7-9.5-7Z"
+                      />
+
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"
+                      />
+                    </svg>
+                  )}
+                </button>
+              </div>
+
+              {/* Compact Password Rules */}
+
+              {password && !isPasswordValid && (
+                <p className="mt-1 ml-1 text-[10px] leading-4 text-red-500">
+                  8+ characters • Uppercase • Lowercase •
+                  Number • Special character
+                </p>
+              )}
+
+              {password && isPasswordValid && (
+                <p className="mt-1 ml-1 text-[10px] leading-4 text-green-600">
+                  ✓ Strong password
+                </p>
+              )}
+
             </div>
 
             {/* Confirm Password */}
 
             <div className="relative">
+
               <input
-                type={showConfirmPassword ? "text" : "password"}
+                type={
+                  showConfirmPassword
+                    ? "text"
+                    : "password"
+                }
                 value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
+                onChange={(e) =>
+                  setConfirmPassword(e.target.value)
+                }
                 placeholder="Confirm your password"
                 className="
                   w-full
                   h-[52px]
                   rounded-[14px]
                   border
-                  border border-black
+                  border-black
                   bg-white/75
                   px-5
                   pr-12
@@ -241,12 +317,23 @@ function Register() {
                 "
               />
 
+              {/* Show / Hide Confirm Password */}
+
               <button
                 type="button"
                 onClick={() =>
-                  setShowConfirmPassword(!showConfirmPassword)
+                  setShowConfirmPassword(
+                    !showConfirmPassword
+                  )
                 }
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-black"
+                className="
+                  absolute
+                  right-4
+                  top-1/2
+                  -translate-y-1/2
+                  text-gray-500
+                  hover:text-black
+                "
               >
                 {showConfirmPassword ? (
                   <svg
@@ -262,6 +349,7 @@ function Register() {
                       strokeLinejoin="round"
                       d="M3.98 8.5C2.9 10.04 2.5 12 2.5 12s3.5 7 9.5 7c1.25 0 2.4-.25 3.43-.67M6.42 6.42C7.9 5.5 9.58 5 12 5c6 0 9.5 7 9.5 7s-.9 1.8-2.5 3.42M3 3l18 18"
                     />
+
                     <path
                       strokeLinecap="round"
                       strokeLinejoin="round"
@@ -282,6 +370,7 @@ function Register() {
                       strokeLinejoin="round"
                       d="M2.5 12s3.5-7 9.5-7 9.5 7 9.5 7-3.5 7-9.5 7-9.5-7-9.5-7Z"
                     />
+
                     <path
                       strokeLinecap="round"
                       strokeLinejoin="round"
@@ -290,6 +379,7 @@ function Register() {
                   </svg>
                 )}
               </button>
+
             </div>
 
             {/* Create Account */}
@@ -310,7 +400,9 @@ function Register() {
               "
             >
               Create Account
-              <span className="ml-3 text-xl">→</span>
+              <span className="ml-3 text-xl">
+                →
+              </span>
             </button>
 
           </form>
@@ -319,12 +411,14 @@ function Register() {
 
           <p className="text-center text-[15px] text-black font-semibold mt-4">
             Already have an account?{" "}
+
             <Link
               to="/login"
               className="text-[#d90416] font-semibold hover:underline"
             >
               Login
             </Link>
+
           </p>
 
         </div>

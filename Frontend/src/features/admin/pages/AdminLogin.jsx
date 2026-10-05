@@ -78,7 +78,7 @@ function AdminLogin() {
 
           <div className="text-center mb-8">
 
-            <h1 className="text-3xl sm:text-4xl font-bold text-white">
+            <h1 className="text-3xl sm:text-4xl font-bold !text-white">
               <span className="text-[#d90416]">
                 Admin
               </span>{" "}

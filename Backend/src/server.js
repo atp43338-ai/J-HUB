@@ -12,7 +12,6 @@ import adminRoutes from "./features/admin/routes/adminRoutes.js";
 
 import productRoutes from "./features/product/routes/productRoutes.js";
 import adminProductRoutes from "./features/admin/product/routes/adminProductRoutes.js";
-
 import adminCategoryRoutes from "./features/admin/category/routes/adminCategoryRoutes.js";
 
 import cartRoutes from "./features/cart/routes/cartRoutes.js";
@@ -20,8 +19,12 @@ import cartRoutes from "./features/cart/routes/cartRoutes.js";
 import wishlistRoutes from "./features/wishlist/routes/wishlistRoutes.js";
 
 import orderRoutes from "./features/order/routes/orderRoutes.js";
+import returnRoutes from "./features/order/routes/returnRoutes.js";
 
 import adminOrderRoutes from "./features/admin/routes/adminOrderRoutes.js";
+import adminReturnRoutes from "./features/admin/routes/adminReturnRoutes.js";
+
+import adminCollectionRoutes from "./features/admin/collection/routes/adminCollectionRoutes.js";
 
 
 
@@ -65,18 +68,20 @@ app.use("/api/address", addressRoutes);
 
 app.use("/api/admin", adminRoutes);
 app.use("/api/admin/orders", adminOrderRoutes);
+app.use("/api/admin/returns", adminReturnRoutes);
 
 app.use("/api/products", productRoutes);
 
 app.use("/api/admin/products", adminProductRoutes);
-
 app.use("/api/admin/categories", adminCategoryRoutes);
+app.use("/api/admin/collections", adminCollectionRoutes);
 
 app.use("/api/cart", cartRoutes);
 
 app.use("/api/wishlist", wishlistRoutes);
 
 app.use("/api/orders", orderRoutes);
+app.use("/api/orders/return", returnRoutes);
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);

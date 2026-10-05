@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Cropper from "react-easy-crop";
 import { createProduct } from "../services/adminProductService";
+import { getCollections } from "../services/adminCollectionService";
 import toast from "react-hot-toast";
 
 function AddProductModal({ onClose, onAdded }) {
@@ -9,8 +10,9 @@ function AddProductModal({ onClose, onAdded }) {
   const [price, setPrice] = useState("");
   const [category, setCategory] = useState("");
 
-  // Changed: collection is now an array
-  const [collection, setCollection] = useState([]);
+  // Collection
+  const [collection, setCollection] = useState("");
+  const [collections, setCollections] = useState([]);
 
   const [brand, setBrand] = useState("");
   const [images, setImages] = useState([]);
@@ -25,6 +27,21 @@ function AddProductModal({ onClose, onAdded }) {
   const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
   const [cropImage, setCropImage] = useState(null);
   const [cropQueue, setCropQueue] = useState([]);
+
+  // Fetch collections
+  useEffect(() => {
+    const fetchCollections = async () => {
+      try {
+        const data = await getCollections();
+        setCollections(data || []);
+      } catch (error) {
+        console.error("Failed to fetch collections:", error);
+        toast.error("Failed to load collections");
+      }
+    };
+
+    fetchCollections();
+  }, []);
 
   // Remove image
   const handleRemoveImage = (index) => {
@@ -188,24 +205,35 @@ function AddProductModal({ onClose, onAdded }) {
     }
 
     if (!description.trim()) {
-      newErrors.description = "Please enter product description";
+      newErrors.description =
+        "Please enter product description";
     }
 
     if (!description.length === 20) {
-      newErrors.description = "Please enter minimum 20 words";
+      newErrors.description =
+        "Please enter minimum 20 words";
     }
 
-    if (!price || Number(price) < 0) {
-      newErrors.price = "Please enter a valid price";
+    // PRICE VALIDATION
+    const priceValue = Number(price);
+
+    if (
+      price === "" ||
+      !Number.isFinite(priceValue) ||
+      priceValue < 1 ||
+      priceValue > 1000000
+    ) {
+      newErrors.price =
+        "Price must be between ₹1 and ₹10,00,000";
     }
 
     if (!category) {
       newErrors.category = "Please select a category";
     }
 
-    // Changed: check array length
     if (collection.length === 0) {
-      newErrors.collection = "Please select a collection";
+      newErrors.collection =
+        "Please select a collection";
     }
 
     if (!brand.trim()) {
@@ -213,11 +241,13 @@ function AddProductModal({ onClose, onAdded }) {
     }
 
     if (images.length < 3) {
-      newErrors.images = "Please upload at least 3 product images";
+      newErrors.images =
+        "Please upload at least 3 product images";
     }
 
     if (discount === "") {
-      newErrors.discount = "Please enter discount";
+      newErrors.discount =
+        "Please enter discount";
     } else if (
       Number(discount) < 0 ||
       Number(discount) > 100
@@ -235,7 +265,6 @@ function AddProductModal({ onClose, onAdded }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Check all fields together
     if (!validateForm()) {
       return;
     }
@@ -247,7 +276,6 @@ function AddProductModal({ onClose, onAdded }) {
     formData.append("price", price);
     formData.append("category", category);
 
-    // Changed: send each collection separately
     collection.forEach((item) => {
       formData.append("collection", item);
     });
@@ -266,7 +294,6 @@ function AddProductModal({ onClose, onAdded }) {
 
       toast.success("Product added successfully");
 
-      // Tell ProductManagement to refresh
       onAdded();
     } catch (error) {
       console.error("Create product error:", error);
@@ -287,7 +314,10 @@ function AddProductModal({ onClose, onAdded }) {
           <div className="sticky top-0 bg-white border-b px-6 py-5 flex items-center justify-between z-10">
 
             <h2 className="text-2xl font-bold">
-              <span className="text-black">Add </span>
+              <span className="text-black">
+                Add{" "}
+              </span>
+
               <span className="text-[#d90416]">
                 Product
               </span>
@@ -311,6 +341,7 @@ function AddProductModal({ onClose, onAdded }) {
 
             {/* Product Name */}
             <div className="mb-6">
+
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Product Name
               </label>
@@ -339,10 +370,12 @@ function AddProductModal({ onClose, onAdded }) {
                   {errors.name}
                 </p>
               )}
+
             </div>
 
             {/* Description */}
             <div className="mb-6">
+
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Description
               </label>
@@ -371,10 +404,12 @@ function AddProductModal({ onClose, onAdded }) {
                   {errors.description}
                 </p>
               )}
+
             </div>
 
             {/* Price */}
             <div className="mb-6">
+
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Price
               </label>
@@ -391,7 +426,9 @@ function AddProductModal({ onClose, onAdded }) {
                   }));
                 }}
                 placeholder="Enter price"
-                min="0"
+                min="1"
+                max="1000000"
+                step="1"
                 className={`w-full border rounded-lg px-4 py-3 outline-none focus:border-[#d90416] ${
                   errors.price
                     ? "border-red-500"
@@ -399,15 +436,21 @@ function AddProductModal({ onClose, onAdded }) {
                 }`}
               />
 
+              <p className="mt-2 text-xs text-gray-500">
+                Price must be between ₹1 and ₹10,00,000.
+              </p>
+
               {errors.price && (
                 <p className="mt-2 text-sm text-red-500">
                   {errors.price}
                 </p>
               )}
+
             </div>
 
             {/* Category */}
             <div className="mb-6">
+
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Category
               </label>
@@ -428,6 +471,7 @@ function AddProductModal({ onClose, onAdded }) {
                     : "border-gray-300"
                 }`}
               >
+
                 <option value="">
                   Select category
                 </option>
@@ -435,6 +479,7 @@ function AddProductModal({ onClose, onAdded }) {
                 <option value="Unisex">
                   Unisex
                 </option>
+
               </select>
 
               {errors.category && (
@@ -442,51 +487,86 @@ function AddProductModal({ onClose, onAdded }) {
                   {errors.category}
                 </p>
               )}
+
             </div>
 
             {/* Collection */}
-            <div>
+            <div className="mb-6">
+
               <label className="block font-medium mb-3">
                 Collection
               </label>
 
               <div className="space-y-2">
 
-                {["Club", "National", "Legends", "New Season"].map(
-                  (item) => (
+                {collections.length > 0 ? (
+                  collections.map((item) => (
+
                     <label
-                      key={item}
+                      key={item._id}
                       className="flex items-center gap-2"
                     >
+
                       <input
                         type="checkbox"
-                        checked={collection.includes(item)}
+                        checked={collection.includes(
+                          item.name
+                        )}
                         onChange={(e) => {
+
                           if (e.target.checked) {
+
                             setCollection([
                               ...collection,
-                              item,
+                              item.name,
                             ]);
+
                           } else {
+
                             setCollection(
                               collection.filter(
-                                (value) => value !== item
+                                (value) =>
+                                  value !== item.name
                               )
                             );
                           }
+
+                          setErrors((prev) => ({
+                            ...prev,
+                            collection: "",
+                          }));
                         }}
                       />
 
-                      <span>{item}</span>
+                      <span>
+                        {item.name}
+                      </span>
+
                     </label>
-                  )
+
+                  ))
+                ) : (
+
+                  <p className="text-sm text-gray-500">
+                    No collections available.
+                    Please add a collection first.
+                  </p>
+
                 )}
 
               </div>
+
+              {errors.collection && (
+                <p className="mt-2 text-sm text-red-500">
+                  {errors.collection}
+                </p>
+              )}
+
             </div>
 
             {/* Brand */}
             <div className="mb-6">
+
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Brand
               </label>
@@ -515,6 +595,7 @@ function AddProductModal({ onClose, onAdded }) {
                   {errors.brand}
                 </p>
               )}
+
             </div>
 
             {/* Product Images */}
@@ -537,7 +618,8 @@ function AddProductModal({ onClose, onAdded }) {
               />
 
               <p className="mt-2 text-sm text-gray-500">
-                Select 3 to 5 images. Each image will be cropped and resized to 800 × 800.
+                Select 3 to 5 images. Each image will
+                be cropped and resized to 800 × 800.
               </p>
 
               {errors.images && (
@@ -704,6 +786,7 @@ function AddProductModal({ onClose, onAdded }) {
               <button
                 type="button"
                 onClick={() => {
+
                   cropQueue.forEach((item) => {
                     URL.revokeObjectURL(item.url);
                   });
@@ -714,6 +797,7 @@ function AddProductModal({ onClose, onAdded }) {
                   setZoom(1);
                   setCrop({ x: 0, y: 0 });
                   setCroppedAreaPixels(null);
+
                 }}
                 className="px-5 py-2.5 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-100 transition"
               >

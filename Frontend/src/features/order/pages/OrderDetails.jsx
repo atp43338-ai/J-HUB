@@ -12,6 +12,8 @@ import {
   cancelOrderItem,
 } from "../services/orderService";
 
+import { createReturn } from "../services/returnService";
+
 function OrderDetails() {
   const { orderId } = useParams();
   const navigate = useNavigate();
@@ -24,6 +26,12 @@ function OrderDetails() {
 
   // CANCEL ITEM LOADING
   const [cancellingItem, setCancellingItem] = useState(null);
+
+  // RETURN ORDER
+  const [returning, setReturning] = useState(false);
+  const [showReturnForm, setShowReturnForm] = useState(false);
+  const [returnReason, setReturnReason] = useState("");
+  const [returnDescription, setReturnDescription] = useState("");
 
   // FETCH ORDER
   useEffect(() => {
@@ -139,17 +147,62 @@ function OrderDetails() {
     }
   };
 
+  // RETURN ORDER
+  const handleReturnOrder = async (e) => {
+    e.preventDefault();
+
+    if (!returnReason) {
+      toast.error("Please select a return reason");
+      return;
+    }
+
+    try {
+      setReturning(true);
+
+      await createReturn(
+        orderId,
+        returnReason,
+        returnDescription
+      );
+
+      toast.success(
+        "Return request submitted successfully"
+      );
+
+      setShowReturnForm(false);
+      setReturnReason("");
+      setReturnDescription("");
+    } catch (error) {
+      console.error(
+        "Failed to submit return:",
+        error
+      );
+
+      toast.error(
+        error.response?.data?.message ||
+          error.message ||
+          "Failed to submit return request"
+      );
+    } finally {
+      setReturning(false);
+    }
+  };
+
   // DOWNLOAD INVOICE
   const handleDownloadInvoice = () => {
     try {
       if (!order) {
-        toast.error("Order details are not available");
+        toast.error(
+          "Order details are not available"
+        );
         return;
       }
 
       generateInvoicePDF(order);
 
-      toast.success("Invoice downloaded successfully");
+      toast.success(
+        "Invoice downloaded successfully"
+      );
     } catch (error) {
       console.error(
         "Failed to generate invoice:",
@@ -589,6 +642,111 @@ function OrderDetails() {
                       : "Cancel Order"}
                   </button>
                 )}
+
+                {/* RETURN ORDER */}
+                {order.status === "delivered" &&
+                  !showReturnForm && (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setShowReturnForm(true)
+                      }
+                      className="w-full mt-4 border border-[#d90416] text-[#d90416] hover:bg-red-50 py-3 rounded-lg font-semibold transition"
+                    >
+                      Return Order
+                    </button>
+                  )}
+
+                {/* RETURN ORDER FORM */}
+                {order.status === "delivered" &&
+                  showReturnForm && (
+                    <form
+                      onSubmit={handleReturnOrder}
+                      className="mt-4 border border-gray-200 rounded-xl p-4"
+                    >
+                      <h3 className="font-semibold text-lg text-gray-900 mb-4">
+                        Return Order
+                      </h3>
+
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Reason
+                      </label>
+
+                      <select
+                        value={returnReason}
+                        onChange={(e) =>
+                          setReturnReason(
+                            e.target.value
+                          )
+                        }
+                        className="w-full border border-gray-300 rounded-lg px-3 py-3 outline-none focus:border-[#d90416]"
+                      >
+                        <option value="">
+                          Select reason
+                        </option>
+
+                        <option value="Wrong size">
+                          Wrong size
+                        </option>
+
+                        <option value="Damaged product">
+                          Damaged product
+                        </option>
+
+                        <option value="Wrong product">
+                          Wrong product received
+                        </option>
+
+                        <option value="Quality issue">
+                          Product quality issue
+                        </option>
+
+                        <option value="Other">
+                          Other
+                        </option>
+                      </select>
+
+                      <label className="block text-sm font-medium text-gray-700 mt-4 mb-2">
+                        Additional Details
+                      </label>
+
+                      <textarea
+                        value={returnDescription}
+                        onChange={(e) =>
+                          setReturnDescription(
+                            e.target.value
+                          )
+                        }
+                        rows="4"
+                        placeholder="Tell us more about the reason..."
+                        className="w-full border border-gray-300 rounded-lg px-3 py-3 outline-none resize-none focus:border-[#d90416]"
+                      />
+
+                      <div className="flex gap-3 mt-4">
+
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setShowReturnForm(false)
+                          }
+                          className="flex-1 border border-gray-300 text-gray-700 py-3 rounded-lg font-semibold hover:bg-gray-50"
+                        >
+                          Cancel
+                        </button>
+
+                        <button
+                          type="submit"
+                          disabled={returning}
+                          className="flex-1 bg-[#d90416] hover:bg-red-700 text-white py-3 rounded-lg font-semibold disabled:opacity-50"
+                        >
+                          {returning
+                            ? "Submitting..."
+                            : "Submit Return"}
+                        </button>
+
+                      </div>
+                    </form>
+                  )}
 
                 {/* DOWNLOAD INVOICE */}
                 <button

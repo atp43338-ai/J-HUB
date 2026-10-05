@@ -3,7 +3,10 @@ import toast from "react-hot-toast";
 
 import Navbar from "../../home/components/Navbar";
 import Footer from "../../home/components/Footer";
+
 import { useWishlist } from "../context/WishlistContext";
+import { addToCart } from "../../cart/services/cartService";
+import { useCart } from "../../cart/context/CartContext";
 
 function Wishlist() {
   const navigate = useNavigate();
@@ -15,18 +18,38 @@ function Wishlist() {
     clearWishlist,
   } = useWishlist();
 
+  const { refreshCartCount } = useCart();
+
   const handleRemove = async (productId) => {
     await removeFromWishlist(productId);
   };
 
-  const handleMoveToCart = (product) => {
-    // Cart requires size selection,
-    // so go to product details first.
-    navigate(`/products/${product._id}`);
+  // Add wishlist product to cart using saved size
+  const handleMoveToCart = async (product) => {
+    if (!product.size) {
+      toast.error("Size is not available");
+      return;
+    }
 
-    toast.success(
-      "Select a size to add this product to cart"
-    );
+    try {
+      await addToCart({
+        productId: product._id,
+        size: product.size,
+        quantity: 1,
+      });
+
+      await refreshCartCount();
+
+      await removeFromWishlist(product._id);
+
+      toast.success(
+        `Product added to cart with size ${product.size}`
+      );
+
+      navigate("/cart");
+    } catch (error) {
+      toast.error(error.message);
+    }
   };
 
   if (loading) {
@@ -57,9 +80,14 @@ function Wishlist() {
 
             <div>
               <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3">
-                 <span className="text-black">My </span>
-                 <span className="text-[#d90416]">Wishlist</span>
-               </h1>
+                <span className="text-black">
+                  My{" "}
+                </span>
+
+                <span className="text-[#d90416]">
+                  Wishlist
+                </span>
+              </h1>
 
               <p className="text-gray-500 mt-2">
                 Products you saved for later.
@@ -96,7 +124,9 @@ function Wishlist() {
 
               <button
                 type="button"
-                onClick={() => navigate("/products")}
+                onClick={() =>
+                  navigate("/products")
+                }
                 className="mt-6 px-7 py-3 bg-[#d90416] text-white rounded-lg font-semibold hover:bg-[#b90312] transition"
               >
                 Continue Shopping
@@ -138,6 +168,16 @@ function Wishlist() {
                       {product.name}
                     </h3>
 
+                    {/* Size */}
+                    {product.size && (
+                      <p className="text-sm text-gray-500 mt-2">
+                        Size:{" "}
+                        <span className="font-semibold text-black">
+                          {product.size}
+                        </span>
+                      </p>
+                    )}
+
                     <p className="text-xl font-bold mt-2">
                       ₹
                       {product.price?.toLocaleString(
@@ -156,7 +196,7 @@ function Wishlist() {
                       Remove
                     </button>
 
-                    {/* Move to Cart */}
+                    {/* Add to Cart */}
                     <button
                       type="button"
                       onClick={() =>

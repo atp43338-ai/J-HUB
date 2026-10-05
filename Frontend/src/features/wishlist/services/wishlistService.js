@@ -25,7 +25,10 @@ export const getWishlist = async () => {
 };
 
 // Add product to wishlist
-export const addToWishlist = async (productId) => {
+export const addToWishlist = async (
+  productId,
+  size
+) => {
   const response = await fetch(API_URL, {
     method: "POST",
     headers: {
@@ -34,6 +37,7 @@ export const addToWishlist = async (productId) => {
     },
     body: JSON.stringify({
       productId,
+      size,
     }),
   });
 
@@ -41,7 +45,8 @@ export const addToWishlist = async (productId) => {
 
   if (!response.ok) {
     throw new Error(
-      data.message || "Failed to add product to wishlist"
+      data.message ||
+        "Failed to add product to wishlist"
     );
   }
 
@@ -49,7 +54,9 @@ export const addToWishlist = async (productId) => {
 };
 
 // Remove product from wishlist
-export const removeFromWishlist = async (productId) => {
+export const removeFromWishlist = async (
+  productId
+) => {
   const response = await fetch(
     `${API_URL}/${productId}`,
     {
@@ -85,7 +92,8 @@ export const clearWishlist = async () => {
 
   if (!response.ok) {
     throw new Error(
-      data.message || "Failed to clear wishlist"
+      data.message ||
+        "Failed to clear wishlist"
     );
   }
 

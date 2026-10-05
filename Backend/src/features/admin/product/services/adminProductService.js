@@ -1,24 +1,42 @@
 import Product from "../../../product/models/Product.js";
 
+
+// CREATE PRODUCT
 export const createProductService = async (productData) => {
+
+  // Convert price to number
+  const price = Number(productData.price);
+
+  // Validate price
+  if (
+    !Number.isFinite(price) ||
+    price < 1 ||
+    price > 1000000
+  ) {
+    throw new Error(
+      "Price must be between ₹1 and ₹10,00,000"
+    );
+  }
+
+  // Save correct number into MongoDB
+  productData.price = price;
+
   const product = await Product.create(productData);
 
   return product;
 };
 
+
 export const getProductsService = async (page = 1, limit = 5) => {
   const skip = (page - 1) * limit;
 
-  const products = await Product.find({
-    isListed: true,
-  })
+  // Admin should see both active and inactive products
+  const products = await Product.find()
     .sort({ createdAt: -1 })
     .skip(skip)
     .limit(limit);
 
-  const totalProducts = await Product.countDocuments({
-    isListed: true,
-  });
+  const totalProducts = await Product.countDocuments();
 
   const totalPages = Math.ceil(totalProducts / limit);
 
@@ -40,11 +58,37 @@ export const getProductByIdService = async (productId) => {
   return product;
 };
 
-export const updateProductService = async (productId, productData) => {
+
+
+// UPDATE PRODUCT
+export const updateProductService = async (
+  productId,
+  productData
+) => {
+  // Check price only if price is being updated
+  if (productData.price !== undefined) {
+    const price = Number(productData.price);
+
+    if (
+      !Number.isFinite(price) ||
+      price < 1 ||
+      price > 1000000
+    ) {
+      throw new Error(
+        "Price must be between ₹1 and ₹10,00,000"
+      );
+    }
+
+    productData.price = price;
+  }
+
   const product = await Product.findByIdAndUpdate(
     productId,
     productData,
-    { new: true }
+    {
+      new: true,
+      runValidators: true,
+    }
   );
 
   if (!product) {
@@ -53,12 +97,31 @@ export const updateProductService = async (productId, productData) => {
 
   return product;
 };
+
+
 
 export const deleteProductService = async (productId) => {
+  const product = await Product.findByIdAndDelete(productId);
+
+  if (!product) {
+    throw new Error("Product not found");
+  }
+
+  return product;
+};
+
+// UPDATE PRODUCT STATUS
+export const updateProductStatusService = async (
+  productId,
+  isListed
+) => {
   const product = await Product.findByIdAndUpdate(
     productId,
-    { isListed: false },
-    { new: true }
+    { isListed },
+    {
+      new: true,
+      runValidators: true,
+    }
   );
 
   if (!product) {
@@ -67,6 +130,8 @@ export const deleteProductService = async (productId) => {
 
   return product;
 };
+
+
 
 // Add Variant
 export const addVariantService = async (productId, variantData) => {
@@ -103,6 +168,8 @@ export const addVariantService = async (productId, variantData) => {
 
   return product;
 };
+
+
 
 export const getVariantsService = async (productId) => {
   const product = await Product.findById(productId);

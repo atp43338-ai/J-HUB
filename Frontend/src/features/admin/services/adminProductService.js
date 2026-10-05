@@ -57,14 +57,46 @@ export const updateProduct = async (id, productData) => {
 };
 
 export const deleteProduct = async (id) => {
+  const adminToken = localStorage.getItem("adminToken");
+
   const response = await fetch(`${API_URL}/${id}`, {
     method: "DELETE",
+    headers: {
+      Authorization: `Bearer ${adminToken}`,
+    },
   });
 
   const data = await response.json();
 
   if (!response.ok) {
-    throw new Error(data.message || "Failed to delete product");
+    throw new Error(data.message || "Failed to permanently delete product");
+  }
+
+  return data;
+};
+
+
+
+export const updateProductStatus = async (id, isListed) => {
+  const adminToken = localStorage.getItem("adminToken");
+
+  const response = await fetch(`${API_URL}/${id}/status`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${adminToken}`,
+    },
+    body: JSON.stringify({
+      isListed,
+    }),
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(
+      data.message || "Failed to update product status"
+    );
   }
 
   return data;
