@@ -1,7 +1,12 @@
-
 //for register
 
-export const registerUser = async (name, email, password) => {
+export const registerUser = async (
+  name,
+  email,
+  password,
+  referralCode,
+  referralToken
+) => {
   const response = await fetch(
     "http://localhost:5000/api/auth/register",
     {
@@ -13,6 +18,8 @@ export const registerUser = async (name, email, password) => {
         name,
         email,
         password,
+        referralCode,
+        referralToken,
       }),
     }
   );
@@ -54,9 +61,61 @@ export const loginUser = async (email, password) => {
 };
 
 
+// Verify Login OTP
+export const verifyLoginOTP = async (
+  email,
+  otp
+) => {
+  const response = await fetch(
+    "http://localhost:5000/api/auth/verify-login-otp",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        email,
+        otp,
+      }),
+    }
+  );
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.message);
+  }
+
+  return data;
+};
+
+
+// Resend Login OTP
+export const resendLoginOTP = async (email) => {
+  const response = await fetch(
+    "http://localhost:5000/api/auth/resend-login-otp",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        email,
+      }),
+    }
+  );
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.message);
+  }
+
+  return data;
+};
+
+
 // for direct googol login.
-
-
 export const googleLoginUser = async (credential) => {
   const response = await fetch(
     "http://localhost:5000/api/auth/google-login",

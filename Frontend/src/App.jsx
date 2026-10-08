@@ -33,7 +33,8 @@ import OrderManagement from "./features/admin/pages/admin/order/OrderManagement"
 import Wishlist from "./features/wishlist/pages/Wishlist";
 
 import Checkout from "./features/checkout/pages/Checkout";
-import OrderSuccess from "./features/checkout/pages/OrderSuccess";
+import OrderSuccess from "./features/checkout/components/OrderSuccess";
+import OrderFailed from "./features/checkout/components/OrderFailed";
 
 import MyOrders from "./features/order/pages/MyOrders";
 
@@ -42,10 +43,17 @@ import UserOrderDetails from "./features/order/pages/OrderDetails";
 
 import AdminLayout from "./features/admin/components/AdminLayout";
 import AdminDashboard from "./features/admin/pages/admin/dashboard/AdminDashboard";
+import OfferManagement from "./features/admin/pages/admin/offer/OfferManagement";
+import CouponManagement from "./features/admin/pages/admin/coupon/CouponManagement";
+import SalesReport from "./features/admin/pages/admin/sales/SalesReport";
+import ReferralOfferManagement from "./features/admin/pages/admin/referral/ReferralOfferManagement";
 
 import InventoryManagement from "./features/admin/pages/admin/inventory/InventoryManagement";
 
 import ReturnManagement from "./features/admin/pages/admin/return/ReturnManagement";
+
+import Referral from "./features/referral/pages/Referral";
+import Wallet from "./features/wallet/pages/Wallet";
 
 import ProtectedRoute from "./middleware/ProtectedRoute";
 import PublicRoute from "./middleware/PublicRoute";
@@ -58,291 +66,136 @@ function App() {
           AUTH
       ========================= */}
 
-      <Route
-        path="/login"
-        element={
-          <PublicRoute>
-            <Login />
-          </PublicRoute>
-        }
-      />
+      <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
 
-      <Route
-        path="/register"
-        element={
-          <PublicRoute>
-            <Register />
-          </PublicRoute>
-        }
-      />
+      <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
 
-      <Route
-        path="/otp-verification"
-        element={<OTPVerification />}
-      />
+      <Route path="/otp-verification" element={<OTPVerification />} />
 
-      <Route
-        path="/forgot-password"
-        element={<ForgotPassword />}
-      />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
 
-      <Route
-        path="/reset-password"
-        element={<ResetPassword />}
-      />
+      <Route path="/reset-password" element={<ResetPassword />} />
 
 
       {/* =========================
           HOME
       ========================= */}
 
-      <Route
-        path="/"
-        element={<Home />}
-      />
+      <Route path="/" element={<Home />} />
 
 
       {/* =========================
           PROFILE
       ========================= */}
 
-      <Route
-        path="/profile"
-        element={
-          <ProtectedRoute>
-            <Profile />
-          </ProtectedRoute>
-        }
-      />
+      <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
 
-      <Route
-        path="/edit-profile"
-        element={
-          <ProtectedRoute>
-            <EditProfile />
-          </ProtectedRoute>
-        }
-      />
+      <Route path="/edit-profile" element={<ProtectedRoute><EditProfile /></ProtectedRoute>} />
 
-      <Route
-        path="/change-password"
-        element={
-          <ProtectedRoute>
-            <ChangePassword />
-          </ProtectedRoute>
-        }
-      />
+      <Route path="/change-password" element={<ProtectedRoute><ChangePassword /></ProtectedRoute>} />
 
-      <Route
-        path="/address"
-        element={
-          <ProtectedRoute>
-            <Address />
-          </ProtectedRoute>
-        }
-      />
+      <Route path="/address" element={<ProtectedRoute><Address /></ProtectedRoute>} />
 
-      <Route
-        path="/address/add"
-        element={
-          <ProtectedRoute>
-            <AddEditAddress />
-          </ProtectedRoute>
-        }
-      />
+      <Route path="/address/add" element={<ProtectedRoute><AddEditAddress /></ProtectedRoute>} />
 
-      <Route
-        path="/address/edit/:id"
-        element={
-          <ProtectedRoute>
-            <AddEditAddress />
-          </ProtectedRoute>
-        }
-      />
+      <Route path="/address/edit/:id" element={<ProtectedRoute><AddEditAddress /></ProtectedRoute>} />
 
-      <Route
-        path="/email-verification"
-        element={
-          <ProtectedRoute>
-            <EmailVerification />
-          </ProtectedRoute>
-        }
-      />
+      <Route path="/email-verification" element={<ProtectedRoute><EmailVerification /></ProtectedRoute>} />
 
 
       {/* =========================
           ADMIN LOGIN
       ========================= */}
 
-      <Route
-        path="/admin/login"
-        element={
-          <PublicRoute admin>
-            <AdminLogin />
-          </PublicRoute>
-        }
-      />
+      <Route path="/admin/login" element={<PublicRoute admin><AdminLogin /></PublicRoute>} />
 
 
-{/* =========================
-    ADMIN LAYOUT
-========================= */}
+      {/* =========================
+          ADMIN LAYOUT
+      ========================= */}
 
-<Route
-  path="/admin"
-  element={
-    <ProtectedRoute admin>
-      <AdminLayout />
-    </ProtectedRoute>
-  }
->
-  {/* Dashboard */}
-  <Route
-    index
-    element={<AdminDashboard />}
-  />
+      <Route path="/admin" element={<ProtectedRoute admin><AdminLayout /></ProtectedRoute>}>
 
-  {/* Users */}
-  <Route
-    path="users"
-    element={<UserManagement />}
-  />
+        <Route index element={<AdminDashboard />} />
 
-  {/* Products */}
-  <Route
-    path="products"
-    element={<ProductManagement />}
-  />
+        <Route path="users" element={<UserManagement />} />
 
-  {/* Categories */}
-  <Route
-    path="categories"
-    element={<CategoryManagement />}
-  />
+        <Route path="products" element={<ProductManagement />} />
 
-  {/* Orders */}
-  <Route
-    path="orders"
-    element={<OrderManagement />}
-  />
+        <Route path="categories" element={<CategoryManagement />} />
 
-  {/* Order Details */}
-  <Route
-    path="orders/:id"
-    element={<AdminOrderDetails />}
-  />
+        <Route path="orders" element={<OrderManagement />} />
 
-  {/* Inventory */}
-  <Route
-    path="inventory"
-    element={<InventoryManagement />}
-  />
+        <Route path="orders/:id" element={<AdminOrderDetails />} />
 
-  {/* Returns */}
-  <Route
-    path="returns"
-    element={<ReturnManagement />}
-  />
-</Route>
+        <Route path="inventory" element={<InventoryManagement />} />
+
+        <Route path="returns" element={<ReturnManagement />} />
+
+        <Route path="offers" element={<OfferManagement />} />
+
+        <Route path="/admin/coupons" element={<CouponManagement />} />
+
+        <Route path="/admin/sales" element={<SalesReport />} />
+
+        <Route path="/admin/referrals" element={<ReferralOfferManagement />} />
+
+      </Route>
 
 
       {/* =========================
           PRODUCTS
       ========================= */}
 
-      <Route
-        path="/products"
-        element={<ProductListing />}
-      />
+      <Route path="/products" element={<ProductListing />} />
 
-      <Route
-        path="/products/:id"
-        element={<ProductDetails />}
-      />
+      <Route path="/products/:id" element={<ProductDetails />} />
 
 
       {/* =========================
           CART
       ========================= */}
 
-      <Route
-        path="/cart"
-        element={
-          <ProtectedRoute>
-            <Cart />
-          </ProtectedRoute>
-        }
-      />
+      <Route path="/cart" element={<ProtectedRoute><Cart /></ProtectedRoute>} />
 
 
       {/* =========================
           WISHLIST
       ========================= */}
 
-      <Route
-        path="/wishlist"
-        element={
-          <ProtectedRoute>
-            <Wishlist />
-          </ProtectedRoute>
-        }
-      />
+      <Route path="/wishlist" element={<ProtectedRoute><Wishlist /></ProtectedRoute>} />
 
 
       {/* =========================
           CHECKOUT
       ========================= */}
 
-      <Route
-        path="/checkout"
-        element={
-          <ProtectedRoute>
-            <Checkout />
-          </ProtectedRoute>
-        }
-      />
+      <Route path="/checkout" element={<ProtectedRoute><Checkout /></ProtectedRoute>} />
 
 
       {/* =========================
           ORDER SUCCESS
       ========================= */}
 
-      <Route
-        path="/order-success"
-        element={
-          <ProtectedRoute>
-            <OrderSuccess />
-          </ProtectedRoute>
-        }
-      />
+      <Route path="/order-success" element={<ProtectedRoute><OrderSuccess /></ProtectedRoute>} />
+      <Route path="/order-failed" element={<OrderFailed />} />
 
 
       {/* =========================
           USER ORDERS
       ========================= */}
 
-      <Route
-        path="/orders"
-        element={
-          <ProtectedRoute>
-            <MyOrders />
-          </ProtectedRoute>
-        }
-      />
+      <Route path="/orders" element={<ProtectedRoute><MyOrders /></ProtectedRoute>} />
 
-      <Route
-        path="/orders/:orderId"
-        element={
-          <ProtectedRoute>
-            <UserOrderDetails />
-          </ProtectedRoute>
-        }
-      />
+      <Route path="/orders/:orderId" element={<ProtectedRoute><UserOrderDetails /></ProtectedRoute>} />
+      
+      {/*referrel*/}
 
+      <Route path="/referral" element={ <ProtectedRoute> <Referral /> </ProtectedRoute>} />
 
+      <Route path="/wallet" element={ <ProtectedRoute> <Wallet /> </ProtectedRoute> } />
 
     </Routes>
-    
   );
 }
 

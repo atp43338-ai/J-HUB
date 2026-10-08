@@ -46,7 +46,7 @@ function PaymentMethod({
         </div>
       </label>
 
-      {/* UPI */}
+      {/* UPI / RAZORPAY */}
       <label
         className={`flex items-center gap-4 border rounded-xl p-5 mt-4 cursor-pointer transition ${
           paymentMethod === "upi"
@@ -71,15 +71,15 @@ function PaymentMethod({
           </h3>
 
           <p className="text-sm text-gray-500 mt-1">
-            Pay securely using your UPI app.
+            Pay securely using UPI through Razorpay.
           </p>
         </div>
       </label>
 
-      {/* CREDIT / DEBIT CARD */}
+      {/* WALLET */}
       <label
         className={`flex items-center gap-4 border rounded-xl p-5 mt-4 cursor-pointer transition ${
-          paymentMethod === "card"
+          paymentMethod === "wallet"
             ? "border-[#d90416] bg-red-50"
             : "border-gray-200 hover:border-gray-400"
         }`}
@@ -87,8 +87,8 @@ function PaymentMethod({
         <input
           type="radio"
           name="payment"
-          value="card"
-          checked={paymentMethod === "card"}
+          value="wallet"
+          checked={paymentMethod === "wallet"}
           onChange={(e) =>
             setPaymentMethod(e.target.value)
           }
@@ -97,14 +97,27 @@ function PaymentMethod({
 
         <div>
           <h3 className="font-semibold text-black">
-            Credit / Debit Card
+            Wallet
           </h3>
 
           <p className="text-sm text-gray-500 mt-1">
-            Pay using your credit or debit card.
+            Pay securely using your wallet balance.
           </p>
         </div>
       </label>
+
+      {/* RAZORPAY INFO */}
+      {paymentMethod === "upi" && (
+        <div className="mt-5 rounded-lg border border-gray-200 bg-gray-50 p-4">
+          <p className="text-sm text-gray-600">
+            You will be redirected to the Razorpay
+            secure payment window after clicking
+            <span className="font-semibold text-black">
+              {" "}Place Order
+            </span>.
+          </p>
+        </div>
+      )}
 
     </section>
   );

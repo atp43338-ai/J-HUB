@@ -1,3 +1,5 @@
+import "dotenv/config";
+
 import express from "express";
 import dotenv from "dotenv";
 import connectDB from "./config/db.js";
@@ -22,9 +24,21 @@ import orderRoutes from "./features/order/routes/orderRoutes.js";
 import returnRoutes from "./features/order/routes/returnRoutes.js";
 
 import adminOrderRoutes from "./features/admin/routes/adminOrderRoutes.js";
-import adminReturnRoutes from "./features/admin/routes/adminReturnRoutes.js";
+import adminReturnRoutes from "./features/admin/return/routes/adminReturnRoutes.js";
 
 import adminCollectionRoutes from "./features/admin/collection/routes/adminCollectionRoutes.js";
+
+import adminOfferRoutes from "./features/admin/offer/routes/adminOfferRoutes.js";
+import adminCouponRoutes from "./features/admin/coupon/routes/adminCouponRoutes.js";
+import adminSalesRoutes from "./features/admin/sales/routes/adminSalesRoutes.js";
+import adminReferralRoutes from "./features/admin/referral/routes/adminReferralRoutes.js";
+
+import walletRoutes from "./features/wallet/routes/walletRoutes.js";
+import referralRoutes from "./features/referral/routes/referralRoutes.js";
+
+import couponRoutes from "./features/coupon/routes/couponRoutes.js";
+
+import paymentRoutes from "./features/payment/routes/paymentRoutes.js";
 
 
 
@@ -82,6 +96,18 @@ app.use("/api/wishlist", wishlistRoutes);
 
 app.use("/api/orders", orderRoutes);
 app.use("/api/orders/return", returnRoutes);
+
+app.use("/api/admin/offers", adminOfferRoutes);
+app.use("/api/admin/coupons", adminCouponRoutes);
+app.use("/api/admin/sales", adminSalesRoutes);
+app.use("/api/admin/referrals", adminReferralRoutes);
+
+app.use("/api/wallet", walletRoutes);
+app.use("/api/referral", referralRoutes);
+
+app.use("/api/payment", paymentRoutes);
+
+app.use("/api/coupon", couponRoutes);
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);

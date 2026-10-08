@@ -10,19 +10,18 @@ import {
   googleLogin,
   changePassword,
 } from "../controllers/authController.js";
+
 import authMiddleware from "../middleware/authMiddleware.js";
 
-
 const router = express.Router();
-
 
 // Register
 router.post("/register", registerUser);
 
-// OTP Verification
+// OTP Verification - Register
 router.post("/verify-otp", verifyOTP);
 
-//resend otp
+// Resend Register OTP
 router.post("/resend-otp", resendOTP);
 
 // Login
@@ -34,11 +33,14 @@ router.post("/forgot-password", forgotPassword);
 // Reset Password
 router.post("/reset-password", resetPassword);
 
-
 // Google Login
 router.post("/google-login", googleLogin);
 
-router.patch("/change-password", authMiddleware, changePassword);
-
+// Change Password
+router.patch(
+  "/change-password",
+  authMiddleware,
+  changePassword
+);
 
 export default router;

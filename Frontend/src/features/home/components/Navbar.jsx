@@ -1,9 +1,11 @@
 import { Link, useLocation, useNavigate } from "react-router";
 import { useCart } from "../../cart/context/CartContext";
 import { useEffect, useState } from "react";
+import { getWishlist } from "../../wishlist/services/wishlistService";
 
 function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
+  const [wishlistCount, setWishlistCount] = useState(0);
 
   const token = localStorage.getItem("token");
 
@@ -11,6 +13,31 @@ function Navbar() {
 
   const location = useLocation();
   const navigate = useNavigate();
+
+  // Get wishlist count
+  const fetchWishlistCount = async () => {
+    const currentToken = localStorage.getItem("token");
+
+    if (!currentToken) {
+      setWishlistCount(0);
+      return;
+    }
+
+    try {
+      const data = await getWishlist();
+
+      setWishlistCount(
+        data?.wishlist?.products?.length || 0
+      );
+    } catch (error) {
+      console.error(
+        "Wishlist count error:",
+        error
+      );
+
+      setWishlistCount(0);
+    }
+  };
 
   // Detect scroll
   useEffect(() => {
@@ -21,7 +48,34 @@ function Navbar() {
     window.addEventListener("scroll", handleScroll);
 
     return () => {
-      window.removeEventListener("scroll", handleScroll);
+      window.removeEventListener(
+        "scroll",
+        handleScroll
+      );
+    };
+  }, []);
+
+  // Fetch wishlist count
+  useEffect(() => {
+    fetchWishlistCount();
+  }, [token]);
+
+  // Update wishlist count when wishlist changes
+  useEffect(() => {
+    const handleWishlistUpdate = () => {
+      fetchWishlistCount();
+    };
+
+    window.addEventListener(
+      "wishlistUpdated",
+      handleWishlistUpdate
+    );
+
+    return () => {
+      window.removeEventListener(
+        "wishlistUpdated",
+        handleWishlistUpdate
+      );
     };
   }, []);
 
@@ -196,29 +250,40 @@ function Navbar() {
           </Link>
 
           {/* Wishlist */}
-          <Link
-            to="/wishlist"
-            className={`transition ${textColor} hover:text-[#d90416]`}
-            title="Wishlist"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="w-5 h-5"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth="2"
+          <div className="relative">
+
+            <Link
+              to="/wishlist"
+              className={`transition ${textColor} hover:text-[#d90416]`}
+              title="Wishlist"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78Z"
-              />
-            </svg>
-          </Link>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="w-5 h-5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78Z"
+                />
+              </svg>
+            </Link>
+
+            {wishlistCount > 0 && (
+              <span className="absolute -top-3 -right-3 w-5 h-5 rounded-full bg-[#d90416] text-white text-[11px] font-bold flex items-center justify-center">
+                {wishlistCount}
+              </span>
+            )}
+
+          </div>
 
           {/* Cart */}
           <div className="relative">
+
             <Link
               to="/cart"
               className={`transition ${textColor} hover:text-[#d90416]`}
@@ -257,6 +322,7 @@ function Navbar() {
                 {cartCount}
               </span>
             )}
+
           </div>
 
           {/* Login / Profile */}

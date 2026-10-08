@@ -15,19 +15,26 @@ import {
 
 export const registerUser = async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const {
+      name,
+      email,
+      password,
+      referralCode,
+      referralToken,
+    } = req.body;
 
     if (!name || !email || !password) {
       return res.status(400).json({
         message: "Please fill all required fields",
       });
     }
-   
 
     const user = await registerUserService(
       name,
       email,
       password,
+      referralCode,
+      referralToken
     );
 
     res.status(201).json({
@@ -41,7 +48,6 @@ export const registerUser = async (req, res) => {
     });
   }
 };
-
 
 // OTP VERIFICATION
 
@@ -111,19 +117,19 @@ export const loginUser = async (req, res) => {
       email,
       password
     );
- 
+
     res.status(200).json({
       message: "Login successful",
       token: result.token,
       user: result.user,
     });
-
   } catch (error) {
     res.status(500).json({
       message: error.message,
     });
   }
 };
+
 
 
 

@@ -22,8 +22,8 @@ const userSchema = new mongoose.Schema(
     },
 
     googleId: {
-    type: String,
-    default: null,
+      type: String,
+      default: null,
     },
 
     password: {
@@ -51,14 +51,48 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+
     otp: {
       type: String,
       default: null,
     },
 
-    otpExpiresAt: {
+    loginOTP: {
+    type: String,
+    default: null,
+    },
+
+    loginOTPExpiresAt: {
     type: Date,
     default: null,
+    },
+
+    otpExpiresAt: {
+      type: Date,
+      default: null,
+    },
+
+    // Referral
+    referralCode: {
+      type: String,
+      unique: true,
+      sparse: true,
+    },
+    referralToken: {
+      type: String,
+      unique: true,
+      sparse: true,
+      },
+
+    referredBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
+    },
+
+    referralRewardClaimed: {
+      type: Boolean,
+      default: false,
     },
   },
   {

@@ -26,11 +26,6 @@ export const addToWishlistService = async (
   productId,
   size
 ) => {
-  // Check size
-  if (!size) {
-    throw new Error("Please select a size");
-  }
-
   // Check product
   const product = await Product.findById(productId);
 
@@ -43,19 +38,36 @@ export const addToWishlistService = async (
     throw new Error("Product is not available");
   }
 
-  // Check selected variant
-  const selectedVariant = product.variants?.find(
-    (variant) => variant.size === size
-  );
+  // Find selected variant
+  let selectedVariant;
 
-  if (!selectedVariant) {
-    throw new Error("Selected size is not available");
+  if (size) {
+    selectedVariant = product.variants?.find(
+      (variant) => variant.size === size
+    );
+
+    if (!selectedVariant) {
+      throw new Error("Selected size is not available");
+    }
+
+    if (selectedVariant.stock <= 0) {
+      throw new Error("Selected size is out of stock");
+    }
+  } else {
+    // Automatically select first available size
+    selectedVariant = product.variants?.find(
+      (variant) => variant.stock > 0
+    );
+
+    if (!selectedVariant) {
+      throw new Error(
+        "Product is out of stock"
+      );
+    }
   }
 
-  // Check stock
-  if (selectedVariant.stock <= 0) {
-    throw new Error("Selected size is out of stock");
-  }
+  // Use selected/automatic size
+  const selectedSize = selectedVariant.size;
 
   // Find user's wishlist
   let wishlist = await Wishlist.findOne({
@@ -69,7 +81,7 @@ export const addToWishlistService = async (
       products: [
         {
           product: productId,
-          size: size,
+          size: selectedSize,
         },
       ],
     });
@@ -84,19 +96,22 @@ export const addToWishlistService = async (
   );
 
   if (alreadyExists) {
-    throw new Error("Product already in wishlist");
+    throw new Error(
+      "Product already in wishlist"
+    );
   }
 
-  // Add product with selected size
+  // Add product with automatic size
   wishlist.products.push({
     product: productId,
-    size: size,
+    size: selectedSize,
   });
 
   await wishlist.save();
 
   return wishlist.populate("products.product");
 };
+
 
 // Remove product from wishlist
 export const removeFromWishlistService = async (

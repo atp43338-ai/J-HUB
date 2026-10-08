@@ -122,9 +122,32 @@ function ProductCard({ product }) {
           {product.name}
         </h3>
 
-        <p className="mt-2 text-xl font-bold">
-          ₹{product.price}
-        </p>
+        {/* Price */}
+        {product.offerDiscount > 0 ? (
+          <div className="mt-2">
+
+            <div className="flex items-center gap-3">
+
+              <p className="text-xl font-bold text-[#d90416]">
+                ₹{product.offerPrice}
+              </p>
+
+              <p className="text-sm text-gray-400 line-through">
+                ₹{product.price}
+              </p>
+
+            </div>
+
+            <p className="mt-1 text-sm font-semibold text-green-600">
+              {product.offerDiscount}% OFF
+            </p>
+
+          </div>
+        ) : (
+          <p className="mt-2 text-xl font-bold">
+            ₹{product.price}
+          </p>
+        )}
 
         {/* Buy Now */}
         <button

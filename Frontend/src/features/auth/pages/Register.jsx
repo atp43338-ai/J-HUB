@@ -1,28 +1,55 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router";
+
+import {
+  Link,
+  useNavigate,
+  useSearchParams,
+} from "react-router";
+
 import toast from "react-hot-toast";
 
 import RegisterImage from "../asset/Register-bg.png";
+
 import { registerUser } from "../services/authService.js";
 
 function Register() {
   const navigate = useNavigate();
 
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
+  // Referral code from URL
+  const [searchParams] = useSearchParams();
 
-  const [showPassword, setShowPassword] = useState(false);
+  const [referralCode, setReferralCode] = useState(
+    searchParams.get("ref") || ""
+  );
+
+  const [showReferralCode, setShowReferralCode] =
+    useState(false);
+
+  const [name, setName] = useState("");
+
+  const [email, setEmail] = useState("");
+
+  const [password, setPassword] = useState("");
+
+  const [confirmPassword, setConfirmPassword] =
+    useState("");
+
+  const [showPassword, setShowPassword] =
+    useState(false);
+
   const [showConfirmPassword, setShowConfirmPassword] =
     useState(false);
 
   // Password rules
   const passwordRules = {
     length: password.length >= 8,
+
     uppercase: /[A-Z]/.test(password),
+
     lowercase: /[a-z]/.test(password),
+
     number: /[0-9]/.test(password),
+
     special: /[@$!%*?&]/.test(password),
   };
 
@@ -37,13 +64,21 @@ function Register() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!name || !email || !password || !confirmPassword) {
+    if (
+      !name ||
+      !email ||
+      !password ||
+      !confirmPassword
+    ) {
       toast.error("Please fill all fields");
       return;
     }
 
     // Strong password validation
     if (!isPasswordValid) {
+      toast.error(
+        "Password must contain 8 characters, uppercase, lowercase, number and special character"
+      );
       return;
     }
 
@@ -57,7 +92,9 @@ function Register() {
       await registerUser(
         name,
         email,
-        password
+        password,
+        referralCode.trim() || undefined,
+        undefined
       );
 
       toast.success("Registration successful");
@@ -69,7 +106,11 @@ function Register() {
         },
       });
     } catch (error) {
-      console.error("Registration error:", error);
+      console.error(
+        "Registration error:",
+        error
+      );
+
       toast.error(error.message);
     }
   };
@@ -79,7 +120,6 @@ function Register() {
       <div className="fixed inset-0 w-full h-full overflow-hidden">
 
         {/* Background Image */}
-
         <img
           src={RegisterImage}
           alt="J-HUB background"
@@ -87,7 +127,6 @@ function Register() {
         />
 
         {/* J-HUB Logo */}
-
         <div className="absolute top-[0%] left-[7%] z-10">
           <h1 className="text-[42px] leading-none font-black tracking-tight">
             <span className="text-black">
@@ -101,23 +140,20 @@ function Register() {
         </div>
 
         {/* Registration Content */}
-
-        <div className="absolute z-20 left-[12%] top-[24%] w-[30%]">
+        <div className="absolute z-20 left-[12%] top-[21%] w-[30%]">
 
           <h2 className="mt-3 text-[15px] font-semibold !text-black">
             Registration
           </h2>
 
           {/* Registration Form */}
-
           <form
             onSubmit={handleSubmit}
             autoComplete="off"
-            className="mt-6 space-y-3"
+            className="mt-4 space-y-2.5"
           >
 
             {/* Name */}
-
             <input
               type="text"
               value={name}
@@ -127,7 +163,7 @@ function Register() {
               placeholder="Enter your name"
               className="
                 w-full
-                h-[52px]
+                h-[48px]
                 rounded-[14px]
                 border
                 border-black
@@ -143,7 +179,6 @@ function Register() {
             />
 
             {/* Email */}
-
             <input
               type="email"
               value={email}
@@ -154,7 +189,7 @@ function Register() {
               placeholder="Enter your email"
               className="
                 w-full
-                h-[52px]
+                h-[48px]
                 rounded-[14px]
                 border
                 border-black
@@ -170,9 +205,7 @@ function Register() {
             />
 
             {/* Password */}
-
             <div>
-
               <div className="relative">
 
                 <input
@@ -189,7 +222,7 @@ function Register() {
                   placeholder="Enter your password"
                   className="
                     w-full
-                    h-[52px]
+                    h-[48px]
                     rounded-[14px]
                     border
                     border-black
@@ -206,11 +239,12 @@ function Register() {
                 />
 
                 {/* Show / Hide Password */}
-
                 <button
                   type="button"
                   onClick={() =>
-                    setShowPassword(!showPassword)
+                    setShowPassword(
+                      !showPassword
+                    )
                   }
                   className="
                     absolute
@@ -268,11 +302,11 @@ function Register() {
               </div>
 
               {/* Compact Password Rules */}
-
               {password && !isPasswordValid && (
                 <p className="mt-1 ml-1 text-[10px] leading-4 text-red-500">
-                  8+ characters • Uppercase • Lowercase •
-                  Number • Special character
+                  8+ characters • Uppercase •
+                  Lowercase • Number • Special
+                  character
                 </p>
               )}
 
@@ -281,11 +315,9 @@ function Register() {
                   ✓ Strong password
                 </p>
               )}
-
             </div>
 
             {/* Confirm Password */}
-
             <div className="relative">
 
               <input
@@ -296,12 +328,14 @@ function Register() {
                 }
                 value={confirmPassword}
                 onChange={(e) =>
-                  setConfirmPassword(e.target.value)
+                  setConfirmPassword(
+                    e.target.value
+                  )
                 }
                 placeholder="Confirm your password"
                 className="
                   w-full
-                  h-[52px]
+                  h-[48px]
                   rounded-[14px]
                   border
                   border-black
@@ -318,7 +352,6 @@ function Register() {
               />
 
               {/* Show / Hide Confirm Password */}
-
               <button
                 type="button"
                 onClick={() =>
@@ -379,17 +412,66 @@ function Register() {
                   </svg>
                 )}
               </button>
+            </div>
+
+            {/* Referral Code */}
+            <div className="mt-1">
+
+              <button
+                type="button"
+                onClick={() =>
+                  setShowReferralCode(
+                    !showReferralCode
+                  )
+                }
+                className="
+                  text-[12px]
+                  text-[#d90416]
+                  font-semibold
+                  hover:underline
+                "
+              >
+                Referral Code
+              </button>
+
+              {showReferralCode && (
+                <input
+                  type="text"
+                  value={referralCode}
+                  onChange={(e) =>
+                    setReferralCode(
+                      e.target.value.toUpperCase()
+                    )
+                  }
+                  placeholder="Enter referral code"
+                  className="
+                    mt-2
+                    w-full
+                    h-[46px]
+                    rounded-[10px]
+                    border
+                    border-black
+                    bg-white
+                    px-4
+                    text-[13px]
+                    text-black
+                    placeholder-[#777]
+                    outline-none
+                    focus:border-[#d90416]
+                    transition
+                  "
+                />
+              )}
 
             </div>
 
             {/* Create Account */}
-
             <button
               type="submit"
               className="
                 w-full
-                h-[55px]
-                mt-2
+                h-[48px]
+                mt-1
                 rounded-[14px]
                 bg-[#d90416]
                 hover:bg-[#b90312]
@@ -400,6 +482,7 @@ function Register() {
               "
             >
               Create Account
+
               <span className="ml-3 text-xl">
                 →
               </span>
@@ -408,8 +491,8 @@ function Register() {
           </form>
 
           {/* Login Link */}
+          <p className="text-center text-[14px] text-black font-semibold mt-3">
 
-          <p className="text-center text-[15px] text-black font-semibold mt-4">
             Already have an account?{" "}
 
             <Link
@@ -422,6 +505,7 @@ function Register() {
           </p>
 
         </div>
+
       </div>
     </div>
   );

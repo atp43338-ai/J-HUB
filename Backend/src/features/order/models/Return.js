@@ -29,6 +29,23 @@ const returnSchema = new mongoose.Schema(
       enum: ["requested", "approved", "rejected"],
       default: "requested",
     },
+
+    // REFUND TRACKING
+    refundProcessed: {
+      type: Boolean,
+      default: false,
+    },
+
+    refundAmount: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+
+    refundedAt: {
+      type: Date,
+      default: null,
+    },
   },
   {
     timestamps: true,

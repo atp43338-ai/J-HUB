@@ -43,12 +43,6 @@ export const addToWishlist = async (req, res) => {
       });
     }
 
-    if (!size) {
-      return res.status(400).json({
-        message: "Please select a size",
-      });
-    }
-
     const wishlist = await addToWishlistService(
       userId,
       productId,
@@ -73,6 +67,9 @@ export const addToWishlist = async (req, res) => {
     });
   }
 };
+
+
+
 
 // Remove product from wishlist
 export const removeFromWishlist = async (

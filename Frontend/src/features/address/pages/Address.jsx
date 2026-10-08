@@ -15,6 +15,9 @@ function Address() {
 
   const navigate = useNavigate();
 
+  // DELETE MODAL STATE
+  const [deleteId, setDeleteId] = useState(null);
+
   // GET ADDRESSES
   useEffect(() => {
     const fetchAddresses = async () => {
@@ -41,11 +44,12 @@ function Address() {
 
   // DELETE ADDRESS
   const handleDelete = async (id) => {
-    const confirmDelete = window.confirm(
-      "Are you sure you want to delete this address?"
-    );
+    setDeleteId(id);
+  };
 
-    if (!confirmDelete) {
+  // CONFIRM DELETE
+  const confirmDelete = async () => {
+    if (!deleteId) {
       return;
     }
 
@@ -58,16 +62,21 @@ function Address() {
         return;
       }
 
-      await deleteAddress(token, id);
+      await deleteAddress(token, deleteId);
 
       toast.success("Address deleted successfully");
 
       setAddresses((prevAddresses) =>
-        prevAddresses.filter((address) => address._id !== id)
+        prevAddresses.filter(
+          (address) => address._id !== deleteId
+        )
       );
+
+      setDeleteId(null);
     } catch (error) {
       console.error("Delete address error:", error);
       toast.error(error.message);
+      setDeleteId(null);
     }
   };
 
@@ -82,55 +91,125 @@ function Address() {
   };
 
   return (
-    
-    <ProfileLayout
-      title="My"
-      highlight="Address"
-      description="Manage your delivery addresses"
-    >
-      <div className="flex items-start justify-between gap-5">
-        <ProfileHeader
-          title="Delivery"
-          highlight="Addresses"
-          description="Manage your saved delivery addresses"
-        />
+    <>
+      {/* DELETE CONFIRMATION MODAL */}
+      {deleteId && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 px-4">
+          <div className="w-full max-w-sm bg-white rounded-xl shadow-2xl p-6 text-center">
 
-        <button
-          type="button"
-          onClick={handleAdd}
-          className="
-            h-[46px]
-            px-6
-            rounded-lg
-            bg-[#d90416]
-            hover:bg-[#b90312]
-            text-white
-            text-sm
-            font-semibold
-            transition
-            flex-shrink-0
-          "
-        >
-          + Add Address
-        </button>
-      </div>
+            {/* Warning Icon */}
+            <div className="mx-auto w-14 h-14 rounded-full bg-red-100 flex items-center justify-center">
+              <div className="w-8 h-8 rounded-full bg-red-500 text-white flex items-center justify-center text-xl font-bold">
+                ×
+              </div>
+            </div>
 
-      {addresses.length === 0 ? (
-        <AddressEmptyState onAdd={handleAdd} />
-      ) : (
-        <div className="grid grid-cols-1 gap-5">
-          {addresses.map((address) => (
-            <AddressCard
-              key={address._id}
-              address={address}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
-            />
-          ))}
+            {/* Title */}
+            <h3 className="mt-4 text-lg font-semibold text-gray-900">
+              Delete Address
+            </h3>
+
+            {/* Message */}
+            <p className="mt-2 text-sm text-gray-500">
+              Are you sure you want to delete this address?
+            </p>
+
+            {/* Buttons */}
+            <div className="flex gap-3 mt-6">
+
+              {/* Cancel */}
+              <button
+                type="button"
+                onClick={() => setDeleteId(null)}
+                className="
+                  flex-1
+                  h-10
+                  rounded-lg
+                  border
+                  border-gray-200
+                  text-gray-700
+                  text-sm
+                  font-semibold
+                  hover:bg-gray-50
+                  transition
+                "
+              >
+                Cancel
+              </button>
+
+              {/* Delete */}
+              <button
+                type="button"
+                onClick={confirmDelete}
+                className="
+                  flex-1
+                  h-10
+                  rounded-lg
+                  bg-[#d90416]
+                  hover:bg-[#b90312]
+                  text-white
+                  text-sm
+                  font-semibold
+                  transition
+                "
+              >
+                Delete
+              </button>
+
+            </div>
+
+          </div>
         </div>
       )}
-    </ProfileLayout>
-    
+
+      <ProfileLayout
+        title="My"
+        highlight="Address"
+        description="Manage your delivery addresses"
+      >
+        <div className="flex items-start justify-between gap-5">
+          <ProfileHeader
+            title="Delivery"
+            highlight="Addresses"
+            description="Manage your saved delivery addresses"
+          />
+
+          <button
+            type="button"
+            onClick={handleAdd}
+            className="
+              h-[46px]
+              px-6
+              rounded-lg
+              bg-[#d90416]
+              hover:bg-[#b90312]
+              text-white
+              text-sm
+              font-semibold
+              transition
+              flex-shrink-0
+            "
+          >
+            + Add Address
+          </button>
+        </div>
+
+        {addresses.length === 0 ? (
+          <AddressEmptyState onAdd={handleAdd} />
+        ) : (
+          <div className="grid grid-cols-1 gap-5">
+            {addresses.map((address) => (
+              <AddressCard
+                key={address._id}
+                address={address}
+                onEdit={handleEdit}
+                onDelete={handleDelete}
+              />
+            ))}
+          </div>
+        )}
+      </ProfileLayout>
+    </>
   );
 }
 

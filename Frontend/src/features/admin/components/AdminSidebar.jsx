@@ -33,8 +33,20 @@ function AdminSidebar({ isOpen, setIsOpen }) {
       path: "/admin/coupons",
     },
     {
+      name: "Offer Management",
+      path: "/admin/offers",
+    },
+    {
       name: "Return Management",
       path: "/admin/returns",
+    },
+    {
+      name: "Sales Report",
+      path: "/admin/sales",
+    },
+    {
+      name: "Rferral Management",
+      path: "/admin/referrals",
     },
   ];
 

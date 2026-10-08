@@ -3,7 +3,10 @@ import { Link, useNavigate, Navigate } from "react-router";
 import { GoogleLogin } from "@react-oauth/google";
 import toast from "react-hot-toast";
 
-import { loginUser, googleLoginUser } from "../services/authService.js";
+import {
+  loginUser,
+  googleLoginUser,
+} from "../services/authService.js";
 
 import loginImage from "../asset/Login-bg.png";
 
@@ -37,11 +40,15 @@ function Login() {
 
       const data = await loginUser(email, password);
 
+      // Save JWT token after successful login
       localStorage.setItem("token", data.token);
 
       toast.success("Login successful");
 
-      navigate("/", { replace: true });
+      // Go directly to home page
+      navigate("/", {
+        replace: true,
+      });
     } catch (error) {
       console.error("Login error:", error);
 
@@ -98,7 +105,11 @@ function Login() {
           Login
         </h2>
 
-        <form onSubmit={handleSubmit} autoComplete="off" className="mt-6 space-y-4">
+        <form
+          onSubmit={handleSubmit}
+          autoComplete="off"
+          className="mt-6 space-y-4"
+        >
 
           {/* Email */}
 
@@ -261,7 +272,10 @@ function Login() {
             "
           >
             {loading ? "Logging in..." : "Login"}
-            {!loading && <span className="ml-3 text-xl">→</span>}
+
+            {!loading && (
+              <span className="ml-3 text-xl">→</span>
+            )}
           </button>
 
         </form>
@@ -298,12 +312,14 @@ function Login() {
 
         <p className="text-center text-[15px] text-black font-semibold mt-4">
           Don't have an account?{" "}
+
           <Link
             to="/register"
             className="text-[#d90416] font-semibold hover:underline"
           >
             Register
           </Link>
+
         </p>
 
       </div>

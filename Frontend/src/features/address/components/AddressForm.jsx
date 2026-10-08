@@ -20,11 +20,50 @@ function AddressForm({
   loading,
   isEdit,
 }) {
+  // Phone validation
+  const handlePhoneChange = (e) => {
+    const value = e.target.value;
+
+    if (/^\d{0,10}$/.test(value)) {
+      setPhone(value);
+    }
+  };
+
+  // Pincode validation
+  const handlePincodeChange = (e) => {
+    const value = e.target.value;
+
+    if (/^\d{0,6}$/.test(value)) {
+      setPincode(value);
+    }
+  };
+
+  // Submit validation
+  const handleFormSubmit = (e) => {
+    e.preventDefault();
+
+    if (!/^[6-9]\d{9}$/.test(phone)) {
+      alert("Please enter a valid 10-digit phone number");
+      return;
+    }
+
+    if (!/^\d{6}$/.test(pincode)) {
+      alert("Please enter a valid 6-digit pincode");
+      return;
+    }
+
+    onSubmit(e);
+  };
+
   return (
-    <form onSubmit={onSubmit} className="space-y-6">
+    <form
+      onSubmit={handleFormSubmit}
+      className="space-y-6"
+    >
 
       {/* Name + Phone */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+
         <AddressField
           label="Full Name"
           value={name}
@@ -35,10 +74,11 @@ function AddressForm({
         <AddressField
           label="Phone Number"
           value={phone}
-          onChange={(e) => setPhone(e.target.value)}
+          onChange={handlePhoneChange}
           type="tel"
           placeholder="Enter phone number"
         />
+
       </div>
 
       {/* Address */}
@@ -74,6 +114,7 @@ function AddressForm({
 
       {/* City + State */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+
         <AddressField
           label="City"
           value={city}
@@ -87,30 +128,37 @@ function AddressForm({
           onChange={(e) => setState(e.target.value)}
           placeholder="Enter state"
         />
+
       </div>
 
       {/* Pincode */}
       <div className="md:w-1/2">
+
         <AddressField
           label="Pincode"
           value={pincode}
-          onChange={(e) => setPincode(e.target.value)}
+          onChange={handlePincodeChange}
           placeholder="Enter pincode"
         />
+
       </div>
 
       {/* Default Address */}
       <label className="flex items-center gap-3 cursor-pointer">
+
         <input
           type="checkbox"
           checked={isDefault}
-          onChange={(e) => setIsDefault(e.target.checked)}
+          onChange={(e) =>
+            setIsDefault(e.target.checked)
+          }
           className="w-4 h-4 accent-[#d90416]"
         />
 
         <span className="text-sm text-gray-700">
           Set as default address
         </span>
+
       </label>
 
       {/* Buttons */}

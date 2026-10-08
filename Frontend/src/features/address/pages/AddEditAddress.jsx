@@ -50,6 +50,12 @@ function AddEditAddress() {
   const [pageLoading, setPageLoading] = useState(false);
 
   // -----------------------------------
+  // Modal state
+  // -----------------------------------
+
+  const [errorMessage, setErrorMessage] = useState("");
+
+  // -----------------------------------
   // Fetch address when editing
   // -----------------------------------
 
@@ -117,6 +123,14 @@ function AddEditAddress() {
       return;
     }
 
+    // Phone must be exactly 10 digits
+    if (!/^[6-9]\d{9}$/.test(phone.trim())) {
+      setErrorMessage(
+        "Please enter a valid 10-digit phone number"
+      );
+      return;
+    }
+
     if (!address.trim()) {
       toast.error("Please enter address");
       return;
@@ -134,6 +148,14 @@ function AddEditAddress() {
 
     if (!pincode.trim()) {
       toast.error("Please enter pincode");
+      return;
+    }
+
+    // Pincode must be exactly 6 digits
+    if (!/^\d{6}$/.test(pincode.trim())) {
+      setErrorMessage(
+        "Please enter a valid 6-digit pincode"
+      );
       return;
     }
 
@@ -260,6 +282,55 @@ function AddEditAddress() {
           : "Add a new delivery address"
       }
     >
+      {/* -----------------------------------
+          Validation Modal
+      ----------------------------------- */}
+
+      {errorMessage && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 px-4">
+          <div className="w-full max-w-sm bg-white rounded-xl shadow-2xl p-6 text-center">
+
+            {/* Error Icon */}
+            <div className="mx-auto w-14 h-14 rounded-full bg-red-100 flex items-center justify-center">
+              <div className="w-8 h-8 rounded-full bg-red-500 text-white flex items-center justify-center text-xl font-bold">
+                ×
+              </div>
+            </div>
+
+            {/* Title */}
+            <h3 className="mt-4 text-lg font-semibold text-gray-900">
+              Invalid Details
+            </h3>
+
+            {/* Message */}
+            <p className="mt-2 text-sm text-gray-500">
+              {errorMessage}
+            </p>
+
+            {/* OK Button */}
+            <button
+              type="button"
+              onClick={() => setErrorMessage("")}
+              className="
+                mt-5
+                w-full
+                h-10
+                rounded-lg
+                bg-[#d90416]
+                hover:bg-[#b90312]
+                text-white
+                text-sm
+                font-semibold
+                transition
+              "
+            >
+              OK
+            </button>
+
+          </div>
+        </div>
+      )}
+
       <ProfileHeader
         title={id ? "Edit" : "Add"}
         highlight="Address"

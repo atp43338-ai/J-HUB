@@ -141,3 +141,91 @@ export const returnOrder = async (orderId, reason) => {
 export const downloadInvoice = async (orderId) => {
   // Backend later
 };
+
+// CREATE FAILED PAYMENT ORDER
+
+export const createFailedPaymentOrder = async (
+  orderData
+) => {
+  const token = localStorage.getItem("token");
+
+  const response = await fetch(
+    `${API_URL}/failed-payment`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(orderData),
+    }
+  );
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(
+      data.message ||
+        "Failed to create payment failed order"
+    );
+  }
+
+  return data;
+};
+
+
+// RETRY PAYMENT ORDER
+
+export const retryPaymentOrder = async (
+  orderId
+) => {
+  const token = localStorage.getItem("token");
+
+  const response = await fetch(
+    `${API_URL}/${orderId}/retry-payment`,
+    {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(
+      data.message ||
+        "Payment retry is not available"
+    );
+  }
+
+  return data;
+};
+
+
+
+
+export const completeRetryPaymentOrder = async (orderId) => {
+  const token = localStorage.getItem("token");
+
+  const response = await fetch(
+    `${API_URL}/${orderId}/complete-retry-payment`,
+    {
+      method: "PATCH",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(
+      data.message || "Failed to complete retry payment"
+    );
+  }
+
+  return data;
+};

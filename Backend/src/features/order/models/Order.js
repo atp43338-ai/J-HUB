@@ -110,7 +110,7 @@ const orderSchema = new mongoose.Schema(
     // Payment
     paymentMethod: {
       type: String,
-      enum: ["COD"],
+      enum: ["COD", "UPI", "CARD","WALLET"],
       required: true,
     },
 
@@ -120,6 +120,12 @@ const orderSchema = new mongoose.Schema(
       default: "pending",
     },
 
+    // Payment retry
+paymentRetryExpiresAt: {
+  type: Date,
+  default: null,
+},
+
     // Price details
     subtotal: {
       type: Number,
@@ -127,6 +133,11 @@ const orderSchema = new mongoose.Schema(
     },
 
     discount: {
+      type: Number,
+      default: 0,
+    },
+
+    couponDiscount: {
       type: Number,
       default: 0,
     },

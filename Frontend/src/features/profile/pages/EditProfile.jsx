@@ -67,6 +67,16 @@ function EditProfile() {
       return;
     }
 
+    // Phone number validation
+    const phoneRegex = /^[6-9]\d{9}$/;
+
+    if (!phoneRegex.test(phone)) {
+      toast.error(
+        "Please enter a valid 10-digit phone number"
+      );
+      return;
+    }
+
     try {
       const token = localStorage.getItem("token");
 
