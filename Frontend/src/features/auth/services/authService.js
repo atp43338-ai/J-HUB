@@ -1,5 +1,7 @@
-//for register
+import { api } from "../../../services/api";
 
+
+// Register
 export const registerUser = async (
   name,
   email,
@@ -7,241 +9,106 @@ export const registerUser = async (
   referralCode,
   referralToken
 ) => {
-  const response = await fetch(
-    "http://localhost:5000/api/auth/register",
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        name,
-        email,
-        password,
-        referralCode,
-        referralToken,
-      }),
-    }
-  );
-
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(data.message);
-  }
-
-  return data;
+  return api("/auth/register", {
+    method: "POST",
+    body: JSON.stringify({
+      name,
+      email,
+      password,
+      referralCode,
+      referralToken,
+    }),
+  });
 };
 
 
-// for login.
-
+// Login
 export const loginUser = async (email, password) => {
-  const response = await fetch(
-    "http://localhost:5000/api/auth/login",
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        email,
-        password,
-      }),
-    }
-  );
-
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(data.message);
-  }
-
-  return data;
+  return api("/auth/login", {
+    method: "POST",
+    body: JSON.stringify({
+      email,
+      password,
+    }),
+  });
 };
 
 
 // Verify Login OTP
-export const verifyLoginOTP = async (
-  email,
-  otp
-) => {
-  const response = await fetch(
-    "http://localhost:5000/api/auth/verify-login-otp",
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        email,
-        otp,
-      }),
-    }
-  );
-
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(data.message);
-  }
-
-  return data;
+export const verifyLoginOTP = async (email, otp) => {
+  return api("/auth/verify-login-otp", {
+    method: "POST",
+    body: JSON.stringify({
+      email,
+      otp,
+    }),
+  });
 };
 
 
 // Resend Login OTP
 export const resendLoginOTP = async (email) => {
-  const response = await fetch(
-    "http://localhost:5000/api/auth/resend-login-otp",
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        email,
-      }),
-    }
-  );
-
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(data.message);
-  }
-
-  return data;
+  return api("/auth/resend-login-otp", {
+    method: "POST",
+    body: JSON.stringify({
+      email,
+    }),
+  });
 };
 
 
-// for direct googol login.
+// Google Login
 export const googleLoginUser = async (credential) => {
-  const response = await fetch(
-    "http://localhost:5000/api/auth/google-login",
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        credential,
-      }),
-    }
-  );
-
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(data.message);
-  }
-
-  return data;
+  return api("/auth/google-login", {
+    method: "POST",
+    body: JSON.stringify({
+      credential,
+    }),
+  });
 };
 
-// for forgot password.
 
+// Forgot Password
 export const forgotPassword = async (email) => {
-  const response = await fetch(
-    "http://localhost:5000/api/auth/forgot-password",
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ email }),
-    }
-  );
-
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(data.message);
-  }
-
-  return data;
+  return api("/auth/forgot-password", {
+    method: "POST",
+    body: JSON.stringify({
+      email,
+    }),
+  });
 };
 
 
-
-// for otp-verification
-
-
-
+// OTP Verification
 export const verifyOTP = async (email, otp) => {
-  const response = await fetch(
-    "http://localhost:5000/api/auth/verify-otp",
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        email,
-        otp,
-      }),
-    }
-  );
-
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(data.message);
-  }
-
-  return data;
+  return api("/auth/verify-otp", {
+    method: "POST",
+    body: JSON.stringify({
+      email,
+      otp,
+    }),
+  });
 };
 
-//resend otp
 
+// Resend OTP
 export const resendOTP = async (email) => {
-  const response = await fetch(
-    "http://localhost:5000/api/auth/resend-otp",
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        email,
-      }),
-    }
-  );
-
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(data.message);
-  }
-
-  return data;
+  return api("/auth/resend-otp", {
+    method: "POST",
+    body: JSON.stringify({
+      email,
+    }),
+  });
 };
 
 
-// for reset password
-
-
-
+// Reset Password
 export const resetPassword = async (email, password) => {
-  const response = await fetch(
-    "http://localhost:5000/api/auth/reset-password",
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        email,
-        password,
-      }),
-    }
-  );
-
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(data.message);
-  }
-
-  return data;
+  return api("/auth/reset-password", {
+    method: "POST",
+    body: JSON.stringify({
+      email,
+      password,
+    }),
+  });
 };

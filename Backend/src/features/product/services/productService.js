@@ -13,21 +13,30 @@ const applyProductOffers = async (products) => {
 
   const now = new Date();
 
-  const offers = await Offer.find({
-    status: true,
-    startDate: { $lte: now },
-    endDate: { $gte: now },
-    $or: [
-      {
-        type: "Product",
-        targetId: { $in: productIds },
+
+
+const offers = await Offer.find({
+  status: true,
+  startDate: { $lte: now },
+  endDate: { $gte: now },
+  $or: [
+    {
+      type: "Product",
+      $expr: {
+        $in: [
+          { $toString: "$targetId" },
+          productIds.map((id) => id.toString()),
+        ],
       },
-      {
-        type: "Category",
-        targetId: { $in: categories },
-      },
-    ],
-  });
+    },
+    {
+      type: "Category",
+      targetId: { $in: categories },
+    },
+  ],
+});
+
+
 
   return products.map((product) => {
     const productData = product.toObject();

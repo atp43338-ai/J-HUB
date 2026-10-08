@@ -1,7 +1,7 @@
-const API_URL = "http://localhost:5000/api/payment";
+import { api } from "../../../services/api";
 
 export const createPaymentOrder = async (amount, token) => {
-  const response = await fetch(`${API_URL}/create-order`, {
+  return api("/payment/create-order", {
     method: "POST",
 
     headers: {
@@ -13,16 +13,7 @@ export const createPaymentOrder = async (amount, token) => {
       amount,
     }),
   });
-
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(data.message || "Failed to create payment order");
-  }
-
-  return data;
 };
-
 
 
 
@@ -30,27 +21,14 @@ export const verifyPayment = async (
   paymentData,
   token
 ) => {
-  const response = await fetch(
-    `${API_URL}/verify`,
-    {
-      method: "POST",
+  return api("/payment/verify", {
+    method: "POST",
 
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
 
-      body: JSON.stringify(paymentData),
-    }
-  );
-
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(
-      data.message || "Payment verification failed"
-    );
-  }
-
-  return data;
+    body: JSON.stringify(paymentData),
+  });
 };

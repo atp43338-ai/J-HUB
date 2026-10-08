@@ -1,4 +1,4 @@
-const API_URL = "http://localhost:5000/api/coupon";
+import { api } from "../../../services/api";
 
 // APPLY COUPON
 export const applyCoupon = async (
@@ -7,32 +7,19 @@ export const applyCoupon = async (
 ) => {
   const token = localStorage.getItem("token");
 
-  const response = await fetch(
-    `${API_URL}/apply`,
-    {
-      method: "POST",
+  return api("/coupon/apply", {
+    method: "POST",
 
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
 
-      body: JSON.stringify({
-        code,
-        subtotal,
-      }),
-    }
-  );
-
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(
-      data.message || "Failed to apply coupon"
-    );
-  }
-
-  return data;
+    body: JSON.stringify({
+      code,
+      subtotal,
+    }),
+  });
 };
 
 
@@ -40,25 +27,11 @@ export const applyCoupon = async (
 export const getAvailableCoupons = async () => {
   const token = localStorage.getItem("token");
 
-  const response = await fetch(
-    `${API_URL}/available`,
-    {
-      method: "GET",
+  return api("/coupon/available", {
+    method: "GET",
 
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    }
-  );
-
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(
-      data.message ||
-        "Failed to fetch available coupons"
-    );
-  }
-
-  return data;
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
 };
