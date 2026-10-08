@@ -13,7 +13,7 @@ import upload from "../middleware/uploadMiddleware.js";
 
 const router = express.Router();
 
-
+router.use(authMiddleware);
 // Get logged-in user profile
 router.get("/", authMiddleware, getProfile);
 

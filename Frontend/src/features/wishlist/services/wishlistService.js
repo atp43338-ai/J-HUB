@@ -1,35 +1,29 @@
-const API_URL = "http://localhost:5000/api/wishlist";
+import { api } from "../../../services/api";
 
 const getToken = () => {
   return localStorage.getItem("token");
 };
 
+
 // Get wishlist
 export const getWishlist = async () => {
-  const response = await fetch(API_URL, {
+  const response = await api("/wishlist", {
     method: "GET",
     headers: {
       Authorization: `Bearer ${getToken()}`,
     },
   });
 
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(
-      data.message || "Failed to fetch wishlist"
-    );
-  }
-
-  return data;
+  return response;
 };
+
 
 // Add product to wishlist
 export const addToWishlist = async (
   productId,
   size
 ) => {
-  const response = await fetch(API_URL, {
+  const response = await api("/wishlist", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -41,24 +35,16 @@ export const addToWishlist = async (
     }),
   });
 
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(
-      data.message ||
-        "Failed to add product to wishlist"
-    );
-  }
-
-  return data;
+  return response;
 };
+
 
 // Remove product from wishlist
 export const removeFromWishlist = async (
   productId
 ) => {
-  const response = await fetch(
-    `${API_URL}/${productId}`,
+  const response = await api(
+    `/wishlist/${productId}`,
     {
       method: "DELETE",
       headers: {
@@ -67,35 +53,18 @@ export const removeFromWishlist = async (
     }
   );
 
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(
-      data.message ||
-        "Failed to remove product from wishlist"
-    );
-  }
-
-  return data;
+  return response;
 };
+
 
 // Clear wishlist
 export const clearWishlist = async () => {
-  const response = await fetch(API_URL, {
+  const response = await api("/wishlist", {
     method: "DELETE",
     headers: {
       Authorization: `Bearer ${getToken()}`,
     },
   });
 
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(
-      data.message ||
-        "Failed to clear wishlist"
-    );
-  }
-
-  return data;
+  return response;
 };

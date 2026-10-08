@@ -1,10 +1,15 @@
-const API_URL = "http://localhost:5000/api/orders";
+import { api } from "../../../services/api";
+
+const getToken = () => {
+  return localStorage.getItem("token");
+};
+
 
 // CREATE ORDER
 export const createOrder = async (orderData) => {
-  const token = localStorage.getItem("token");
+  const token = getToken();
 
-  const response = await fetch(API_URL, {
+  return api("/orders", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -12,100 +17,62 @@ export const createOrder = async (orderData) => {
     },
     body: JSON.stringify(orderData),
   });
-
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(data.message || "Failed to place order");
-  }
-
-  return data;
 };
 
 
 // GET SINGLE ORDER
 export const getOrderById = async (orderId) => {
-  const token = localStorage.getItem("token");
+  const token = getToken();
 
-  const response = await fetch(`${API_URL}/${orderId}`, {
+  return api(`/orders/${orderId}`, {
     method: "GET",
     headers: {
       Authorization: `Bearer ${token}`,
     },
   });
-
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(data.message || "Failed to fetch order");
-  }
-
-  return data;
 };
 
 
 // GET ALL ORDERS
 export const getOrders = async () => {
-  const token = localStorage.getItem("token");
+  const token = getToken();
 
-  const response = await fetch(API_URL, {
+  return api("/orders", {
     method: "GET",
     headers: {
       Authorization: `Bearer ${token}`,
     },
   });
-
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(data.message || "Failed to fetch orders");
-  }
-
-  return data;
 };
 
 
 // CANCEL ORDER
 export const cancelOrder = async (orderId, reason) => {
-  const token = localStorage.getItem("token");
+  const token = getToken();
 
-  const response = await fetch(
-    `${API_URL}/${orderId}/cancel`,
-    {
-      method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({
-        reason,
-      }),
-    }
-  );
-
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(
-      data.message || "Failed to cancel order"
-    );
-  }
-
-  return data;
+  return api(`/orders/${orderId}/cancel`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({
+      reason,
+    }),
+  });
 };
 
 
 // CANCEL SPECIFIC ORDER ITEM
-
 export const cancelOrderItem = async (
   orderId,
   itemId,
   reason
 ) => {
-  const token = localStorage.getItem("token");
+  const token = getToken();
 
-  const response = await fetch(
-    `${API_URL}/${orderId}/items/${itemId}/cancel`,
+  return api(
+    `/orders/${orderId}/items/${itemId}/cancel`,
     {
       method: "PATCH",
       headers: {
@@ -117,17 +84,6 @@ export const cancelOrderItem = async (
       }),
     }
   );
-
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(
-      data.message ||
-        "Failed to cancel product"
-    );
-  }
-
-  return data;
 };
 
 
@@ -142,75 +98,43 @@ export const downloadInvoice = async (orderId) => {
   // Backend later
 };
 
-// CREATE FAILED PAYMENT ORDER
 
+// CREATE FAILED PAYMENT ORDER
 export const createFailedPaymentOrder = async (
   orderData
 ) => {
-  const token = localStorage.getItem("token");
+  const token = getToken();
 
-  const response = await fetch(
-    `${API_URL}/failed-payment`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify(orderData),
-    }
-  );
-
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(
-      data.message ||
-        "Failed to create payment failed order"
-    );
-  }
-
-  return data;
+  return api("/orders/failed-payment", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(orderData),
+  });
 };
 
 
 // RETRY PAYMENT ORDER
+export const retryPaymentOrder = async (orderId) => {
+  const token = getToken();
 
-export const retryPaymentOrder = async (
-  orderId
-) => {
-  const token = localStorage.getItem("token");
-
-  const response = await fetch(
-    `${API_URL}/${orderId}/retry-payment`,
-    {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    }
-  );
-
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(
-      data.message ||
-        "Payment retry is not available"
-    );
-  }
-
-  return data;
+  return api(`/orders/${orderId}/retry-payment`, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
 };
 
 
-
-
+// COMPLETE RETRY PAYMENT ORDER
 export const completeRetryPaymentOrder = async (orderId) => {
-  const token = localStorage.getItem("token");
+  const token = getToken();
 
-  const response = await fetch(
-    `${API_URL}/${orderId}/complete-retry-payment`,
+  return api(
+    `/orders/${orderId}/complete-retry-payment`,
     {
       method: "PATCH",
       headers: {
@@ -218,14 +142,4 @@ export const completeRetryPaymentOrder = async (orderId) => {
       },
     }
   );
-
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(
-      data.message || "Failed to complete retry payment"
-    );
-  }
-
-  return data;
 };

@@ -1,4 +1,4 @@
-const API_URL = "http://localhost:5000/api/cart";
+import { api } from "../../../services/api";
 
 // Get token
 const getToken = () => {
@@ -8,7 +8,7 @@ const getToken = () => {
 
 // Add item to cart
 export const addToCart = async (cartData) => {
-  const response = await fetch(API_URL, {
+  return api("/cart", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -16,95 +16,52 @@ export const addToCart = async (cartData) => {
     },
     body: JSON.stringify(cartData),
   });
-
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(data.message || "Failed to add item to cart");
-  }
-
-  return data;
 };
+
 
 // Get cart
 export const getCart = async () => {
-  const response = await fetch(API_URL, {
+  return api("/cart", {
+    method: "GET",
     headers: {
       Authorization: `Bearer ${getToken()}`,
     },
   });
-
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(data.message || "Failed to fetch cart");
-  }
-
-  return data;
 };
 
 
 // Update cart quantity
 export const updateCartItem = async (itemId, quantity) => {
-  const response = await fetch(
-    `${API_URL}/${itemId}`,
-    {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${getToken()}`,
-      },
-      body: JSON.stringify({
-        quantity,
-      }),
-    }
-  );
-
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(
-      data.message || "Failed to update cart"
-    );
-  }
-
-  return data;
+  return api(`/cart/${itemId}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${getToken()}`,
+    },
+    body: JSON.stringify({
+      quantity,
+    }),
+  });
 };
-
 
 
 // Remove cart item
 export const removeCartItem = async (itemId) => {
-  const response = await fetch(`${API_URL}/${itemId}`, {
+  return api(`/cart/${itemId}`, {
     method: "DELETE",
     headers: {
       Authorization: `Bearer ${getToken()}`,
     },
   });
-
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(data.message || "Failed to remove item");
-  }
-
-  return data;
 };
+
 
 // Clear cart
 export const clearCart = async () => {
-  const response = await fetch(API_URL, {
+  return api("/cart", {
     method: "DELETE",
     headers: {
       Authorization: `Bearer ${getToken()}`,
     },
   });
-
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(data.message || "Failed to clear cart");
-  }
-
-  return data;
 };

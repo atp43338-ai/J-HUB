@@ -1,4 +1,5 @@
-const API_URL = "http://localhost:5000/api/orders";
+import { api } from "../../../services/api";
+
 
 // Backend connection will be added later.
 

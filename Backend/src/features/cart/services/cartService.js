@@ -166,3 +166,31 @@ export const removeCartItemService = async (userId, itemId) => {
 
   return cart;
 };
+
+// Remove purchased items from cart
+export const removePurchasedItemsFromCartService = async (
+  userId,
+  purchasedItems
+) => {
+  const cart = await Cart.findOne({ user: userId });
+
+  // No cart = nothing to remove
+  if (!cart) {
+    return null;
+  }
+
+  // Remove only purchased product + size combinations
+  cart.items = cart.items.filter((cartItem) => {
+    const isPurchased = purchasedItems.some(
+      (purchasedItem) =>
+        cartItem.product.toString() === purchasedItem.productId.toString() &&
+        cartItem.size === purchasedItem.size
+    );
+
+    return !isPurchased;
+  });
+
+  await cart.save();
+
+  return cart;
+};

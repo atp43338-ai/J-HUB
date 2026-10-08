@@ -4,8 +4,11 @@ import Address from "../../address/models/Address.js";
 import Offer from "../../admin/offer/models/Offer.js";
 import Coupon from "../../admin/coupon/models/Coupon.js";
 
-// GENERATE ORDER ID
+import {
+  removePurchasedItemsFromCartService,
+} from "../../cart/services/cartService.js";
 
+// GENERATE ORDER ID
 const generateOrderId = () => {
   const date = new Date();
 
@@ -386,42 +389,39 @@ export const createOrderService = async (
 
 
   // CREATE ORDER
+const order = await Order.create({
+  user: userId,
+  orderId,
+  items: orderItems,
+  address: {
+    name: address.name,
+    phone: address.phone,
+    address: address.address,
+    city: address.city,
+    state: address.state,
+    pincode: address.pincode,
+  },
+  paymentMethod,
+  paymentStatus: "pending",
+  subtotal,
+  discount,
+  couponDiscount,
+  tax,
+  shipping,
+  finalPrice,
+  status: "pending",
+});
 
-  const order = await Order.create({
+// REMOVE PURCHASED ITEMS FROM CART
+await removePurchasedItemsFromCartService(userId, items);
 
-    user: userId,
+// INCREASE COUPON USAGE COUNT
+if (appliedCoupon) {
+  appliedCoupon.usedCount += 1;
+  await appliedCoupon.save();
+}
 
-    orderId,
-
-    items: orderItems,
-
-    address: {
-      name: address.name,
-      phone: address.phone,
-      address: address.address,
-      city: address.city,
-      state: address.state,
-      pincode: address.pincode,
-    },
-
-    paymentMethod,
-
-    paymentStatus: "pending",
-
-    subtotal,
-
-    discount,
-
-    couponDiscount,
-
-    tax,
-
-    shipping,
-
-    finalPrice,
-
-    status: "pending",
-  });
+return order;
 
 
   // ==========================================
@@ -1014,3 +1014,5 @@ export const completeRetryPaymentOrderService = async (
 
   return order;
 };
+
+
