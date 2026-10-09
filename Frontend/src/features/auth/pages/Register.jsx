@@ -127,7 +127,7 @@ function Register() {
         />
 
         {/* J-HUB Logo */}
-        <div className="absolute top-[0%] left-[7%] z-10">
+        <div className="absolute top-[0%] left-[5%] z-10">
           <h1 className="text-[42px] leading-none font-black tracking-tight">
             <span className="text-black">
               J-
@@ -140,7 +140,7 @@ function Register() {
         </div>
 
         {/* Registration Content */}
-        <div className="absolute z-20 left-[12%] top-[21%] w-[30%]">
+        <div className="absolute z-20 left-[7%] top-[21%] w-[30%]">
 
           <h2 className="mt-3 text-[15px] font-semibold !text-black">
             Registration

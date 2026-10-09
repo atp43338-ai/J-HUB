@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import otpBg from "../asset/otp-bg.png";
 import { useNavigate, useLocation } from "react-router";
@@ -25,7 +26,7 @@ function OTPVerification() {
     if (timer === 0) return;
 
     const interval = setInterval(() => {
-      setTimer((prv) => prv - 1);
+      setTimer((prev) => prev - 1);
     }, 1000);
 
     return () => clearInterval(interval);
@@ -39,11 +40,9 @@ function OTPVerification() {
         return;
       }
 
-      // Login OTP
       if (from === "login") {
         await resendLoginOTP(email);
       } else {
-        // Register / Forgot Password OTP
         await resendOTP(email);
       }
 
@@ -53,7 +52,6 @@ function OTPVerification() {
       toast.success("OTP resent successfully");
     } catch (error) {
       console.error("Resend OTP error:", error);
-
       toast.error(error.message);
     }
   };
@@ -82,346 +80,216 @@ function OTPVerification() {
 
       // Login OTP
       if (from === "login") {
-        data = await verifyLoginOTP(
-          email,
-          otp
-        );
+        data = await verifyLoginOTP(email, otp);
 
-        // Save token only after login OTP verification
-        localStorage.setItem(
-          "token",
-          data.token
-        );
+        localStorage.setItem("token", data.token);
 
         toast.success("Login successful");
 
-        navigate("/", {
-          replace: true,
-        });
-
+        navigate("/", { replace: true });
         return;
       }
 
       // Register / Forgot Password OTP
-      data = await verifyOTP(
-        email,
-        otp
-      );
+      data = await verifyOTP(email, otp);
 
-      toast.success(
-        "OTP verified successfully"
-      );
+      toast.success("OTP verified successfully");
 
       // Register
       if (from === "register") {
-        navigate("/login", {
-          replace: true,
-        });
-
+        navigate("/login", { replace: true });
         return;
       }
 
       // Forgot Password
       if (from === "forgot-password") {
         navigate("/reset-password", {
-          state: {
-            email: email,
-          },
+          state: { email },
         });
-
         return;
       }
     } catch (error) {
-      console.error(
-        "OTP verification error:",
-        error
-      );
-
+      console.error("OTP verification error:", error);
       toast.error(error.message);
     }
   };
 
+  // Handle OTP input
+  const handleOtpChange = (e, index) => {
+    const value = e.target.value.replace(/\D/g, "");
+
+    if (!value) return;
+
+    const newOtp = otp.split("");
+    newOtp[index] = value.slice(-1);
+
+    const updatedOtp = newOtp.join("").slice(0, 6);
+    setOtp(updatedOtp);
+
+    if (index < 5) {
+      document.getElementById(`otp-${index + 1}`)?.focus();
+    }
+  };
+
+  const handleOtpKeyDown = (e, index) => {
+    if (e.key === "Backspace") {
+      e.preventDefault();
+
+      const newOtp = otp.split("");
+      newOtp[index] = "";
+
+      setOtp(newOtp.join(""));
+
+      if (index > 0) {
+        document.getElementById(`otp-${index - 1}`)?.focus();
+      }
+    }
+  };
+
   return (
-    <div className="fixed inset-0 w-full h-full overflow-auto">
+    <main className="relative min-h-screen w-full overflow-x-hidden bg-white">
 
-      {/* Background Image */}
-
+      {/* Jersey background */}
       <img
         src={otpBg}
-        alt="OTP Background"
-        className="absolute inset-0 w-full h-full object-fill"
+        alt="J-HUB jersey background"
+        className="fixed inset-0 hidden h-full w-full object-cover object-center md:block"
       />
 
-      {/* Center OTP Card */}
+      {/* Logo */}
+      <div className="relative z-20 px-6 pt-8 md:absolute md:left-[6%] md:top-[6%] md:px-0 md:pt-0">
+        <h1 className="text-[38px] font-black leading-none tracking-tight md:text-[42px]">
+          <span className="text-black">J-</span>
+          <span className="text-[#d90416]">HUB</span>
+        </h1>
 
-      <div className="relative z-10 w-full min-h-full flex items-center justify-center px-4 sm:px-6 py-6">
-
-        <div
-          className="
-            w-full
-            max-w-[600px]
-            text-center
-            bg-black
-            border
-            border-[#d90416]
-            rounded-[20px]
-            sm:rounded-[30px]
-
-            px-5
-            py-8
-
-            sm:px-8
-            sm:py-10
-
-            md:px-12
-            md:py-12
-          "
-          style={{
-            boxShadow:
-              "0 15px 40px rgba(0,0,0,0.35)",
-          }}
-        >
-
-          {/* Lock Icon */}
-
-          <div
-            className="
-              mx-auto
-              mb-6
-              sm:mb-8
-              w-[70px]
-              h-[70px]
-              sm:w-[85px]
-              sm:h-[85px]
-              md:w-[95px]
-              md:h-[95px]
-              rounded-[18px]
-              sm:rounded-[22px]
-              bg-[#d90416]
-              flex
-              items-center
-              justify-center
-            "
-          >
-            <span className="text-white text-[32px] sm:text-[38px] md:text-[42px]">
-              🔒
-            </span>
-          </div>
-
-          {/* Heading */}
-
-          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3">
-            <span className="text-white">
-              OTP{" "}
-            </span>
-
-            <span className="text-[#d90416]">
-              Verification
-            </span>
-          </h2>
-
-          {/* Description */}
-
-          <p className="text-gray-400 text-sm sm:text-base md:text-lg mb-7 sm:mb-10">
-            Enter the 6-digit verification code sent to your
-            <br className="hidden sm:block" />
-            email address
-          </p>
-
-          <form
-            onSubmit={handleSubmit}
-            className="space-y-6 sm:space-y-8"
-          >
-
-            {/* OTP Input */}
-
-            <div className="flex justify-center gap-2 sm:gap-3 md:gap-4">
-
-              {[0, 1, 2, 3, 4, 5].map(
-                (index) => (
-                  <input
-                    key={index}
-                    id={`otp-${index}`}
-                    type="text"
-                    maxLength="1"
-                    value={
-                      otp[index] || ""
-                    }
-                    onChange={(e) => {
-                      const value =
-                        e.target.value.replace(
-                          /\D/g,
-                          ""
-                        );
-
-                      if (!value) return;
-
-                      const newOtp =
-                        otp.split("");
-
-                      newOtp[index] =
-                        value;
-
-                      setOtp(
-                        newOtp
-                          .join("")
-                          .slice(0, 6)
-                      );
-
-                      // Move automatically to next box
-                      if (index < 5) {
-                        document
-                          .getElementById(
-                            `otp-${index + 1}`
-                          )
-                          ?.focus();
-                      }
-                    }}
-                    onKeyDown={(e) => {
-                      if (
-                        e.key ===
-                        "Backspace"
-                      ) {
-                        e.preventDefault();
-
-                        const newOtp =
-                          otp.split("");
-
-                        newOtp[index] =
-                          "";
-
-                        setOtp(
-                          newOtp.join("")
-                        );
-
-                        // Move to previous box
-                        if (index > 0) {
-                          document
-                            .getElementById(
-                              `otp-${index - 1}`
-                            )
-                            ?.focus();
-                        }
-                      }
-                    }}
-                    className={`
-                      w-[42px]
-                      h-[52px]
-
-                      sm:w-[55px]
-                      sm:h-[62px]
-
-                      md:w-[78px]
-                      md:h-[78px]
-
-                      rounded-[12px]
-                      sm:rounded-[14px]
-                      md:rounded-[16px]
-
-                      bg-[#1d1f22]
-                      text-white
-                      text-xl
-                      sm:text-2xl
-                      font-semibold
-                      text-center
-                      outline-none
-                      border
-
-                      ${
-                        index ===
-                        otp.length
-                          ? "border-[#d90416] shadow-[0_0_15px_rgba(217,4,22,0.6)]"
-                          : "border-[#3b3d42]"
-                      }
-                    `}
-                  />
-                )
-              )}
-
-            </div>
-
-            {/* Verify Button */}
-
-            <button
-              type="submit"
-              className="
-                w-full
-                h-[55px]
-                sm:h-[60px]
-                md:h-[68px]
-
-                bg-[#d90416]
-                hover:bg-[#b90312]
-
-                text-white
-                text-base
-                sm:text-lg
-                md:text-xl
-
-                font-bold
-                rounded-[14px]
-                sm:rounded-[16px]
-
-                transition
-              "
-            >
-              Verify OTP
-
-              <span className="ml-3 sm:ml-4 text-xl sm:text-2xl">
-                →
-              </span>
-            </button>
-
-            {/* Timer */}
-
-            <p className="text-gray-400 text-sm sm:text-base md:text-lg">
-
-              <span className="text-[#d90416] mr-2">
-                ●
-              </span>
-
-              Code expires in{" "}
-
-              <span className="text-[#d90416] font-bold">
-                00:
-                {String(timer).padStart(
-                  2,
-                  "0"
-                )}
-              </span>
-
-            </p>
-
-            {/* Resend OTP */}
-
-            <p className="text-gray-400 text-sm sm:text-base md:text-lg">
-
-              Didn’t receive the code?{" "}
-
-              <button
-                type="button"
-                onClick={handleResend}
-                disabled={timer > 0}
-                className="
-                  text-[#d90416]
-                  font-semibold
-                  hover:underline
-                  disabled:opacity-40
-                  disabled:no-underline
-                "
-              >
-                Resend OTP
-              </button>
-
-            </p>
-
-          </form>
-
-        </div>
-
+        <p className="mt-2 text-[10px] font-medium tracking-[2px] text-gray-500">
+          YOUR JERSEY DESTINATION
+        </p>
       </div>
 
-    </div>
+      {/* OTP form */}
+      <section className="relative z-20 mx-auto w-full max-w-[560px] px-6 pb-10 pt-12 md:absolute md:left-[6%] md:top-[24%] md:mx-0 md:w-[36%] md:max-w-none md:px-0 md:pb-0 md:pt-0">
+
+        {/* Heading */}
+        <div className="mb-8">
+          <div className="mb-5 h-[3px] w-16 bg-[#d90416]" />
+
+          <h2 className="text-3xl font-bold tracking-tight text-black md:text-[36px]">
+            Verify Your <span className="text-[#d90416]">Email</span>
+          </h2>
+
+          <p className="mt-3 text-sm leading-6 text-gray-500 md:text-base">
+            We have sent a 6-digit OTP to your email.
+            <br />
+            Please enter the code below to continue.
+          </p>
+
+          {email && (
+            <p className="mt-2 break-all text-sm font-medium text-gray-700">
+              {email}
+            </p>
+          )}
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-7">
+
+          {/* Six OTP fields */}
+          <div className="flex items-center justify-between gap-2 sm:justify-start sm:gap-3">
+            {[0, 1, 2, 3, 4, 5].map((index) => (
+              <input
+                key={index}
+                id={`otp-${index}`}
+                type="text"
+                inputMode="numeric"
+                autoComplete={index === 0 ? "one-time-code" : "off"}
+                maxLength={1}
+                value={otp[index] || ""}
+                onChange={(e) => handleOtpChange(e, index)}
+                onKeyDown={(e) => handleOtpKeyDown(e, index)}
+                aria-label={`OTP digit ${index + 1}`}
+                className={`
+                  h-[52px] min-w-0 flex-1 rounded-xl border
+                  bg-white text-center text-xl font-semibold text-black
+                  outline-none transition duration-200
+                  sm:h-[62px] sm:max-w-[65px] sm:flex-1
+                  ${
+                    index === otp.length
+                      ? "border-[#d90416] shadow-[0_0_0_1px_#d90416]"
+                      : "border-gray-300"
+                  }
+                  focus:border-[#d90416]
+                  focus:ring-2 focus:ring-red-100
+                `}
+              />
+            ))}
+          </div>
+
+          {/* Resend OTP and countdown */}
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-2 text-sm md:text-base">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="#d90416"
+              strokeWidth="1.7"
+              className="h-5 w-5 shrink-0"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="m22 2-7 20-4-9-9-4 20-7ZM22 2 11 13"
+              />
+            </svg>
+
+            <span className="text-gray-600">
+              Didn't receive the code?
+            </span>
+
+            <button
+              type="button"
+              onClick={handleResend}
+              disabled={timer > 0}
+              className="font-semibold text-[#d90416] transition hover:underline disabled:cursor-not-allowed disabled:opacity-50 disabled:no-underline"
+            >
+              Resend OTP
+            </button>
+
+            {timer > 0 && (
+              <span className="text-gray-500">
+                (00:{String(timer).padStart(2, "0")})
+              </span>
+            )}
+          </div>
+
+          {/* Verify button */}
+          <button
+            type="submit"
+            className="flex h-[58px] w-full items-center justify-center gap-4 rounded-xl bg-[#d90416] text-base font-semibold text-white shadow-lg shadow-red-200/60 transition duration-200 hover:bg-[#b90312] focus:outline-none focus:ring-2 focus:ring-red-300 focus:ring-offset-2"
+          >
+            Verify OTP
+            <span className="text-2xl">→</span>
+          </button>
+
+          {/* Divider */}
+          <div className="flex items-center gap-4">
+            <div className="h-px flex-1 bg-gray-200" />
+            <span className="text-sm text-gray-400">OR</span>
+            <div className="h-px flex-1 bg-gray-200" />
+          </div>
+
+          {/* Back to register */}
+          <button
+            type="button"
+            onClick={() => navigate("/register")}
+            className="flex h-[54px] w-full items-center justify-center gap-3 rounded-xl border border-gray-300 bg-white text-sm font-semibold text-gray-800 transition hover:border-[#d90416] hover:text-[#d90416]"
+          >
+            <span className="text-xl">←</span>
+            Back to Register
+          </button>
+        </form>
+      </section>
+    </main>
   );
 }
 
