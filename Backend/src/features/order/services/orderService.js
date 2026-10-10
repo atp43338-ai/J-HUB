@@ -8,6 +8,11 @@ import {
   removePurchasedItemsFromCartService,
 } from "../../cart/services/cartService.js";
 
+import {
+  addMoneyToWallet,
+  getOrCreateWallet,
+} from "../../wallet/services/walletService.js";
+
 // GENERATE ORDER ID
 const generateOrderId = () => {
   const date = new Date();
@@ -464,12 +469,13 @@ export const getOrderByIdService = async (
 
 // GET ALL USER ORDERS
 
-export const getOrdersService = async (
-  userId
-) => {
+export const getOrdersService = async (userId) => {
+  console.log("DATABASE:", Order.db.name);
+  console.log("COLLECTION:", Order.collection.name);
+  console.log("MONGO URI:", process.env.MONGO_URI);
+
   const now = new Date();
 
-  // Remove expired failed-payment orders
   await Order.deleteMany({
     user: userId,
     paymentStatus: "failed",
@@ -478,12 +484,14 @@ export const getOrdersService = async (
     },
   });
 
-
-
-  // Get active orders
   const orders = await Order.find({
     user: userId,
   }).sort({ createdAt: -1 });
+
+  console.log(
+    "ORDERS FOUND:",
+    orders.map((order) => order.orderId)
+  );
 
   return orders;
 };
@@ -572,15 +580,14 @@ export const cancelOrderService = async (
 
 
 
-// CANCEL SPECIFIC ORDER ITEM
-
+//cancel and wallet
 export const cancelOrderItemService = async (
   userId,
   orderId,
   itemId,
   reason
 ) => {
-
+  // 1. Find the user's order
   const order = await Order.findOne({
     orderId,
     user: userId,
@@ -590,112 +597,166 @@ export const cancelOrderItemService = async (
     throw new Error("Order not found");
   }
 
-
-  // CHECK ORDER STATUS
-
+  // 2. Allow cancellation only for pending orders
   if (order.status !== "pending") {
     throw new Error(
       "Products can only be cancelled while the order is pending"
     );
   }
 
-
-  // FIND ORDER ITEM
-
+  // 3. Find the selected product
   const item = order.items.id(itemId);
 
   if (!item) {
     throw new Error("Order item not found");
   }
 
-
-  // CHECK IF ALREADY CANCELLED
-
   if (item.cancelled) {
-    throw new Error(
-      "This product has already been cancelled"
-    );
+    throw new Error("This product has already been cancelled");
   }
 
-
-  // CANCEL ITEM
-
-  item.cancelled = true;
-
-  item.cancellationReason =
-    reason || "";
-
-  item.cancelledAt = new Date();
-
-
-  // RESTORE STOCK
-
-  const product = await Product.findById(
-    item.product
+  // 4. Calculate the refund before changing the order
+  const activeItemsBefore = order.items.filter(
+    (orderItem) => !orderItem.cancelled
   );
 
-  if (product) {
+  const activeItemsTotalBefore = activeItemsBefore.reduce(
+    (total, orderItem) =>
+      total + Number(orderItem.total || 0),
+    0
+  );
 
-    const variant =
-      product.variants.find(
-        (variant) =>
-          variant.size === item.size
+  const itemTotal = Number(item.total || 0);
+  const currentCouponDiscount = Number(order.couponDiscount || 0);
+
+  // Allocate the coupon discount proportionally to this item
+  let couponShare = 0;
+
+  if (
+    activeItemsTotalBefore > 0 &&
+    currentCouponDiscount > 0
+  ) {
+    couponShare =
+      (itemTotal / activeItemsTotalBefore) *
+      currentCouponDiscount;
+  }
+
+  couponShare = Math.round(couponShare * 100) / 100;
+
+  // Refund only when payment has actually succeeded
+  const shouldRefund = order.paymentStatus === "paid";
+
+  const refundAmount = Math.max(
+    0,
+    Math.round((itemTotal - couponShare) * 100) / 100
+  );
+
+  // Use the item ID to identify its refund uniquely
+  const refundReason = `Product cancellation refund (${item._id})`;
+
+  // 5. Check for an existing refund
+  if (shouldRefund && refundAmount > 0) {
+    const wallet = await getOrCreateWallet(userId);
+
+    const existingRefund = wallet.transactions.find(
+      (transaction) =>
+        transaction.type === "credit" &&
+        transaction.order?.toString() === order._id.toString() &&
+        transaction.reason === refundReason
+    );
+
+    if (existingRefund) {
+      throw new Error(
+        "Refund for this product has already been processed"
       );
+    }
+  }
+
+  // 6. Restore the product stock
+  const product = await Product.findById(item.product);
+
+  if (product) {
+    const variant = product.variants.find(
+      (variant) => variant.size === item.size
+    );
 
     if (variant) {
-
       variant.stock += item.quantity;
-
       await product.save();
     }
   }
 
+  // 7. Mark the item as cancelled
+  item.cancelled = true;
+  item.cancellationReason = reason || "";
+  item.cancelledAt = new Date();
 
-  // RECALCULATE ORDER PRICE
+  // 8. Calculate the remaining items
+  const activeItemsAfter = order.items.filter(
+    (orderItem) => !orderItem.cancelled
+  );
 
-  const activeItems =
-    order.items.filter(
-      (orderItem) =>
-        !orderItem.cancelled
-    );
+  const remainingItemsTotal = activeItemsAfter.reduce(
+    (total, orderItem) =>
+      total + Number(orderItem.total || 0),
+    0
+  );
 
+  // Keep the remaining coupon discount instead of
+  // subtracting the original coupon discount repeatedly
+  const remainingCouponDiscount = Math.max(
+    0,
+    Math.round(
+      (currentCouponDiscount - couponShare) * 100
+    ) / 100
+  );
 
-  const newSubtotal =
-    activeItems.reduce(
-      (total, orderItem) =>
-        total + orderItem.total,
-      0
-    );
+  // The remaining item totals already include product offers.
+  // Store them as the adjusted subtotal to avoid applying
+  // the product discount a second time.
+  order.subtotal = remainingItemsTotal;
+  order.discount = 0;
+  order.couponDiscount = activeItemsAfter.length
+    ? remainingCouponDiscount
+    : 0;
 
+  order.finalPrice = Math.max(
+    0,
+    Math.round(
+      (
+        remainingItemsTotal -
+        Number(order.couponDiscount || 0) +
+        Number(order.tax || 0) +
+        Number(order.shipping || 0)
+      ) * 100
+    ) / 100
+  );
 
-  order.subtotal =
-    newSubtotal;
-
-
-  order.finalPrice =
-    newSubtotal -
-    order.discount +
-    order.tax +
-    order.shipping;
-
-
-  // IF ALL ITEMS ARE CANCELLED
-
-  if (activeItems.length === 0) {
-
+  // 9. If every product is cancelled, cancel the order
+  if (activeItemsAfter.length === 0) {
     order.status = "cancelled";
-
     order.cancelledAt = new Date();
-
     order.cancellationReason =
       "All products in the order were cancelled";
+    order.finalPrice = 0;
   }
 
-
+  // 10. Save the order
   await order.save();
+
+  // 11. Refund the wallet after the order is saved
+  if (shouldRefund && refundAmount > 0) {
+    await addMoneyToWallet(
+      userId,
+      refundAmount,
+      refundReason,
+      order._id
+    );
+  }
 
   return order;
 };
+
 
 
 
