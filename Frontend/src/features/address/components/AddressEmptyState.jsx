@@ -1,4 +1,3 @@
-import { useState } from "react";
 import AddressField from "./AddressField";
 
 function AddressForm({
@@ -16,282 +15,274 @@ function AddressForm({
   setPincode,
   isDefault,
   setIsDefault,
+  errors = {},
+  setErrors,
   onSubmit,
   onCancel,
   loading,
   isEdit,
 }) {
-  const [errorMessage, setErrorMessage] = useState("");
+  // Validate individual fields
+  const validateField = (field, value) => {
+    let message = "";
 
-  // Show modal message
-  const showErrorMessage = (message) => {
-    setErrorMessage(message);
+    switch (field) {
+      case "name":
+        if (value.trim().length < 3) {
+          message = "Name must contain at least 3 characters";
+        }
+        break;
+
+      case "phone":
+        if (!/^[6-9]\d{9}$/.test(value.trim())) {
+          message = "Enter a valid 10-digit mobile number";
+        }
+        break;
+
+      case "address":
+        if (!value.trim()) {
+          message = "Address is required";
+        }
+        break;
+
+      case "city":
+        if (!value.trim()) {
+          message = "City is required";
+        }
+        break;
+
+      case "state":
+        if (!value.trim()) {
+          message = "State is required";
+        }
+        break;
+
+      case "pincode":
+        if (!/^\d{6}$/.test(value.trim())) {
+          message = "Pincode must contain exactly 6 digits";
+        }
+        break;
+
+      default:
+        break;
+    }
+
+    if (typeof setErrors === "function") {
+      setErrors((previous) => ({
+        ...previous,
+        [field]: message,
+      }));
+    }
   };
 
-  // Phone validation
+  // Update value and validate
+  const handleChange = (field, value, setter) => {
+    setter(value);
+    validateField(field, value);
+  };
+
+  // Allow only digits, maximum 10
   const handlePhoneChange = (e) => {
     const value = e.target.value;
 
     if (/^\d{0,10}$/.test(value)) {
-      setPhone(value);
+      handleChange("phone", value, setPhone);
     }
   };
 
-  // Phone blur validation
-  const handlePhoneBlur = () => {
-    if (phone && !/^[6-9]\d{9}$/.test(phone)) {
-      showErrorMessage(
-        "Please enter a valid 10-digit phone number"
-      );
-    }
-  };
-
-  // Pincode validation
+  // Allow only digits, maximum 6
   const handlePincodeChange = (e) => {
     const value = e.target.value;
 
     if (/^\d{0,6}$/.test(value)) {
-      setPincode(value);
+      handleChange("pincode", value, setPincode);
     }
   };
 
-  // Pincode blur validation
-  const handlePincodeBlur = () => {
-    if (pincode && !/^\d{6}$/.test(pincode)) {
-      showErrorMessage(
-        "Please enter a valid 6-digit pincode"
-      );
-    }
-  };
-
-  // Submit validation
+  // Submit to AddEditAddress.jsx
   const handleFormSubmit = (e) => {
     e.preventDefault();
-
-    if (!/^[6-9]\d{9}$/.test(phone)) {
-      showErrorMessage(
-        "Please enter a valid 10-digit phone number"
-      );
-      return;
-    }
-
-    if ((pincode !==6)) {
-      showErrorMessage(
-        "Please enter a valid 6-digit pincode"
-      );
-      return;
-    }
-
     onSubmit(e);
   };
 
   return (
-    <>
-      {/* Modal Popup */}
-      {errorMessage && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 px-4">
-          <div className="w-full max-w-sm bg-white rounded-xl shadow-2xl p-6 text-center">
-
-            {/* Error Icon */}
-            <div className="mx-auto w-14 h-14 rounded-full bg-red-100 flex items-center justify-center">
-              <div className="w-8 h-8 rounded-full bg-red-500 text-white flex items-center justify-center text-xl font-bold">
-                ×
-              </div>
-            </div>
-
-            {/* Message */}
-            <h3 className="mt-4 text-lg font-semibold text-gray-900">
-              Invalid Details
-            </h3>
-
-            <p className="mt-2 text-sm text-gray-500">
-              {errorMessage}
-            </p>
-
-            {/* Close Button */}
-            <button
-              type="button"
-              onClick={() => setErrorMessage("")}
-              className="
-                mt-5
-                w-full
-                h-10
-                rounded-lg
-                bg-[#d90416]
-                hover:bg-[#b90312]
-                text-white
-                text-sm
-                font-semibold
-                transition
-              "
-            >
-              OK
-            </button>
-
-          </div>
-        </div>
-      )}
-
-      <form
-        onSubmit={handleFormSubmit}
-        className="space-y-6"
-      >
-
-        {/* Name + Phone */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-
+    <form
+      onSubmit={handleFormSubmit}
+      noValidate
+      className="space-y-6"
+    >
+      {/* Name + Phone */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <div>
           <AddressField
             label="Full Name"
             value={name}
-            onChange={(e) => setName(e.target.value)}
+            onChange={(e) =>
+              handleChange("name", e.target.value, setName)
+            }
             placeholder="Enter your name"
           />
 
+          {errors.name && (
+            <p className="mt-1 text-sm text-red-600">
+              {errors.name}
+            </p>
+          )}
+        </div>
+
+        <div>
           <AddressField
             label="Phone Number"
             value={phone}
             onChange={handlePhoneChange}
-            onBlur={handlePhoneBlur}
             type="tel"
             placeholder="Enter phone number"
           />
 
+          {errors.phone && (
+            <p className="mt-1 text-sm text-red-600">
+              {errors.phone}
+            </p>
+          )}
         </div>
+      </div>
 
-        {/* Address */}
+      {/* Address */}
+      <div>
+        <label className="block mb-2 text-sm font-semibold text-gray-700">
+          Address
+        </label>
+
+        <textarea
+          value={address}
+          onChange={(e) =>
+            handleChange("address", e.target.value, setAddress)
+          }
+          placeholder="Enter your full address"
+          rows="4"
+          aria-invalid={Boolean(errors.address)}
+          className={`
+            w-full px-4 py-3 rounded-lg
+            bg-white text-black text-sm
+            outline-none resize-none transition
+            focus:ring-2 focus:ring-[#d90416]/10
+            ${
+              errors.address
+                ? "border border-red-500"
+                : "border border-gray-200 focus:border-[#d90416]"
+            }
+          `}
+        />
+
+        {errors.address && (
+          <p className="mt-1 text-sm text-red-600">
+            {errors.address}
+          </p>
+        )}
+      </div>
+
+      {/* City + State */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         <div>
-          <label className="block mb-2 text-sm font-semibold text-gray-700">
-            Address
-          </label>
-
-          <textarea
-            value={address}
-            onChange={(e) => setAddress(e.target.value)}
-            placeholder="Enter your full address"
-            rows="4"
-            className="
-              w-full
-              px-4
-              py-3
-              rounded-lg
-              border
-              border-gray-200
-              bg-white
-              text-black
-              text-sm
-              outline-none
-              resize-none
-              transition
-              focus:border-[#d90416]
-              focus:ring-2
-              focus:ring-[#d90416]/10
-            "
-          />
-        </div>
-
-        {/* City + State */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-
           <AddressField
             label="City"
             value={city}
-            onChange={(e) => setCity(e.target.value)}
+            onChange={(e) =>
+              handleChange("city", e.target.value, setCity)
+            }
             placeholder="Enter city"
           />
 
+          {errors.city && (
+            <p className="mt-1 text-sm text-red-600">
+              {errors.city}
+            </p>
+          )}
+        </div>
+
+        <div>
           <AddressField
             label="State"
             value={state}
-            onChange={(e) => setState(e.target.value)}
+            onChange={(e) =>
+              handleChange("state", e.target.value, setState)
+            }
             placeholder="Enter state"
           />
 
+          {errors.state && (
+            <p className="mt-1 text-sm text-red-600">
+              {errors.state}
+            </p>
+          )}
         </div>
+      </div>
 
-        {/* Pincode */}
-        <div className="md:w-1/2">
+      {/* Pincode */}
+      <div className="md:w-1/2">
+        <AddressField
+          label="Pincode"
+          value={pincode}
+          onChange={handlePincodeChange}
+          placeholder="Enter pincode"
+        />
 
-          <AddressField
-            label="Pincode"
-            value={pincode}
-            onChange={handlePincodeChange}
-            onBlur={handlePincodeBlur}
-            placeholder="Enter pincode"
-          />
+        {errors.pincode && (
+          <p className="mt-1 text-sm text-red-600">
+            {errors.pincode}
+          </p>
+        )}
+      </div>
 
-        </div>
+      {/* Default Address */}
+      <label className="flex items-center gap-3 cursor-pointer">
+        <input
+          type="checkbox"
+          checked={isDefault}
+          onChange={(e) => setIsDefault(e.target.checked)}
+          className="w-4 h-4 accent-[#d90416]"
+        />
 
-        {/* Default Address */}
-        <label className="flex items-center gap-3 cursor-pointer">
+        <span className="text-sm text-gray-700">
+          Set as default address
+        </span>
+      </label>
 
-          <input
-            type="checkbox"
-            checked={isDefault}
-            onChange={(e) =>
-              setIsDefault(e.target.checked)
-            }
-            className="w-4 h-4 accent-[#d90416]"
-          />
+      {/* Buttons */}
+      <div className="flex flex-col sm:flex-row gap-3 pt-4">
+        <button
+          type="button"
+          onClick={onCancel}
+          className="
+            flex-1 h-[48px] rounded-lg
+            border border-gray-200
+            text-gray-700 text-sm font-semibold
+            hover:border-gray-400 hover:bg-gray-50
+            transition
+          "
+        >
+          Cancel
+        </button>
 
-          <span className="text-sm text-gray-700">
-            Set as default address
-          </span>
-
-        </label>
-
-        {/* Buttons */}
-        <div className="flex flex-col sm:flex-row gap-3 pt-4">
-
-          {/* Cancel */}
-          <button
-            type="button"
-            onClick={onCancel}
-            className="
-              flex-1
-              h-[48px]
-              rounded-lg
-              border
-              border-gray-200
-              text-gray-700
-              text-sm
-              font-semibold
-              hover:border-gray-400
-              hover:bg-gray-50
-              transition
-            "
-          >
-            Cancel
-          </button>
-
-          {/* Submit */}
-          <button
-            type="submit"
-            disabled={loading}
-            className="
-              flex-1
-              h-[48px]
-              rounded-lg
-              bg-[#d90416]
-              hover:bg-[#b90312]
-              disabled:opacity-50
-              disabled:cursor-not-allowed
-              text-white
-              text-sm
-              font-semibold
-              transition
-            "
-          >
-            {loading
-              ? "Saving..."
-              : isEdit
-                ? "Update Address"
-                : "Add Address"}
-          </button>
-
-        </div>
-
-      </form>
-    </>
+        <button
+          type="submit"
+          disabled={loading}
+          className="
+            flex-1 h-[48px] rounded-lg
+            bg-[#d90416] hover:bg-[#b90312]
+            disabled:opacity-50 disabled:cursor-not-allowed
+            text-white text-sm font-semibold
+            transition
+          "
+        >
+          {loading
+            ? "Saving..."
+            : isEdit
+              ? "Update Address"
+              : "Add Address"}
+        </button>
+      </div>
+    </form>
   );
 }
 

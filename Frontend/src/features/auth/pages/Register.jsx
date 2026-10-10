@@ -26,19 +26,14 @@ function Register() {
     useState(false);
 
   const [name, setName] = useState("");
-
   const [email, setEmail] = useState("");
-
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
 
-  const [confirmPassword, setConfirmPassword] =
-    useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] =useState(false);
 
-  const [showPassword, setShowPassword] =
-    useState(false);
-
-  const [showConfirmPassword, setShowConfirmPassword] =
-    useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   // Password rules
   const passwordRules = {
@@ -60,60 +55,67 @@ function Register() {
     passwordRules.number &&
     passwordRules.special;
 
-  // Normal registration
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+// Normal registration
+const handleSubmit = async (e) => {
+  e.preventDefault();
 
-    if (
-      !name ||
-      !email ||
-      !password ||
-      !confirmPassword
-    ) {
-      toast.error("Please fill all fields");
-      return;
-    }
+  if (
+    !name ||
+    !email ||
+    !password ||
+    !confirmPassword
+  ) {
+    toast.error("Please fill all fields");
+    return;
+  }
 
-    // Strong password validation
-    if (!isPasswordValid) {
-      toast.error(
-        "Password must contain 8 characters, uppercase, lowercase, number and special character"
-      );
-      return;
-    }
+  // Strong password validation
+  if (!isPasswordValid) {
+    toast.error(
+      "Password must contain 8 characters, uppercase, lowercase, number and special character"
+    );
+    return;
+  }
 
-    // Confirm password validation
-    if (password !== confirmPassword) {
-      toast.error("Passwords do not match");
-      return;
-    }
+  // Confirm password validation
+  if (password !== confirmPassword) {
+    toast.error("Passwords do not match");
+    return;
+  }
 
-    try {
-      await registerUser(
-        name,
-        email,
-        password,
-        referralCode.trim() || undefined,
-        undefined
-      );
+  // Prevent multiple submissions
+  if (isLoading) return;
 
-      toast.success("Registration successful");
+  setIsLoading(true);
 
-      navigate("/otp-verification", {
-        state: {
-          from: "register",
-          email: email,
-        },
-      });
-    } catch (error) {
-      console.error(
-        "Registration error:",
-        error
-      );
+  try {
+    await registerUser(
+      name,
+      email,
+      password,
+      referralCode.trim() || undefined,
+      undefined
+    );
 
-      toast.error(error.message);
-    }
-  };
+    toast.success("Registration successful");
+
+    navigate("/otp-verification", {
+      state: {
+        from: "register",
+        email: email,
+      },
+    });
+  } catch (error) {
+    console.error(
+      "Registration error:",
+      error
+    );
+
+    toast.error(error.message);
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   return (
     <div className="relative w-screen h-screen overflow-hidden">
@@ -465,28 +467,59 @@ function Register() {
 
             </div>
 
-            {/* Create Account */}
-            <button
-              type="submit"
-              className="
-                w-full
-                h-[48px]
-                mt-1
-                rounded-[14px]
-                bg-[#d90416]
-                hover:bg-[#b90312]
-                text-white
-                text-[16px]
-                font-semibold
-                transition
-              "
-            >
-              Create Account
-
-              <span className="ml-3 text-xl">
-                →
-              </span>
-            </button>
+{/* create account */}
+           <button
+  type="submit"
+  disabled={isLoading}
+  className="
+    w-full
+    h-[48px]
+    mt-1
+    rounded-[14px]
+    bg-[#d90416]
+    hover:bg-[#b90312]
+    disabled:opacity-70
+    disabled:cursor-not-allowed
+    text-white
+    text-[16px]
+    font-semibold
+    transition
+    flex
+    items-center
+    justify-center
+  "
+>
+  {isLoading ? (
+    <>
+      <svg
+        className="animate-spin h-5 w-5 mr-3"
+        xmlns="http://www.w3.org/2000/svg"
+        fill="none"
+        viewBox="0 0 24 24"
+      >
+        <circle
+          className="opacity-25"
+          cx="12"
+          cy="12"
+          r="10"
+          stroke="currentColor"
+          strokeWidth="4"
+        />
+        <path
+          className="opacity-75"
+          fill="currentColor"
+          d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+        />
+      </svg>
+      Sending OTP...
+    </>
+  ) : (
+    <>
+      Create Account
+      <span className="ml-3 text-xl">→</span>
+    </>
+  )}
+</button>
 
           </form>
 

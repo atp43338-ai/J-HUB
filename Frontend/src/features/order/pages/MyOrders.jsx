@@ -39,10 +39,12 @@ function MyOrders() {
         setLoading(true);
 
         const data = await getOrders();
+        console.log("Latest API response:", data);
 
         setOrders(data.orders || []);
       } catch (error) {
         console.error("Failed to fetch orders:", error);
+        
 
         toast.error(
           error.message || "Failed to load orders"

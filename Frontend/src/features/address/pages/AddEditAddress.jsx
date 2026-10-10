@@ -15,7 +15,6 @@ import {
 
 import ProfileLayout from "../../profile/components/ProfileLayout";
 import ProfileHeader from "../../profile/components/ProfileHeader";
-
 import AddressForm from "../components/AddressForm";
 
 function AddEditAddress() {
@@ -25,51 +24,34 @@ function AddEditAddress() {
 
   const token = localStorage.getItem("token");
 
-  // -----------------------------------
-  // Check if coming from checkout
-  // -----------------------------------
-
   const fromCheckout = location.state?.fromCheckout;
-
   const checkoutItems = location.state?.checkoutItems || [];
 
-  // -----------------------------------
   // Form state
-  // -----------------------------------
-
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
   const [city, setCity] = useState("");
   const [state, setState] = useState("");
   const [pincode, setPincode] = useState("");
-
   const [isDefault, setIsDefault] = useState(false);
 
+  // Loading state
   const [loading, setLoading] = useState(false);
   const [pageLoading, setPageLoading] = useState(false);
 
-  // -----------------------------------
-  // Modal state
-  // -----------------------------------
+  // Inline validation errors only
+  const [errors, setErrors] = useState({});
 
-  const [errorMessage, setErrorMessage] = useState("");
-
-  // -----------------------------------
   // Fetch address when editing
-  // -----------------------------------
-
   useEffect(() => {
-    if (!id) {
-      return;
-    }
+    if (!id) return;
 
     const fetchAddress = async () => {
       try {
         setPageLoading(true);
 
         const data = await getAddress(token, id);
-
         const addressData = data.address;
 
         if (!addressData) {
@@ -84,15 +66,10 @@ function AddEditAddress() {
         setCity(addressData.city || "");
         setState(addressData.state || "");
         setPincode(addressData.pincode || "");
-
         setIsDefault(addressData.isDefault || false);
       } catch (error) {
         console.error(error);
-
-        toast.error(
-          error.message || "Failed to fetch address"
-        );
-
+        toast.error(error.message || "Failed to fetch address");
         navigate("/address");
       } finally {
         setPageLoading(false);
@@ -102,66 +79,48 @@ function AddEditAddress() {
     fetchAddress();
   }, [id, token, navigate]);
 
-  // -----------------------------------
-  // Submit form
-  // -----------------------------------
+  // Validate all fields
+  const validateForm = () => {
+    const newErrors = {};
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
-    // -----------------------------------
-    // Validation
-    // -----------------------------------
-
-    if (!name.trim()) {
-      toast.error("Please enter name");
-      return;
+    if (name.trim().length < 3) {
+      newErrors.name = "Name must contain at least 3 characters";
     }
 
-    if (!phone.trim()) {
-      toast.error("Please enter phone number");
-      return;
-    }
-
-    // Phone must be exactly 10 digits
     if (!/^[6-9]\d{9}$/.test(phone.trim())) {
-      setErrorMessage(
-        "Please enter a valid 10-digit phone number"
-      );
-      return;
+      newErrors.phone = "Enter a valid 10-digit mobile number";
     }
 
     if (!address.trim()) {
-      toast.error("Please enter address");
-      return;
+      newErrors.address = "Address is required";
     }
 
     if (!city.trim()) {
-      toast.error("Please enter city");
-      return;
+      newErrors.city = "City is required";
     }
 
     if (!state.trim()) {
-      toast.error("Please enter state");
-      return;
+      newErrors.state = "State is required";
     }
 
-    if (!pincode.trim()) {
-      toast.error("Please enter pincode");
-      return;
-    }
-
-    // Pincode must be exactly 6 digits
     if (!/^\d{6}$/.test(pincode.trim())) {
-      setErrorMessage(
-        "Please enter a valid 6-digit pincode"
-      );
-      return;
+      newErrors.pincode = "Pincode must contain exactly 6 digits";
     }
 
-    // -----------------------------------
-    // Address data
-    // -----------------------------------
+    return newErrors;
+  };
+
+  // Submit form
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    const newErrors = validateForm();
+    setErrors(newErrors);
+
+    // Show inline errors only
+    if (Object.keys(newErrors).length > 0) {
+      return;
+    }
 
     const addressData = {
       name: name.trim(),
@@ -176,78 +135,41 @@ function AddEditAddress() {
     try {
       setLoading(true);
 
-      // -----------------------------------
-      // UPDATE
-      // -----------------------------------
-
       if (id) {
         await updateAddress(token, id, addressData);
-
         toast.success("Address updated successfully");
-
-        // Return to checkout
-        if (fromCheckout) {
-          navigate("/checkout", {
-            state: {
-              items: checkoutItems,
-            },
-          });
-        } else {
-          navigate("/address");
-        }
-
-        return;
+      } else {
+        await addAddress(token, addressData);
+        toast.success("Address added successfully");
       }
 
-      // -----------------------------------
-      // ADD
-      // -----------------------------------
-
-      await addAddress(token, addressData);
-
-      toast.success("Address added successfully");
-
-      // Return to checkout
       if (fromCheckout) {
         navigate("/checkout", {
-          state: {
-            items: checkoutItems,
-          },
+          state: { items: checkoutItems },
         });
       } else {
         navigate("/address");
       }
     } catch (error) {
       console.error(error);
-
-      toast.error(
-        error.message || "Failed to save address"
-      );
+      toast.error(error.message || "Failed to save address");
     } finally {
       setLoading(false);
     }
   };
 
-  // -----------------------------------
   // Cancel
-  // -----------------------------------
-
   const handleCancel = () => {
     if (fromCheckout) {
       navigate("/checkout", {
-        state: {
-          items: checkoutItems,
-        },
+        state: { items: checkoutItems },
       });
     } else {
       navigate("/address");
     }
   };
 
-  // -----------------------------------
-  // Loading
-  // -----------------------------------
-
+  // Loading screen
   if (pageLoading) {
     return (
       <ProfileLayout
@@ -268,10 +190,6 @@ function AddEditAddress() {
     );
   }
 
-  // -----------------------------------
-  // UI
-  // -----------------------------------
-
   return (
     <ProfileLayout
       title={id ? "Edit" : "Add"}
@@ -282,55 +200,6 @@ function AddEditAddress() {
           : "Add a new delivery address"
       }
     >
-      {/* -----------------------------------
-          Validation Modal
-      ----------------------------------- */}
-
-      {errorMessage && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 px-4">
-          <div className="w-full max-w-sm bg-white rounded-xl shadow-2xl p-6 text-center">
-
-            {/* Error Icon */}
-            <div className="mx-auto w-14 h-14 rounded-full bg-red-100 flex items-center justify-center">
-              <div className="w-8 h-8 rounded-full bg-red-500 text-white flex items-center justify-center text-xl font-bold">
-                ×
-              </div>
-            </div>
-
-            {/* Title */}
-            <h3 className="mt-4 text-lg font-semibold text-gray-900">
-              Invalid Details
-            </h3>
-
-            {/* Message */}
-            <p className="mt-2 text-sm text-gray-500">
-              {errorMessage}
-            </p>
-
-            {/* OK Button */}
-            <button
-              type="button"
-              onClick={() => setErrorMessage("")}
-              className="
-                mt-5
-                w-full
-                h-10
-                rounded-lg
-                bg-[#d90416]
-                hover:bg-[#b90312]
-                text-white
-                text-sm
-                font-semibold
-                transition
-              "
-            >
-              OK
-            </button>
-
-          </div>
-        </div>
-      )}
-
       <ProfileHeader
         title={id ? "Edit" : "Add"}
         highlight="Address"
@@ -357,6 +226,8 @@ function AddEditAddress() {
           setPincode={setPincode}
           isDefault={isDefault}
           setIsDefault={setIsDefault}
+          errors={errors}
+          setErrors={setErrors}
           onSubmit={handleSubmit}
           onCancel={handleCancel}
           loading={loading}
