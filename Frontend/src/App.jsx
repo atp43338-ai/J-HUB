@@ -1,17 +1,15 @@
-import React from 'react';
-import ReactDOM from 'react-dom/client';
-import { BrowserRouter } from 'react-router'; // allel router setup
-import { GoogleOAuthProvider } from '@react-oauth/google';
-import App from './App.jsx';
-import './index.css';
+import { Routes, Route } from "react-router";
 
-// .env-il ulla VITE_GOOGLE_CLIENT_ID edukkunnu
-const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+import AdminRoutes from "./routes/AdminRoutes";
+import UserRoutes from "./routes/UserRoutes";
 
-ReactDOM.createRoot(document.getElementById('root')).render(
-  <React.StrictMode>
-    <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
-      <App />
-    </GoogleOAuthProvider>
-  </React.StrictMode>
-);
+function App() {
+  return (
+    <Routes>
+      <Route path="/admin/*" element={<AdminRoutes />} />
+      <Route path="/*" element={<UserRoutes />} />
+    </Routes>
+  );
+}
+
+export default App;

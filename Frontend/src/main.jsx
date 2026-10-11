@@ -15,19 +15,12 @@ createRoot(document.getElementById("root")).render(
   <StrictMode>
     <GoogleOAuthProvider clientId={clientId}>
       <BrowserRouter>
-
         <CartProvider>
-
           <WishlistProvider>
-
             <App />
-
             <Toaster />
-
           </WishlistProvider>
-
         </CartProvider>
-
       </BrowserRouter>
     </GoogleOAuthProvider>
   </StrictMode>
