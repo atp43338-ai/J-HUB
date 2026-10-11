@@ -1,4 +1,4 @@
-const API_URL = "http://localhost:5000/api";
+const API_URL = "http://13.201.100.233:5000/api";
 
 export const api = async (endpoint, options = {}) => {
   const headers = {
