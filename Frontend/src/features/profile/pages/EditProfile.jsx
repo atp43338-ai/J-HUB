@@ -150,9 +150,11 @@ function EditProfile() {
   const imagePreview = profileImage
     ? URL.createObjectURL(profileImage)
     : user.profileImage
-      ? user.profileImage.startsWith("http")
+      ? user.profileImage.startsWith("http://localhost:5000")
+        ? user.profileImage.replace("http://localhost:5000", "https://api.afsal.online")
+        : user.profileImage.startsWith("http")
         ? user.profileImage
-        : `http://localhost:5000${user.profileImage}`
+        : `https://api.afsal.online${user.profileImage}`
       : null;
 
   return (

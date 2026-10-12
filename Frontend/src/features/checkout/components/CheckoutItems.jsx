@@ -29,9 +29,11 @@ function CheckoutItems({ items }) {
               <div className="w-full sm:w-28 h-28 bg-gray-50 rounded-lg overflow-hidden flex-shrink-0">
                 <img
                   src={
-                    item.image?.startsWith("http")
+                    item.image?.startsWith("http://localhost:5000")
+                      ? item.image.replace("http://localhost:5000", "https://api.afsal.online")
+                      : item.image?.startsWith("http")
                       ? item.image
-                      : `http://localhost:5000${item.image}`
+                      : `https://api.afsal.online${item.image}`
                   }
                   alt={item.name}
                   className="w-full h-full object-contain"

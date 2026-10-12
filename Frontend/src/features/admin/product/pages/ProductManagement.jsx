@@ -208,7 +208,11 @@ const ProductManagement = () => {
                   <td className="px-6 py-4">
 
                     <img
-                      src={`http://localhost:5000${product.images?.[0]}`}
+                      src={
+                        product.images?.[0]?.startsWith("http")
+                          ? product.images[0].replace("http://localhost:5000", "https://api.afsal.online")
+                          : `https://api.afsal.online${product.images?.[0]}`
+                      }
                       alt={product.name}
                       className="w-16 h-16 object-contain rounded-lg bg-gray-100"
                     />

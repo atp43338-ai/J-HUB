@@ -403,7 +403,11 @@ function EditProductModal({
               <div className="mb-4">
 
                 <img
-                  src={`http://localhost:5000${existingImages[0]}`}
+                  src={
+                    existingImages[0]?.startsWith("http")
+                      ? existingImages[0].replace("http://localhost:5000", "https://api.afsal.online")
+                      : `https://api.afsal.online${existingImages[0]}`
+                  }
                   alt={name}
                   className="w-32 h-32 object-contain rounded-lg bg-gray-100 border"
                 />

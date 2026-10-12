@@ -1,6 +1,10 @@
 function ProfileAvatar({ image, name }) {
   const profileImage = image
-    ? `http://localhost:5000${image}`
+    ? image.startsWith("http://localhost:5000")
+      ? image.replace("http://localhost:5000", "https://api.afsal.online")
+      : image.startsWith("http")
+      ? image
+      : `https://api.afsal.online${image}`
     : null;
 
   return (

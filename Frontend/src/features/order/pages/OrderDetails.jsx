@@ -388,9 +388,17 @@ function OrderDetails() {
                       <img
                         src={
                           item.product?.images?.[0]
-                            ? `http://localhost:5000${item.product.images[0]}`
+                            ? (item.product.images[0].startsWith("http://localhost:5000")
+                                ? item.product.images[0].replace("http://localhost:5000", "https://api.afsal.online")
+                                : item.product.images[0].startsWith("http")
+                                ? item.product.images[0]
+                                : `https://api.afsal.online${item.product.images[0]}`)
                             : item.image
-                              ? `http://localhost:5000${item.image}`
+                              ? (item.image.startsWith("http://localhost:5000")
+                                  ? item.image.replace("http://localhost:5000", "https://api.afsal.online")
+                                  : item.image.startsWith("http")
+                                  ? item.image
+                                  : `https://api.afsal.online${item.image}`)
                               : "/placeholder.jpg"
                         }
                         alt={item.name}

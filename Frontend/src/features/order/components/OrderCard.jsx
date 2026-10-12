@@ -8,13 +8,17 @@ function OrderCard({ order }) {
   const getImageUrl = (image) => {
     if (!image) return "";
 
+    if (image.startsWith("http://localhost:5000")) {
+      return image.replace("http://localhost:5000", "https://api.afsal.online");
+    }
+
     // Already a complete URL
     if (image.startsWith("http://") || image.startsWith("https://")) {
       return image;
     }
 
     // Backend uploaded image
-    return `http://localhost:5000${
+    return `https://api.afsal.online${
       image.startsWith("/") ? "" : "/"
     }${image}`;
   };

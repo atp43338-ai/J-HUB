@@ -34,6 +34,10 @@ function OrderDetails() {
       return "";
     }
 
+    if (image.startsWith("http://localhost:5000")) {
+      return image.replace("http://localhost:5000", "https://api.afsal.online");
+    }
+
     // Already complete URL
     if (
       image.startsWith("http://") ||
@@ -45,12 +49,12 @@ function OrderDetails() {
     // Example:
     // /uploads/image.jpg
     if (image.startsWith("/")) {
-      return `http://localhost:5000${image}`;
+      return `https://api.afsal.online${image}`;
     }
 
     // Example:
     // 1759123456789-image.jpg
-    return `http://localhost:5000/uploads/${image}`;
+    return `https://api.afsal.online/uploads/${image}`;
   };
 
 

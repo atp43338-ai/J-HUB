@@ -30,7 +30,11 @@ function CartItem({ item, onQuantityChange, onRemove }) {
       {/* Product Image */}
       <div className="w-28 h-28 bg-gray-100 rounded-lg overflow-hidden">
         <img
-          src={`http://localhost:5000${item.product.images?.[0]}`}
+          src={
+            item.product.images?.[0]?.startsWith("http")
+              ? item.product.images[0].replace("http://localhost:5000", "https://api.afsal.online")
+              : `https://api.afsal.online${item.product.images?.[0]}`
+          }
           alt={item.product.name}
           className="w-full h-full object-contain"
         />

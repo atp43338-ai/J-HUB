@@ -37,7 +37,11 @@ function ProductImages({ images }) {
             `}
           >
             <img
-              src={`http://localhost:5000${image}`}
+              src={
+                image?.startsWith("http")
+                  ? image.replace("http://localhost:5000", "https://api.afsal.online")
+                  : `https://api.afsal.online${image}`
+              }
               alt={`Product ${index + 1}`}
               className="w-full h-full object-contain"
             />
@@ -63,7 +67,11 @@ function ProductImages({ images }) {
         onMouseMove={handleMouseMove}
       >
         <img
-          src={`http://localhost:5000${selectedImage}`}
+          src={
+            selectedImage?.startsWith("http")
+              ? selectedImage.replace("http://localhost:5000", "https://api.afsal.online")
+              : `https://api.afsal.online${selectedImage}`
+          }
           alt="Product"
           className="w-full h-full object-contain transition-transform duration-200"
           style={{
