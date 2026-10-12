@@ -129,8 +129,8 @@ const handleSubmit = async (e) => {
         />
 
         {/* J-HUB Logo */}
-        <div className="absolute top-[0%] left-[5%] z-10">
-          <h1 className="text-[42px] leading-none font-black tracking-tight">
+        <div className="absolute top-4 left-[7%] z-10">
+          <h1 className="text-[36px] md:text-[42px] leading-none font-black tracking-tight">
             <span className="text-black">
               J-
             </span>
@@ -142,9 +142,9 @@ const handleSubmit = async (e) => {
         </div>
 
         {/* Registration Content */}
-        <div className="absolute z-20 left-[7%] top-[21%] w-[30%]">
+        <div className="absolute z-20 left-[7%] top-[55px] md:top-[16%] w-[88%] sm:w-[65%] md:w-[45%] lg:w-[30%] max-h-[calc(100vh-65px)] md:max-h-[82vh] overflow-y-auto pr-1">
 
-          <h2 className="mt-3 text-[15px] font-semibold !text-black">
+          <h2 className="mt-2 text-[15px] font-semibold !text-black">
             Registration
           </h2>
 

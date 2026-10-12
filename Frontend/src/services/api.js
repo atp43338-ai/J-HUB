@@ -13,10 +13,24 @@ export const api = async (endpoint, options = {}) => {
     headers["Content-Type"] = "application/json";
   }
 
-  const response = await fetch(`${API_URL}${endpoint}`, {
-    ...options,
-    headers,
-  });
+  let response;
+  try {
+    response = await fetch(`${API_URL}${endpoint}`, {
+      ...options,
+      headers,
+    });
+  } catch (err) {
+    if (window.location.protocol === "https:" && API_URL.startsWith("http://")) {
+      throw new Error(
+        "Mixed Content Error: Frontend is on HTTPS but API is on HTTP. Backend requires HTTPS."
+      );
+    }
+    throw new Error(
+      err.message === "Failed to fetch"
+        ? "Unable to connect to backend server. Please verify the backend is running."
+        : err.message
+    );
+  }
 
   const data = await response.json();
 
