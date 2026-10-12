@@ -20,6 +20,7 @@ jobs:
         env:
           VITE_GOOGLE_CLIENT_ID: ${{ secrets.VITE_GOOGLE_CLIENT_ID || '261069794901-58gkbo439mcimlk16r6f7tcqeu9vop4a.apps.googleusercontent.com' }}
           VITE_RAZORPAY_KEY_ID: ${{ secrets.VITE_RAZORPAY_KEY_ID || 'rzp_test_Tkf2ff8yJKZCIN' }}
+          VITE_API_URL: ${{ secrets.VITE_API_URL || 'https://api.afsal.online/api' }}
         run: |
           cd Frontend
           npm install

@@ -1,5 +1,4 @@
-const API_URL =
-  import.meta.env.VITE_API_URL || "http://13.201.100.233:5000/api";
+const API_URL = import.meta.env.VITE_API_URL || "https://api.afsal.online/api";
 
 export const api = async (endpoint, options = {}) => {
   const headers = {
