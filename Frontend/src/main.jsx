@@ -9,7 +9,9 @@ import { Toaster } from "react-hot-toast";
 import { CartProvider } from "./features/cart/context/CartContext";
 import { WishlistProvider } from "./features/wishlist/context/WishlistContext";
 
-const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+const clientId =
+  import.meta.env.VITE_GOOGLE_CLIENT_ID ||
+  "261069794901-58gkbo439mcimlk16r6f7tcqeu9vop4a.apps.googleusercontent.com";
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>

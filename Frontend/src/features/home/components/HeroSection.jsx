@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import HomeBackground from "../asset/home-bg.png";
+import HomeBackground from "../asset/Home-bg.png";
 import JerseyImage from "../asset/jersey-img.png";
 
 function HeroSection() {
