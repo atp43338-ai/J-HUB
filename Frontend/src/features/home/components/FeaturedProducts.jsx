@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { getProducts } from "../../product/services/productService";
-import { useNavigate } from "react-router";
+import { useNavigate, Link } from "react-router";
 
 import {
   getWishlist,
@@ -470,7 +470,7 @@ function FeaturedProducts() {
 
         </div>
 
-        {/* View All Products */}
+       {/* View All Products */}
         <motion.div
           initial={{
             opacity: 0,
@@ -489,8 +489,8 @@ function FeaturedProducts() {
           }}
           className="flex justify-center mt-12"
         >
-          <a
-            href="/products"
+          <Link
+            to="/products"
             className="
               px-8
               py-3
@@ -506,7 +506,7 @@ function FeaturedProducts() {
             "
           >
             View All Products
-          </a>
+          </Link>
         </motion.div>
 
       </div>
