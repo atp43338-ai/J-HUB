@@ -1,6 +1,7 @@
 import jwt from "jsonwebtoken";
+import User from "../models/User.js";
 
-const authMiddleware = (req, res, next) => {
+const authMiddleware = async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
 
@@ -18,7 +19,25 @@ const authMiddleware = (req, res, next) => {
       process.env.JWT_SECRET
     );
 
+    // Real-time active session interception: check user status in MongoDB
+    const user = await User.findById(decoded.id);
+
+    if (!user) {
+      return res.status(401).json({
+        message: "User not found or account no longer exists",
+      });
+    }
+
+    if (user.isBlocked) {
+      return res.status(403).json({
+        success: false,
+        message: "Your account has been blocked by the admin.",
+        isBlocked: true,
+      });
+    }
+
     req.user = decoded;
+    req.userDoc = user;
 
     next();
   } catch (error) {

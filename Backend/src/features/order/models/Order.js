@@ -51,6 +51,15 @@ const orderSchema = new mongoose.Schema(
           required: true,
         },
 
+        originalPrice: {
+          type: Number,
+        },
+
+        unitDiscount: {
+          type: Number,
+          default: 0,
+        },
+
         total: {
           type: Number,
           required: true,
@@ -70,6 +79,16 @@ const orderSchema = new mongoose.Schema(
         cancelledAt: {
           type: Date,
           default: null,
+        },
+
+        isRefunded: {
+          type: Boolean,
+          default: false,
+        },
+
+        refundAmount: {
+          type: Number,
+          default: 0,
         },
       },
     ],
@@ -116,8 +135,13 @@ const orderSchema = new mongoose.Schema(
 
     paymentStatus: {
       type: String,
-      enum: ["pending", "paid", "failed"],
+      enum: ["pending", "paid", "failed", "refunded", "partially_refunded"],
       default: "pending",
+    },
+
+    isRefunded: {
+      type: Boolean,
+      default: false,
     },
 
     // Payment retry
@@ -155,6 +179,16 @@ paymentRetryExpiresAt: {
     finalPrice: {
       type: Number,
       required: true,
+    },
+
+    totalAmount: {
+      type: Number,
+      default: 0,
+    },
+
+    finalAmount: {
+      type: Number,
+      default: 0,
     },
 
     // Order status

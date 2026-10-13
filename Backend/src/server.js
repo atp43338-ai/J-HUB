@@ -42,6 +42,7 @@ import referralRoutes from "./features/referral/routes/referralRoutes.js";
 import couponRoutes from "./features/coupon/routes/couponRoutes.js";
 
 import paymentRoutes from "./features/payment/routes/paymentRoutes.js";
+import reviewRoutes from "./features/review/routes/reviewRoutes.js";
 
 
 
@@ -128,6 +129,7 @@ app.use("/api/referral", referralRoutes);
 app.use("/api/payment", paymentRoutes);
 
 app.use("/api/coupon", couponRoutes);
+app.use("/api/reviews", reviewRoutes);
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);

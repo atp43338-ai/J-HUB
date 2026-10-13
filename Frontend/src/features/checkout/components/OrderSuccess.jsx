@@ -1,15 +1,20 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router";
 
 import Navbar from "../../home/components/Navbar";
 import Footer from "../../home/components/Footer";
+import { getOrderById } from "../../order/services/orderService";
 
 function OrderSuccess() {
   const navigate = useNavigate();
   const location = useLocation();
 
+  // DATA FROM CHECKOUT
+  const orderData = location.state;
+  const [fetchedOrder, setFetchedOrder] = useState(null);
+
   // ==========================================
-  // SCROLL TO TOP WHEN PAGE OPENS
+  // SCROLL TO TOP WHEN PAGE OPENS & FETCH DETAILS
   // ==========================================
 
   useEffect(() => {
@@ -18,11 +23,19 @@ function OrderSuccess() {
       left: 0,
       behavior: "instant",
     });
-  }, []);
 
-  // DATA FROM CHECKOUT
-
-  const orderData = location.state;
+    if (orderData?.orderId) {
+      getOrderById(orderData.orderId)
+        .then((res) => {
+          if (res?.order) {
+            setFetchedOrder(res.order);
+          }
+        })
+        .catch((err) => {
+          console.warn("Could not fetch order details for OrderSuccess:", err);
+        });
+    }
+  }, [orderData?.orderId]);
 
   // ==========================================
   // IF ORDER DATA IS MISSING
@@ -143,12 +156,22 @@ function OrderSuccess() {
   // ORDER DETAILS
   // ==========================================
 
-  const {
-    orderId,
-    total,
-    status,
-    paymentMethod,
-  } = orderData;
+  const order = fetchedOrder || orderData;
+
+  const orderId = order.orderId;
+  const status = order.status;
+  const paymentMethod = order.paymentMethod;
+
+  const finalAmount = Number(
+    fetchedOrder?.finalPrice ??
+    fetchedOrder?.finalAmount ??
+    fetchedOrder?.totalAmount ??
+    orderData?.finalAmount ??
+    orderData?.totalAmount ??
+    orderData?.finalPrice ??
+    orderData?.total ??
+    0
+  );
 
   return (
     <div className="min-h-screen bg-white">
@@ -389,7 +412,10 @@ function OrderSuccess() {
                     text-gray-900
                   "
                 >
-                  ₹{total}
+                  ₹{Number(finalAmount ?? 0).toLocaleString("en-IN", {
+                    minimumFractionDigits: Number(finalAmount) % 1 !== 0 ? 2 : 0,
+                    maximumFractionDigits: 2,
+                  })}
                 </p>
 
               </div>

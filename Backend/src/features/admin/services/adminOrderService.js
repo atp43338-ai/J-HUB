@@ -1,4 +1,6 @@
 import Order from "../../order/models/Order.js";
+import Product from "../../product/models/Product.js";
+import { addMoneyToWallet } from "../../wallet/services/walletService.js";
 
 import {
   applyReferralRewardService,
@@ -77,13 +79,54 @@ export const updateOrderStatusForAdminService = async (
 
 
   // If order is cancelled
-
-  if (status === "cancelled") {
+  if (status === "cancelled" && previousStatus !== "cancelled") {
     order.cancelledAt = new Date();
+
+    // RESTORE STOCK
+    for (const item of order.items) {
+      if (item.cancelled) continue;
+
+      const product = await Product.findById(item.product);
+      if (product) {
+        const variant = product.variants.find((v) => v.size === item.size);
+        if (variant) {
+          variant.stock += item.quantity;
+          await product.save();
+        }
+      }
+    }
+
+    // STRICT REFUND: Refund only if order was prepaid or paid
+    const isPaid =
+      order.paymentStatus === "paid" ||
+      (order.paymentMethod && order.paymentMethod !== "COD");
+
+    let refundAmount = 0;
+    if (isPaid) {
+      refundAmount = Math.max(0, Number(order.finalPrice || 0));
+    }
+
+    const refundReason = `Admin order cancellation refund (${order.orderId})`;
+
+    if (isPaid && refundAmount > 0) {
+      await addMoneyToWallet(
+        order.user,
+        refundAmount,
+        refundReason,
+        order._id
+      );
+    }
+
+    order.finalPrice = 0;
+  } else if (status === "delivered") {
+    order.cancelledAt = null;
+    // When COD order is delivered, it is paid in cash
+    if (order.paymentMethod === "COD") {
+      order.paymentStatus = "paid";
+    }
   } else {
     order.cancelledAt = null;
   }
-
 
   await order.save();
 

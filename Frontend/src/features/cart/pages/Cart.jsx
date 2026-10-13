@@ -131,13 +131,28 @@ function Cart() {
   });
 
   // -----------------------------
-  // SUBTOTAL
+  // PRICE CALCULATION
   // -----------------------------
-  const subtotal = cart.items.reduce(
-    (total, item) =>
-      total + item.product.price * item.quantity,
-    0
-  );
+  const subtotal = cart.items.reduce((total, item) => {
+    const originalPrice = Number(item.product?.price) || 0;
+    return total + originalPrice * item.quantity;
+  }, 0);
+
+  const discountedSubtotal = cart.items.reduce((total, item) => {
+    const originalPrice = Number(item.product?.price) || 0;
+    const offerDiscount = Number(item.product?.offerDiscount) || 0;
+    const offerPrice = Number(item.product?.offerPrice);
+
+    const price =
+      offerDiscount > 0 && Number.isFinite(offerPrice)
+        ? offerPrice
+        : originalPrice -
+          (originalPrice * (Number(item.product?.discount) || 0)) / 100;
+
+    return total + price * item.quantity;
+  }, 0);
+
+  const discount = Math.max(0, subtotal - discountedSubtotal);
 
   // -----------------------------
   // CART PAGE
@@ -199,7 +214,7 @@ function Cart() {
             <div>
               <CartSummary
                 subtotal={subtotal}
-                discount={0}
+                discount={discount}
                 delivery={100}
                 hasOutOfStockItem={hasOutOfStockItem}
                 cartItems={cart.items}

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate, Navigate } from "react-router";
 import { GoogleLogin } from "@react-oauth/google";
 import toast from "react-hot-toast";
@@ -25,6 +25,15 @@ function Login() {
 
   // Show / Hide Password
   const [showPassword, setShowPassword] = useState(false);
+
+  // Display blocked message if redirected from an active session
+  useEffect(() => {
+    const blockedMsg = sessionStorage.getItem("blockedToast");
+    if (blockedMsg) {
+      toast.error(blockedMsg);
+      sessionStorage.removeItem("blockedToast");
+    }
+  }, []);
 
   // Normal Login
   const handleSubmit = async (e) => {

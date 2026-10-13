@@ -8,6 +8,11 @@ const returnSchema = new mongoose.Schema(
       required: true,
     },
 
+    item: {
+      type: mongoose.Schema.Types.ObjectId,
+      default: null,
+    },
+
     user: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",

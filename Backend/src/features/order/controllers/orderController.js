@@ -17,6 +17,8 @@ export const createOrder = async (req, res) => {
       addressId,
       paymentMethod,
       items,
+      couponcode,
+      couponCode = couponcode,
     } = req.body;
 
     // BASIC VALIDATION
@@ -40,13 +42,14 @@ export const createOrder = async (req, res) => {
     }
 
     // CREATE ORDER
-
+    
     const order = await createOrderService(
       req.user.id,
       {
         addressId,
         paymentMethod,
         items,
+        couponCode,
       }
     );
 
@@ -59,6 +62,9 @@ export const createOrder = async (req, res) => {
         _id: order._id,
         orderId: order.orderId,
         total: order.finalPrice,
+        finalPrice: order.finalPrice,
+        finalAmount: order.finalPrice,
+        totalAmount: order.finalPrice,
         status: order.status,
         paymentMethod: order.paymentMethod,
       },
@@ -89,6 +95,7 @@ export const createFailedPaymentOrder = async (
       addressId,
       paymentMethod,
       items,
+      couponCode,
     } = req.body;
 
     // BASIC VALIDATION
@@ -129,6 +136,9 @@ export const createFailedPaymentOrder = async (
         _id: order._id,
         orderId: order.orderId,
         total: order.finalPrice,
+        finalPrice: order.finalPrice,
+        finalAmount: order.finalPrice,
+        totalAmount: order.finalPrice,
         status: order.status,
         paymentMethod: order.paymentMethod,
         paymentStatus: order.paymentStatus,
@@ -172,6 +182,9 @@ export const retryPaymentOrder = async (
         _id: order._id,
         orderId: order.orderId,
         total: order.finalPrice,
+        finalPrice: order.finalPrice,
+        finalAmount: order.finalPrice,
+        totalAmount: order.finalPrice,
         paymentMethod: order.paymentMethod,
         paymentStatus: order.paymentStatus,
         paymentRetryExpiresAt:

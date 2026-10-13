@@ -16,8 +16,15 @@ export const createCategory = async (req, res) => {
       category,
     });
   } catch (error) {
-    res.status(500).json({
-      message: error.message,
+    // Catch MongoDB duplicate index error code 11000
+    if (error.code === 11000) {
+      return res.status(400).json({
+        message: "Category name already exists",
+      });
+    }
+
+    res.status(error.statusCode || 500).json({
+      message: error.message || "Failed to create category",
     });
   }
 };
@@ -37,8 +44,8 @@ export const getCategories = async (req, res) => {
 
     res.status(200).json(data);
   } catch (error) {
-    res.status(500).json({
-      message: error.message,
+    res.status(error.statusCode || 500).json({
+      message: error.message || "Failed to fetch categories",
     });
   }
 };
@@ -52,8 +59,8 @@ export const getCategoryById = async (req, res) => {
       category,
     });
   } catch (error) {
-    res.status(404).json({
-      message: error.message,
+    res.status(error.statusCode || 404).json({
+      message: error.message || "Category not found",
     });
   }
 };
@@ -71,8 +78,14 @@ export const updateCategory = async (req, res) => {
       category,
     });
   } catch (error) {
-    res.status(404).json({
-      message: error.message,
+    if (error.code === 11000) {
+      return res.status(400).json({
+        message: "Category name already exists",
+      });
+    }
+
+    res.status(error.statusCode || 500).json({
+      message: error.message || "Failed to update category",
     });
   }
 };
@@ -87,8 +100,8 @@ export const deleteCategory = async (req, res) => {
       category,
     });
   } catch (error) {
-    res.status(404).json({
-      message: error.message,
+    res.status(error.statusCode || 404).json({
+      message: error.message || "Failed to delete category",
     });
   }
 };

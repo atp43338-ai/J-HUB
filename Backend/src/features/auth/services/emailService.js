@@ -1,18 +1,45 @@
+import dotenv from "dotenv";
+dotenv.config();
+
 import nodemailer from "nodemailer";
 
-const transporter = nodemailer.createTransport({
-  service: "gmail",
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASSWORD,
-  },
-});
+const getTransporter = () => {
+  const user = process.env.EMAIL_USER;
+  const pass = process.env.EMAIL_PASS || process.env.EMAIL_PASSWORD;
 
- console.log("EMAIL_USER:", process.env.EMAIL_USER);
- console.log(
-  "EMAIL_PASSWORD:",
-  process.env.EMAIL_PASSWORD ? "LOADED" : "NOT LOADED"
-);
+  if (!user || !pass) {
+    console.warn(
+      "Warning: Nodemailer email credentials missing. Ensure EMAIL_USER and EMAIL_PASS (or EMAIL_PASSWORD) are set in .env."
+    );
+    return null;
+  }
+
+  return nodemailer.createTransport({
+    service: "gmail",
+    auth: {
+      user,
+      pass,
+    },
+  });
+};
+
+const sendMailWithFallback = async (mailOptions) => {
+  const transporter = getTransporter();
+  if (!transporter) {
+    console.warn(
+      `Email skipped: No email credentials configured. Mail would have been sent to ${mailOptions.to}.`
+    );
+    return false;
+  }
+
+  try {
+    await transporter.sendMail(mailOptions);
+    return true;
+  } catch (error) {
+    console.error("Error sending email:", error.message);
+    throw error;
+  }
+};
 
 
 // REGISTER OTP EMAIL
@@ -65,7 +92,7 @@ export const sendRegisterOTPEmail = async (email, otp) => {
     `,
   };
 
-  await transporter.sendMail(mailOptions);
+  await sendMailWithFallback(mailOptions);
 };
 
 // LOGIN OTP EMAIL
@@ -114,7 +141,7 @@ export const sendLoginOTPEmail = async (email, otp) => {
     `,
   };
 
-  await transporter.sendMail(mailOptions);
+  await sendMailWithFallback(mailOptions);
 };
 
 // FORGOT PASSWORD OTP EMAIL
@@ -166,7 +193,7 @@ export const sendForgotPasswordOTPEmail = async (
     `,
   };
 
-  await transporter.sendMail(mailOptions);
+  await sendMailWithFallback(mailOptions);
 };
 
 

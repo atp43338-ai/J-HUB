@@ -210,7 +210,16 @@ export const loginUserService = async (
   }
 
   if (user.isBlocked) {
-    throw new Error("Your account has been blocked");
+    const error = new Error(
+      "Your account has been blocked by the admin. Please contact support."
+    );
+    error.statusCode = 403;
+    error.isBlocked = true;
+    throw error;
+  }
+
+  if (!user.password || typeof user.password !== "string" || typeof password !== "string") {
+    throw new Error("Invalid email or password");
   }
 
   const isPasswordMatch = await bcrypt.compare(
@@ -368,7 +377,12 @@ export const googleLoginService = async (
   }
 
   if (user.isBlocked) {
-    throw new Error("Your account has been blocked");
+    const error = new Error(
+      "Your account has been blocked by the admin. Please contact support."
+    );
+    error.statusCode = 403;
+    error.isBlocked = true;
+    throw error;
   }
 
   const token = jwt.sign(

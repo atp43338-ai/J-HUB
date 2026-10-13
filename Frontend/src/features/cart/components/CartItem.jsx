@@ -51,9 +51,37 @@ function CartItem({ item, onQuantityChange, onRemove }) {
           Size: {item.size}
         </p>
 
-        <p className="mt-2 text-lg font-bold text-black">
-          ₹{item.product.price}
-        </p>
+        {(() => {
+          const originalPrice = Number(item.product.price) || 0;
+          const offerDiscount = Number(item.product.offerDiscount) || 0;
+          const offerPrice = Number(item.product.offerPrice);
+
+          const hasOffer = offerDiscount > 0 && Number.isFinite(offerPrice);
+          const productDiscount = Number(item.product.discount) || 0;
+
+          const unitPrice = hasOffer
+            ? offerPrice
+            : productDiscount > 0
+            ? originalPrice - (originalPrice * productDiscount) / 100
+            : originalPrice;
+
+          const hasDiscount = hasOffer || productDiscount > 0;
+
+          return hasDiscount ? (
+            <div className="mt-2 flex items-center gap-3">
+              <span className="text-lg font-bold text-[#d90416]">
+                ₹{unitPrice.toLocaleString("en-IN")}
+              </span>
+              <span className="text-sm text-gray-500 line-through">
+                ₹{originalPrice.toLocaleString("en-IN")}
+              </span>
+            </div>
+          ) : (
+            <p className="mt-2 text-lg font-bold text-black">
+              ₹{originalPrice.toLocaleString("en-IN")}
+            </p>
+          );
+        })()}
 
         {/* Stock Status */}
         {isOutOfStock && (
@@ -97,7 +125,7 @@ function CartItem({ item, onQuantityChange, onRemove }) {
             type="button"
             onClick={handleIncrease}
             disabled={
-              unavailable || item.quantity >= stock
+              unavailable || item.quantity >= 5
             }
             className="
               w-8 h-8

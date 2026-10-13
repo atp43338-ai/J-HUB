@@ -2,7 +2,7 @@ import Product from "../models/Product.js";
 import Offer from "../../admin/offer/models/Offer.js";
 
 
-const applyProductOffers = async (products) => {
+export const applyProductOffers = async (products) => {
   const productIds = products.map(
     (product) => product._id
   );

@@ -19,6 +19,13 @@ const walletTransactionSchema = new mongoose.Schema(
       required: true,
     },
 
+    description: {
+      type: String,
+      default: function () {
+        return this.reason;
+      },
+    },
+
     order: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Order",
@@ -30,6 +37,11 @@ const walletTransactionSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Return",
       default: null,
+    },
+
+    date: {
+      type: Date,
+      default: Date.now,
     },
 
     createdAt: {

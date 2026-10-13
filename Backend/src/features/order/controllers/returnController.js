@@ -4,7 +4,7 @@ import { createReturnService } from "../services/returnService.js";
 // CREATE RETURN REQUEST
 export const createReturn = async (req, res) => {
   try {
-    const { orderId, reason, description } = req.body;
+    const { orderId, reason, description, itemId } = req.body;
 
     // Validation
     if (!orderId || !reason) {
@@ -17,7 +17,8 @@ export const createReturn = async (req, res) => {
       orderId,
       req.user.id,
       reason,
-      description
+      description,
+      itemId
     );
 
     res.status(201).json({

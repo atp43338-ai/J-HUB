@@ -28,6 +28,8 @@ export const createPaymentOrder = async (
       success: true,
       message:
         "Payment order created successfully",
+      key_id: process.env.RAZORPAY_KEY_ID,
+      razorpayKeyId: process.env.RAZORPAY_KEY_ID,
       order: razorpayOrder,
     });
   } catch (error) {

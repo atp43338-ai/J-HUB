@@ -42,7 +42,7 @@ function CartSummary({
         </span>
 
         <span className="font-medium text-black">
-          ₹{subtotal}
+          ₹{Number(subtotal ?? 0).toLocaleString("en-IN", { minimumFractionDigits: Number(subtotal) % 1 !== 0 ? 2 : 0 })}
         </span>
       </div>
 
@@ -53,7 +53,7 @@ function CartSummary({
         </span>
 
         <span className="font-medium text-green-600">
-          - ₹{discount}
+          - ₹{Number(discount ?? 0).toLocaleString("en-IN", { minimumFractionDigits: Number(discount) % 1 !== 0 ? 2 : 0 })}
         </span>
       </div>
 
@@ -64,7 +64,7 @@ function CartSummary({
         </span>
 
         <span className="font-medium text-black">
-          ₹{delivery}
+          ₹{Number(delivery ?? 0).toLocaleString("en-IN")}
         </span>
       </div>
 
@@ -78,7 +78,7 @@ function CartSummary({
         </span>
 
         <span className="text-lg font-bold text-black">
-          ₹{total}
+          ₹{Number(total ?? 0).toLocaleString("en-IN", { minimumFractionDigits: Number(total) % 1 !== 0 ? 2 : 0 })}
         </span>
       </div>
 

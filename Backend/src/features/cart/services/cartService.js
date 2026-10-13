@@ -1,5 +1,6 @@
 import Cart from "../models/Cart.js";
 import Product from "../../product/models/Product.js";
+import { applyProductOffers } from "../../product/services/productService.js";
 
 // Add item to cart
 export const addToCartService = async (
@@ -87,6 +88,31 @@ export const getCartService = async (userId) => {
       user: userId,
       items: [],
     };
+  }
+
+  // Attach active product / category offers to products
+  const products = cart.items
+    .map((item) => item.product)
+    .filter(Boolean);
+
+  if (products.length > 0) {
+    const productsWithOffers = await applyProductOffers(products);
+    const offerMap = new Map(
+      productsWithOffers.map((p) => [p._id.toString(), p])
+    );
+
+    const cartObj = cart.toObject();
+    cartObj.items = cartObj.items.map((item) => {
+      if (item.product && offerMap.has(item.product._id.toString())) {
+        return {
+          ...item,
+          product: offerMap.get(item.product._id.toString()),
+        };
+      }
+      return item;
+    });
+
+    return cartObj;
   }
 
   return cart;

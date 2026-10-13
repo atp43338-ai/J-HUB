@@ -6,7 +6,8 @@ export const createReturnService = async (
   orderId,
   userId,
   reason,
-  description
+  description,
+  itemId = null
 ) => {
   // Find order using custom orderId
   const order = await Order.findOne({
@@ -26,9 +27,14 @@ export const createReturnService = async (
   }
 
   // Check existing return request
-  const existingReturn = await Return.findOne({
+  const query = {
     order: order._id,
-  });
+  };
+  if (itemId) {
+    query.item = itemId;
+  }
+
+  const existingReturn = await Return.findOne(query);
 
   if (existingReturn) {
     throw new Error(
@@ -39,6 +45,7 @@ export const createReturnService = async (
   // Create return request
   const returnRequest = await Return.create({
     order: order._id,
+    item: itemId || null,
     user: userId,
     reason,
     description,

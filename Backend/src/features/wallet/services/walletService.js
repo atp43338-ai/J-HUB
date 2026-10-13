@@ -65,6 +65,8 @@ export const addMoneyToWallet = async (
     type: "credit",
     amount: Number(amount),
     reason,
+    description: reason,
+    date: new Date(),
     order: orderId,
     returnRequest: returnId,
   });

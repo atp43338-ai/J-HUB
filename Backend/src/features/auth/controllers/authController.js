@@ -124,7 +124,16 @@ export const loginUser = async (req, res) => {
       user: result.user,
     });
   } catch (error) {
-    res.status(500).json({
+    if (error.statusCode === 403 || error.isBlocked || error.message.toLowerCase().includes("blocked")) {
+      return res.status(403).json({
+        success: false,
+        message: "Your account has been blocked by the admin. Please contact support.",
+        isBlocked: true,
+      });
+    }
+
+    res.status(400).json({
+      success: false,
       message: error.message,
     });
   }
@@ -218,7 +227,16 @@ export const googleLogin = async (req, res) => {
   } catch (error) {
     console.error("Google login error:", error);
 
-    res.status(500).json({
+    if (error.statusCode === 403 || error.isBlocked || error.message.toLowerCase().includes("blocked")) {
+      return res.status(403).json({
+        success: false,
+        message: "Your account has been blocked by the admin. Please contact support.",
+        isBlocked: true,
+      });
+    }
+
+    res.status(400).json({
+      success: false,
       message: error.message,
     });
   }

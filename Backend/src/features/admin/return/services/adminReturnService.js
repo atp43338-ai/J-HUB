@@ -91,117 +91,114 @@ export const approveReturnService = async (returnId) => {
 
 
   // ---------------------------------------------------
-  // 6. CALCULATE REFUND AMOUNT
+  // 6. CALCULATE STRICT NET PAID REFUND AMOUNT
   // ---------------------------------------------------
 
-  const refundAmount =
-    Number(order.finalPrice || 0);
+  let refundAmount = 0;
+  const isSingleItemReturn = Boolean(returnRequest.item);
+
+  if (isSingleItemReturn) {
+    // Single item return
+    const item = order.items.id(returnRequest.item);
+    if (!item) {
+      throw new Error("Returned order item not found");
+    }
+
+    const activeItems = order.items.filter((it) => !it.cancelled);
+    const activeItemsTotal = activeItems.reduce(
+      (tot, it) => tot + Number(it.total || 0),
+      0
+    );
+
+    const itemTotal = Number(item.total || 0);
+    const currentCouponDiscount = Number(order.couponDiscount || 0);
+
+    let couponShare = 0;
+    if (activeItemsTotal > 0 && currentCouponDiscount > 0) {
+      couponShare = (itemTotal / activeItemsTotal) * currentCouponDiscount;
+    }
+    couponShare = Math.round(couponShare * 100) / 100;
+
+    refundAmount = Math.max(0, Math.round((itemTotal - couponShare) * 100) / 100);
+
+    // Restore stock for this single returned item
+    const product = await Product.findById(item.product);
+    if (product) {
+      const variant = product.variants.find(
+        (v) => v.size === item.size
+      );
+      if (variant) {
+        variant.stock += item.quantity;
+        await product.save();
+      }
+    }
+  } else {
+    // Full order return: refund net amount paid
+    refundAmount = Math.max(0, Number(order.finalPrice || 0));
+
+    // Restore product stock for all active items
+    for (const item of order.items) {
+      if (item.cancelled) {
+        continue;
+      }
+
+      const product = await Product.findById(item.product);
+      if (!product) {
+        continue;
+      }
+
+      const variant = product.variants.find(
+        (v) => v.size === item.size
+      );
+
+      if (variant) {
+        variant.stock += item.quantity;
+        await product.save();
+      }
+    }
+  }
+
+  refundAmount = Math.round(refundAmount * 100) / 100;
 
   if (refundAmount <= 0) {
-    throw new Error(
-      "Invalid refund amount"
-    );
+    throw new Error("Invalid refund amount: net paid amount is 0");
   }
 
-
   // ---------------------------------------------------
-  // 7. RESTORE PRODUCT STOCK
+  // 7. REFUND MONEY TO WALLET
   // ---------------------------------------------------
 
-  for (const item of order.items) {
-
-    // Do not restore stock for
-    // already cancelled items
-    if (item.cancelled) {
-      continue;
-    }
-
-
-    const product =
-      await Product.findById(
-        item.product
-      );
-
-    // Product may have been deleted
-    if (!product) {
-      continue;
-    }
-
-
-    // Find matching size variant
-    const variant =
-      product.variants.find(
-        (variant) =>
-          variant.size === item.size
-      );
-
-
-    if (variant) {
-
-      variant.stock += item.quantity;
-
-      await product.save();
-    }
-  }
-
-
-  // ---------------------------------------------------
-  // 8. REFUND MONEY TO WALLET
-  // ---------------------------------------------------
+  const refundDescription = `Refund for returned ${isSingleItemReturn ? "item" : "order"} in #${order.orderId}`;
 
   await addMoneyToWallet(
     order.user,
     refundAmount,
-    `Refund for returned order ${order.orderId}`,
+    refundDescription,
     order._id,
     returnRequest._id
   );
 
-
   // ---------------------------------------------------
-  // 9. MARK REFUND AS PROCESSED
+  // 8. MARK REFUND AS PROCESSED
   // ---------------------------------------------------
 
   returnRequest.refundProcessed = true;
-
-  returnRequest.refundAmount =
-    refundAmount;
-
-  returnRequest.refundedAt =
-    new Date();
-
-
-  // ---------------------------------------------------
-  // 10. UPDATE RETURN STATUS
-  // ---------------------------------------------------
-
+  returnRequest.refundAmount = refundAmount;
+  returnRequest.refundedAt = new Date();
   returnRequest.status = "approved";
 
-
   // ---------------------------------------------------
-  // 11. UPDATE ORDER
+  // 9. UPDATE ORDER
   // ---------------------------------------------------
 
-  order.status = "returned";
-
-  order.returnReason =
-    returnRequest.reason;
-
-  order.returnedAt =
-    new Date();
-
-
-  // ---------------------------------------------------
-  // 12. SAVE ORDER
-  // ---------------------------------------------------
+  if (!isSingleItemReturn) {
+    order.status = "returned";
+    order.returnReason = returnRequest.reason;
+    order.returnedAt = new Date();
+    order.finalPrice = 0;
+  }
 
   await order.save();
-
-
-  // ---------------------------------------------------
-  // 13. SAVE RETURN REQUEST
-  // ---------------------------------------------------
-
   await returnRequest.save();
 
 

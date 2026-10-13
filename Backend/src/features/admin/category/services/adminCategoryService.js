@@ -2,7 +2,23 @@ import Category from "../models/category.js";
 
 // Add Category
 export const createCategoryService = async (categoryData) => {
-  const category = await Category.create(categoryData);
+  const trimmedName = categoryData.name?.trim();
+
+  // Case-insensitive duplicate check
+  const existingCategory = await Category.findOne({
+    name: { $regex: new RegExp(`^${trimmedName}$`, "i") },
+  });
+
+  if (existingCategory) {
+    const error = new Error("Category name already exists");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const category = await Category.create({
+    ...categoryData,
+    name: trimmedName,
+  });
 
   return category;
 };
@@ -21,8 +37,7 @@ export const getCategoriesService = async (
 
   if (search) {
     query.name = {
-      $regex: search,
-      $options: "i",
+      $regex: search,$options: "i",
     };
   }
 
@@ -32,7 +47,6 @@ export const getCategoriesService = async (
     .limit(limit);
 
   const totalCategories = await Category.countDocuments(query);
-
   const totalPages = Math.ceil(totalCategories / limit);
 
   return {
@@ -48,7 +62,9 @@ export const getCategoryByIdService = async (categoryId) => {
   const category = await Category.findById(categoryId);
 
   if (!category) {
-    throw new Error("Category not found");
+    const error = new Error("Category not found");
+    error.statusCode = 404;
+    throw error;
   }
 
   return category;
@@ -59,6 +75,24 @@ export const updateCategoryService = async (
   categoryId,
   categoryData
 ) => {
+  if (categoryData.name) {
+    const trimmedName = categoryData.name.trim();
+
+    // Prevent renaming to another category that already exists
+    const existingCategory = await Category.findOne({
+      _id: { $ne: categoryId },
+      name: { $regex: new RegExp(`^${trimmedName}$`, "i") },
+    });
+
+    if (existingCategory) {
+      const error = new Error("Category name already exists");
+      error.statusCode = 400;
+      throw error;
+    }
+
+    categoryData.name = trimmedName;
+  }
+
   const category = await Category.findByIdAndUpdate(
     categoryId,
     categoryData,
@@ -66,7 +100,9 @@ export const updateCategoryService = async (
   );
 
   if (!category) {
-    throw new Error("Category not found");
+    const error = new Error("Category not found");
+    error.statusCode = 404;
+    throw error;
   }
 
   return category;
@@ -81,7 +117,9 @@ export const deleteCategoryService = async (categoryId) => {
   );
 
   if (!category) {
-    throw new Error("Category not found");
+    const error = new Error("Category not found");
+    error.statusCode = 404;
+    throw error;
   }
 
   return category;

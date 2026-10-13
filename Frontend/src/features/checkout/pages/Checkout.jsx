@@ -1,21 +1,13 @@
+
 import { useEffect, useState } from "react";
-
 import { useLocation, useNavigate } from "react-router";
-
 import Navbar from "../../home/components/Navbar";
-
 import Footer from "../../home/components/Footer";
-
 import CheckoutAddress from "../components/CheckoutAddress";
-
 import CheckoutItems from "../components/CheckoutItems";
-
 import CheckoutSummary from "../components/CheckoutSummary";
-
 import PaymentMethod from "../components/PaymentMethod";
-
 import CouponSection from "../components/CouponSection";
-
 import { getAddresses } from "../../address/services/addressService";
 
 import {
@@ -141,17 +133,15 @@ function Checkout() {
 
   // CONVERT PRODUCTS FOR CHECKOUT UI
   const items = buyNowItems.map((item) => {
-    const originalPrice =
-      Number(item.product.price) || 0;
-
-    const offerPrice =
-      Number(item.product.offerPrice) || 0;
+    const originalPrice = Number(item.product.price) || 0;
+    const offerDiscount = Number(item.product.offerDiscount) || 0;
+    const offerPrice = Number(item.product.offerPrice);
 
     const price =
-      item.product.offerDiscount > 0 &&
-      offerPrice > 0
+      offerDiscount > 0 && Number.isFinite(offerPrice)
         ? offerPrice
-        : originalPrice;
+        : originalPrice -
+          (originalPrice * (Number(item.product.discount) || 0)) / 100;
 
     return {
       id: item.product._id,
@@ -162,7 +152,9 @@ function Checkout() {
       price,
       originalPrice,
       offerDiscount:
-        item.product.offerDiscount || 0,
+        offerDiscount > 0
+          ? offerDiscount
+          : Number(item.product.discount) || 0,
     };
   });
 
@@ -233,26 +225,29 @@ function Checkout() {
       setCouponLoading(false);
     }
   };
-  
 
   const removeOrderedItemsFromCart = async () => {
-  try {
-    for (const item of buyNowItems) {
-      if (item._id) {
-        await removeCartItem(item._id);
+    try {
+      for (const item of buyNowItems) {
+        if (item._id) {
+          await removeCartItem(item._id);
+        }
       }
+
+      window.dispatchEvent(new Event("cartUpdated"));
+
+      console.log("Ordered items removed from cart");
+    } catch (error) {
+      console.error(
+        "Failed to remove ordered items from cart:",
+        error
+      );
     }
+  };
 
-    window.dispatchEvent(new Event("cartUpdated"));
-
-    console.log("Ordered items removed from cart");
-  } catch (error) {
-    console.error(
-      "Failed to remove ordered items from cart:",
-      error
-    );
-  }
-};
+  // GET THE ACTUAL TOTAL RETURNED BY THE BACKEND
+  const getOrderTotal = (order) =>
+    Number(order?.finalPrice ?? order?.total ?? 0);
 
   // PLACE ORDER
   const handlePlaceOrder = async () => {
@@ -303,10 +298,19 @@ function Checkout() {
           couponCode:
             appliedCoupon || null,
 
-          items: buyNowItems.map((item) => ({
-            productId: item.product._id,
+          subtotal,
+          discount,
+          totalAmount: finalPrice,
+          finalAmount: finalPrice,
+
+          items: items.map((item) => ({
+            productId: item.id,
             size: item.size,
             quantity: item.quantity,
+            price: item.price,
+            originalPrice: item.originalPrice,
+            discount: item.originalPrice - item.price,
+            unitDiscount: item.originalPrice - item.price,
           })),
         };
 
@@ -323,13 +327,24 @@ function Checkout() {
           data
         );
 
+        const finalAmountValue = getOrderTotal(data.order);
+
         navigate("/order-success", {
           state: {
             orderId:
               data.order.orderId,
 
             total:
-              data.order.total,
+              finalAmountValue,
+
+            finalAmount:
+              finalAmountValue,
+
+            totalAmount:
+              finalAmountValue,
+
+            finalPrice:
+              finalAmountValue,
 
             status:
               data.order.status,
@@ -343,23 +358,23 @@ function Checkout() {
       }
 
       const removeOrderedItemsFromCart = async () => {
-  try {
-    for (const item of buyNowItems) {
-      if (item._id) {
-        await removeCartItem(item._id);
-      }
-    }
+        try {
+          for (const item of buyNowItems) {
+            if (item._id) {
+              await removeCartItem(item._id);
+            }
+          }
 
-    window.dispatchEvent(new Event("cartUpdated"));
+          window.dispatchEvent(new Event("cartUpdated"));
 
-    console.log("Ordered items removed from cart");
-  } catch (error) {
-    console.error(
-      "Failed to remove ordered items from cart:",
-      error
-    );
-  }
-};
+          console.log("Ordered items removed from cart");
+        } catch (error) {
+          console.error(
+            "Failed to remove ordered items from cart:",
+            error
+          );
+        }
+      };
 
       // ==============================
       // RAZORPAY PAYMENT
@@ -387,13 +402,25 @@ function Checkout() {
         return;
       }
 
+      // GET & VALIDATE RAZORPAY KEY ID
+      const razorpayKey =
+        data.key_id ||
+        data.razorpayKeyId ||
+        data.order?.key_id ||
+        import.meta.env.VITE_RAZORPAY_KEY_ID;
+
+      if (!razorpayKey) {
+        toast.error("Razorpay Key ID is missing. Please check your configuration.");
+        setPlacingOrder(false);
+        return;
+      }
+
       // =================================
       // RAZORPAY OPTIONS
       // =================================
 
       const options = {
-        key: import.meta.env
-          .VITE_RAZORPAY_KEY_ID,
+        key: razorpayKey,
 
         amount: data.order.amount,
 
@@ -481,6 +508,8 @@ function Checkout() {
                   "Payment completed successfully"
                 );
 
+                const retryTotalValue = getOrderTotal(retryResult.order);
+
                 navigate("/order-success", {
                   state: {
                     orderId:
@@ -488,8 +517,16 @@ function Checkout() {
                         .orderId,
 
                     total:
-                      retryResult.order
-                        .total,
+                      retryTotalValue,
+
+                    finalAmount:
+                      retryTotalValue,
+
+                    totalAmount:
+                      retryTotalValue,
+
+                    finalPrice:
+                      retryTotalValue,
 
                     status:
                       retryResult.order
@@ -518,17 +555,20 @@ function Checkout() {
                 couponCode:
                   appliedCoupon || null,
 
-                items: buyNowItems.map(
-                  (item) => ({
-                    productId:
-                      item.product._id,
+                subtotal,
+                discount,
+                totalAmount: finalPrice,
+                finalAmount: finalPrice,
 
-                    size: item.size,
-
-                    quantity:
-                      item.quantity,
-                  })
-                ),
+                items: items.map((item) => ({
+                  productId: item.id,
+                  size: item.size,
+                  quantity: item.quantity,
+                  price: item.price,
+                  originalPrice: item.originalPrice,
+                  discount: item.originalPrice - item.price,
+                  unitDiscount: item.originalPrice - item.price,
+                })),
               };
 
               console.log(
@@ -554,27 +594,36 @@ function Checkout() {
               // SUCCESS PAGE
               // ==============================
 
-              setPlacingOrder(false);
 
-              navigate("/order-success", {
-                state: {
-                  orderId:
-                    orderDataResponse.order
-                      .orderId,
+setPlacingOrder(false);
 
-                  total:
-                    orderDataResponse.order
-                      .total,
+const onlineTotalValue = Number(
+  orderDataResponse.order.finalPrice ??
+  orderDataResponse.order.finalAmount ??
+  orderDataResponse.order.totalAmount ??
+  orderDataResponse.order.total ??
+  0
+);
 
-                  status:
-                    orderDataResponse.order
-                      .status,
+navigate("/order-success", {
+  state: {
+    orderId: orderDataResponse.order.orderId,
 
-                  paymentMethod:
-                    orderDataResponse.order
-                      .paymentMethod,
-                },
-              });
+    total: onlineTotalValue,
+
+    finalAmount: onlineTotalValue,
+
+    totalAmount: onlineTotalValue,
+
+    finalPrice: onlineTotalValue,
+
+    status: orderDataResponse.order.status,
+
+    paymentMethod:
+      orderDataResponse.order.paymentMethod,
+  },
+});
+
             }
           } catch (error) {
             console.error(
@@ -659,10 +708,19 @@ function Checkout() {
               paymentMethod:
                 paymentMethod.toUpperCase(),
 
-              items: buyNowItems.map((item) => ({
-                productId: item.product._id,
+              subtotal,
+              discount,
+              totalAmount: finalPrice,
+              finalAmount: finalPrice,
+
+              items: items.map((item) => ({
+                productId: item.id,
                 size: item.size,
                 quantity: item.quantity,
+                price: item.price,
+                originalPrice: item.originalPrice,
+                discount: item.originalPrice - item.price,
+                unitDiscount: item.originalPrice - item.price,
               })),
             };
 
