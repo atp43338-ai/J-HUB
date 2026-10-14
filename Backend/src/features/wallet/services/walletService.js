@@ -1,14 +1,70 @@
+import mongoose from "mongoose";
 import Wallet from "../models/Wallet.js";
+
+// CREDIT USER WALLET (ATOMIC & RESILIENT)
+export const creditUserWallet = async (targetUserId, amount, description) => {
+  try {
+    const uId = new mongoose.Types.ObjectId(targetUserId);
+
+    // Identify whether schema uses 'user' or 'userId'
+    const sampleWallet = await Wallet.findOne({});
+    const userKey = (sampleWallet && "userId" in sampleWallet) ? "userId" : "user";
+
+    const query = {
+      $or: [
+        { [userKey]: uId },
+        { user: uId },
+        { userId: uId },
+      ],
+    };
+
+    let wallet = await Wallet.findOne(query);
+
+    if (!wallet) {
+      wallet = new Wallet({
+        [userKey]: uId,
+        user: uId,
+        userId: uId,
+        balance: 0,
+        transactions: [],
+      });
+    }
+
+    // Perform numerical increment and append transaction
+    wallet.balance = Number((Number(wallet.balance || 0) + Number(amount)).toFixed(2));
+
+    wallet.transactions.unshift({
+      amount: Number(amount),
+      type: "credit",
+      reason: description,
+      description: description,
+      date: new Date(),
+      status: "Completed",
+    });
+
+    await wallet.save();
+    return wallet;
+  } catch (err) {
+    console.error(`Failed to credit wallet for user ${targetUserId}:`, err);
+    throw err;
+  }
+};
 
 // GET OR CREATE USER WALLET
 export const getOrCreateWallet = async (userId) => {
+  const uId = new mongoose.Types.ObjectId(userId);
+  const sampleWallet = await Wallet.findOne({});
+  const userKey = (sampleWallet && "userId" in sampleWallet) ? "userId" : "user";
+
   let wallet = await Wallet.findOne({
-    user: userId,
+    $or: [{ [userKey]: uId }, { user: uId }, { userId: uId }],
   });
 
   if (!wallet) {
     wallet = await Wallet.create({
-      user: userId,
+      [userKey]: uId,
+      user: uId,
+      userId: uId,
       balance: 0,
       transactions: [],
     });
@@ -16,7 +72,6 @@ export const getOrCreateWallet = async (userId) => {
 
   return wallet;
 };
-
 
 // GET WALLET
 export const getWallet = async (userId) => {
@@ -32,7 +87,8 @@ export const addMoneyToWallet = async (
   amount,
   reason,
   orderId = null,
-  returnId = null
+  returnId = null,
+  description = null
 ) => {
   if (!amount || amount <= 0) {
     throw new Error("Invalid wallet amount");
@@ -65,7 +121,7 @@ export const addMoneyToWallet = async (
     type: "credit",
     amount: Number(amount),
     reason,
-    description: reason,
+    description: description || reason,
     date: new Date(),
     order: orderId,
     returnRequest: returnId,

@@ -57,6 +57,15 @@ function UserRoutes() {
       />
 
       <Route
+        path="/signup"
+        element={
+          <PublicRoute>
+            <Register />
+          </PublicRoute>
+        }
+      />
+
+      <Route
         path="/otp-verification"
         element={<OTPVerification />}
       />

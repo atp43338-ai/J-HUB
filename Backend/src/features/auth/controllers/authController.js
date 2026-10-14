@@ -19,9 +19,10 @@ export const registerUser = async (req, res) => {
       name,
       email,
       password,
-      referralCode,
-      referralToken,
     } = req.body;
+
+    const referralCode = req.body.referralCode || req.query.ref || null;
+    const referralToken = req.body.referralToken || req.query.token || null;
 
     if (!name || !email || !password) {
       return res.status(400).json({
@@ -271,3 +272,4 @@ export const changePassword = async (req, res) => {
     });
   }
 };
+

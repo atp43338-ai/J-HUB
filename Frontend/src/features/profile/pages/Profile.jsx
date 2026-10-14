@@ -212,6 +212,9 @@ function Profile() {
         <h3 className="text-lg font-bold text-black">
           Referral <span className="text-[#d90416]">Program</span>
         </h3>
+        <p className="text-xs text-gray-500 mt-1">
+          Share your code! You get <span className="font-semibold text-[#d90416]">₹99</span> and your friend gets <span className="font-semibold text-[#d90416]">₹49</span> in their wallet when they sign up.
+        </p>
 
         <div className="mt-5 grid grid-cols-1 md:grid-cols-2 gap-5">
 

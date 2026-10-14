@@ -113,11 +113,26 @@ const Referral = () => {
       <ProfileHeader
         title="Referral"
         highlight="Program"
-        description="Invite friends and earn rewards"
+        description="Share your code! You get ₹99 and your friend gets ₹49 in their wallet when they sign up."
       />
 
+      {/* Incentive Banner */}
+      <div className="mt-6 p-4 rounded-xl bg-red-50 border border-red-100 flex items-center gap-3.5">
+        <div className="w-10 h-10 rounded-full bg-[#d90416] text-white flex items-center justify-center font-bold text-base shrink-0">
+          ₹
+        </div>
+        <div>
+          <h4 className="text-sm font-bold text-gray-900">
+            Refer & Earn Wallet Cash
+          </h4>
+          <p className="text-xs text-gray-600 mt-0.5">
+            Share your code! You get <span className="font-semibold text-[#d90416]">₹99</span> and your friend gets <span className="font-semibold text-[#d90416]">₹49</span> in their wallet when they sign up.
+          </p>
+        </div>
+      </div>
+
       {/* Referral Code */}
-      <div className="mt-8">
+      <div className="mt-6">
 
         <div className="p-5 rounded-xl border border-gray-200 bg-gray-50">
 
@@ -139,6 +154,7 @@ const Referral = () => {
                 border-gray-200
                 bg-white
                 text-sm
+                font-semibold
                 text-gray-800
                 outline-none
               "
@@ -183,7 +199,11 @@ const Referral = () => {
           <div className="mt-3 flex gap-3">
 
             <input
-              value={referral.referralLink || ""}
+              value={
+                referral.referralCode
+                  ? `${window.location.origin}/register?ref=${referral.referralCode}`
+                  : referral.referralLink || ""
+              }
               readOnly
               className="
                 flex-1
@@ -202,7 +222,11 @@ const Referral = () => {
             <button
               type="button"
               onClick={() =>
-                copyText(referral.referralLink)
+                copyText(
+                  referral.referralCode
+                    ? `${window.location.origin}/register?ref=${referral.referralCode}`
+                    : referral.referralLink || ""
+                )
               }
               className="
                 h-[46px]

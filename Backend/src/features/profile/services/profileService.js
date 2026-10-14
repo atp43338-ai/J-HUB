@@ -1,3 +1,4 @@
+import crypto from "crypto";
 import User from "../../auth/models/User.js";
 
 
@@ -22,6 +23,15 @@ export const getProfileService = async (userId) => {
 
   if (!user) {
     throw new Error("User not found");
+  }
+
+  if (!user.referralCode) {
+    let newReferralCode;
+    do {
+      newReferralCode = crypto.randomBytes(4).toString("hex").toUpperCase();
+    } while (await User.findOne({ referralCode: newReferralCode }));
+    user.referralCode = newReferralCode;
+    await user.save();
   }
 
   return user;

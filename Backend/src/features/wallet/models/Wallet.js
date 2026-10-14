@@ -16,14 +16,21 @@ const walletTransactionSchema = new mongoose.Schema(
 
     reason: {
       type: String,
-      required: true,
+      default: function () {
+        return this.description || "Wallet transaction";
+      },
     },
 
     description: {
       type: String,
       default: function () {
-        return this.reason;
+        return this.reason || "Wallet transaction";
       },
+    },
+
+    status: {
+      type: String,
+      default: "Completed",
     },
 
     order: {
@@ -57,8 +64,15 @@ const walletSchema = new mongoose.Schema(
     user: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
-      required: true,
-      unique: true,
+      sparse: true,
+      index: true,
+    },
+
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      sparse: true,
+      index: true,
     },
 
     balance: {

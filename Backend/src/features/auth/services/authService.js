@@ -8,6 +8,10 @@ import {
   sendRegisterOTPEmail,
   sendForgotPasswordOTPEmail,
 } from "./emailService.js";
+import {
+  addMoneyToWallet,
+  creditUserWallet,
+} from "../../wallet/services/walletService.js";
 
 const googleClient = new OAuth2Client(
   process.env.GOOGLE_CLIENT_ID
@@ -20,13 +24,7 @@ const generateOTP = () => {
 
 // Generate Referral Code
 const generateReferralCode = () => {
-  return (
-    "JHUB-" +
-    Math.random()
-      .toString(36)
-      .substring(2, 8)
-      .toUpperCase()
-  );
+  return crypto.randomBytes(4).toString("hex").toUpperCase();
 };
 
 // Generate Referral Token
@@ -58,36 +56,10 @@ export const registerUserService = async (
   }
 
   let referredBy = null;
+  let validReferrer = null;
 
-  if (referralCode && referralToken) {
-    throw new Error(
-      "Use either referral code or referral token"
-    );
-  }
-
-  if (referralCode) {
-    const referrer = await User.findOne({
-      referralCode: referralCode.trim().toUpperCase(),
-    });
-
-    if (!referrer) {
-      throw new Error("Invalid referral code");
-    }
-
-    referredBy = referrer._id;
-  }
-
-  if (referralToken) {
-    const referrer = await User.findOne({
-      referralToken: referralToken.trim(),
-    });
-
-    if (!referrer) {
-      throw new Error("Invalid referral token");
-    }
-
-    referredBy = referrer._id;
-  }
+  const cleanCode = referralCode ? String(referralCode).trim().toUpperCase() : null;
+  const cleanToken = referralToken ? String(referralToken).trim() : null;
 
   // Generate unique referral code for new user
   let newReferralCode;
@@ -111,6 +83,35 @@ export const registerUserService = async (
     })
   );
 
+  // Self-referral and duplicate prevention checks
+  if (cleanCode) {
+    const referrer = await User.findOne({
+      referralCode: cleanCode,
+    });
+
+    if (
+      referrer &&
+      referrer.email?.toLowerCase() !== email.toLowerCase() &&
+      referrer.referralCode?.toUpperCase() !== newReferralCode
+    ) {
+      referredBy = referrer._id;
+      validReferrer = referrer;
+    }
+  } else if (cleanToken) {
+    const referrer = await User.findOne({
+      referralToken: cleanToken,
+    });
+
+    if (
+      referrer &&
+      referrer.email?.toLowerCase() !== email.toLowerCase() &&
+      referrer.referralToken !== newReferralToken
+    ) {
+      referredBy = referrer._id;
+      validReferrer = referrer;
+    }
+  }
+
   const hashPassword = await bcrypt.hash(password, 10);
 
   const otp = generateOTP();
@@ -119,7 +120,8 @@ export const registerUserService = async (
     Date.now() + 60 * 1000
   );
 
-  const user = await User.create({
+  // Execution Sequence: The new user document MUST be persisted (await newUser.save()) before invoking wallet service
+  const newUser = new User({
     name,
     email,
     password: hashPassword,
@@ -129,16 +131,41 @@ export const registerUserService = async (
     referralCode: newReferralCode,
     referralToken: newReferralToken,
     referredBy,
-    referralRewardClaimed: false,
+    referralRewardClaimed: Boolean(validReferrer),
+    isReferralRewardClaimed: Boolean(validReferrer),
   });
+
+  await newUser.save();
+
+  // Dual-sided referral rewards:
+  // Referrer earns ₹99, New user earns ₹49
+  if (validReferrer) {
+    try {
+      // 1. Credit ₹49 to newly registered user
+      await creditUserWallet(
+        newUser._id,
+        49,
+        "Referral signup welcome bonus"
+      );
+
+      // 2. Credit ₹99 to referrer
+      await creditUserWallet(
+        validReferrer._id,
+        99,
+        `Referral reward for inviting ${newUser.name || "a new user"}`
+      );
+    } catch (creditError) {
+      console.error("Referral wallet credit failed:", creditError);
+    }
+  }
 
   // Send registration OTP to user's email
   await sendRegisterOTPEmail(
-    user.email,
+    newUser.email,
     otp
   );
 
-  return user;
+  return newUser;
 };
 
 // Verify Registration OTP
@@ -353,6 +380,16 @@ export const googleLoginService = async (
   let user = await User.findOne({ email });
 
   if (!user) {
+    let newReferralCode;
+    do {
+      newReferralCode = generateReferralCode();
+    } while (await User.findOne({ referralCode: newReferralCode }));
+
+    let newReferralToken;
+    do {
+      newReferralToken = generateReferralToken();
+    } while (await User.findOne({ referralToken: newReferralToken }));
+
     user = await User.create({
       name,
       email,
@@ -361,19 +398,39 @@ export const googleLoginService = async (
       phone: "",
       password: null,
       isEmailVerified: true,
+      referralCode: newReferralCode,
+      referralToken: newReferralToken,
     });
   } else {
+    let updated = false;
+
+    if (!user.referralCode) {
+      let newReferralCode;
+      do {
+        newReferralCode = generateReferralCode();
+      } while (await User.findOne({ referralCode: newReferralCode }));
+      user.referralCode = newReferralCode;
+      updated = true;
+    }
+
     if (!user.googleId) {
       user.googleId = sub;
+      updated = true;
     }
 
     if (!user.profileImage && picture) {
       user.profileImage = picture;
+      updated = true;
     }
 
-    user.isEmailVerified = true;
+    if (!user.isEmailVerified) {
+      user.isEmailVerified = true;
+      updated = true;
+    }
 
-    await user.save();
+    if (updated) {
+      await user.save();
+    }
   }
 
   if (user.isBlocked) {

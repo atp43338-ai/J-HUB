@@ -94,6 +94,11 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+
+    isReferralRewardClaimed: {
+      type: Boolean,
+      default: false,
+    },
   },
   {
     timestamps: true,

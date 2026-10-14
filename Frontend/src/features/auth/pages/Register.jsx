@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 import {
   Link,
@@ -17,13 +17,18 @@ function Register() {
 
   // Referral code from URL
   const [searchParams] = useSearchParams();
+  const urlRef = searchParams.get("ref") || "";
 
-  const [referralCode, setReferralCode] = useState(
-    searchParams.get("ref") || ""
-  );
+  const [referralCode, setReferralCode] = useState(urlRef);
+  const [showReferralCode, setShowReferralCode] = useState(Boolean(urlRef));
 
-  const [showReferralCode, setShowReferralCode] =
-    useState(false);
+  useEffect(() => {
+    const refFromUrl = searchParams.get("ref");
+    if (refFromUrl) {
+      setReferralCode(refFromUrl.toUpperCase());
+      setShowReferralCode(true);
+    }
+  }, [searchParams]);
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -416,9 +421,8 @@ const handleSubmit = async (e) => {
               </button>
             </div>
 
-            {/* Referral Code */}
+            {/* Referral Code (Optional) */}
             <div className="mt-1">
-
               <button
                 type="button"
                 onClick={() =>
@@ -431,40 +435,50 @@ const handleSubmit = async (e) => {
                   text-[#d90416]
                   font-semibold
                   hover:underline
+                  flex
+                  items-center
+                  gap-1
                 "
               >
-                Referral Code
+                <span>
+                  {showReferralCode
+                    ? "▼ Referral Code (Optional)"
+                    : "▶ Have a referral code? (Optional)"}
+                </span>
               </button>
 
               {showReferralCode && (
-                <input
-                  type="text"
-                  value={referralCode}
-                  onChange={(e) =>
-                    setReferralCode(
-                      e.target.value.toUpperCase()
-                    )
-                  }
-                  placeholder="Enter referral code"
-                  className="
-                    mt-2
-                    w-full
-                    h-[46px]
-                    rounded-[10px]
-                    border
-                    border-black
-                    bg-white
-                    px-4
-                    text-[13px]
-                    text-black
-                    placeholder-[#777]
-                    outline-none
-                    focus:border-[#d90416]
-                    transition
-                  "
-                />
+                <div className="mt-1.5 space-y-1">
+                  <input
+                    type="text"
+                    value={referralCode}
+                    onChange={(e) =>
+                      setReferralCode(
+                        e.target.value.toUpperCase()
+                      )
+                    }
+                    placeholder="Enter referral code"
+                    className="
+                      w-full
+                      h-[44px]
+                      rounded-[10px]
+                      border
+                      border-black
+                      bg-white
+                      px-4
+                      text-[13px]
+                      text-black
+                      placeholder-[#777]
+                      outline-none
+                      focus:border-[#d90416]
+                      transition
+                    "
+                  />
+                  <p className="text-[11px] text-gray-600">
+                    Earn <span className="font-semibold text-[#d90416]">₹49</span> in your wallet upon signup!
+                  </p>
+                </div>
               )}
-
             </div>
 
 {/* create account */}
