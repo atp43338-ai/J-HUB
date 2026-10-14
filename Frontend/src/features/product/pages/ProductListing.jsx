@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router";
 import Navbar from "../../home/components/Navbar";
 import ProductHero from "../components/ProductHero";
 import BrowseCollection from "../components/BrowseCollection";
@@ -10,8 +11,11 @@ import { getProducts } from "../services/productService";
 import Footer from "../../home/components/Footer";
 
 function ProductListing() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const searchQuery = searchParams.get("search") || searchParams.get("q") || "";
+
   const [products, setProducts] = useState([]);
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState(searchQuery);
   const [sort, setSort] = useState("");
   const [category, setCategory] = useState("");
   const [brand, setBrand] = useState("");
@@ -23,13 +27,19 @@ function ProductListing() {
   const [totalProducts, setTotalProducts] = useState(0);
   const productsPerPage = 6;
 
+  // Synchronize URL search param with local search state
+  useEffect(() => {
+    setSearch(searchQuery);
+    setCurrentPage(1);
+  }, [searchQuery]);
+
   useEffect(() => {
     const fetchProducts = async () => {
       try {
         const data = await getProducts(
           currentPage,
           productsPerPage,
-          search,
+          searchQuery || search,
           sort,
           category,
           minPrice,
@@ -38,9 +48,9 @@ function ProductListing() {
           subCategory
         );
 
-        setProducts(data.products);
-        setTotalPages(data.totalPages);
-        setTotalProducts(data.totalProducts);
+        setProducts(data.products || []);
+        setTotalPages(data.totalPages || 1);
+        setTotalProducts(data.totalProducts || 0);
       } catch (error) {
         console.error("Failed to fetch products:", error);
       }
@@ -49,6 +59,7 @@ function ProductListing() {
     fetchProducts();
   }, [
     currentPage,
+    searchQuery,
     search,
     sort,
     category,
@@ -60,6 +71,7 @@ function ProductListing() {
 
   const clearFilters = () => {
     setSearch("");
+    setSearchParams({});
     setSort("");
     setCategory("");
     setBrand("");
@@ -95,6 +107,7 @@ function ProductListing() {
           <ProductSearchSort
             search={search}
             setSearch={setSearch}
+            setSearchParams={setSearchParams}
             sort={sort}
             setSort={setSort}
             setCurrentPage={setCurrentPage}
@@ -146,10 +159,48 @@ function ProductListing() {
               )}
 
               {products.length === 0 ? (
-                <div className="text-center py-20">
-                  <p className="text-gray-500">
-                    No products available.
-                  </p>
+                <div className="text-center py-16 px-6 bg-gray-50 rounded-2xl border border-gray-100 max-w-lg mx-auto my-6">
+                  <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-red-50 text-[#d90416] flex items-center justify-center">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="w-6 h-6"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="m21 21-4.35-4.35m2.35-5.65a8 8 0 1 1-16 0 8 8 0 0 1 16 0Z"
+                      />
+                    </svg>
+                  </div>
+                  {searchQuery || search ? (
+                    <>
+                      <h3 className="text-base font-bold text-gray-900 mb-1.5">
+                        No products found
+                      </h3>
+                      <p className="text-xs text-gray-500 mb-5 leading-relaxed">
+                        No products found matching <span className="font-semibold text-gray-800">"{searchQuery || search}"</span>. Try checking your spelling or use different keywords.
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSearch("");
+                          setSearchParams({});
+                          setCurrentPage(1);
+                        }}
+                        className="px-5 py-2.5 rounded-xl bg-[#d90416] hover:bg-[#b90312] text-white text-xs font-semibold transition shadow-sm inline-flex items-center gap-1.5"
+                      >
+                        Clear Search
+                      </button>
+                    </>
+                  ) : (
+                    <p className="text-gray-500 text-sm">
+                      No products available.
+                    </p>
+                  )}
                 </div>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">

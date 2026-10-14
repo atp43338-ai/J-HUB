@@ -140,11 +140,14 @@ export const getProductsService = async (
     isBlocked: false,
   };
 
-  if (search) {
-    query.name = {
-      $regex: search,
-      $options: "i",
-    };
+  if (search && search.trim() !== "") {
+    const trimmed = search.trim();
+    query.$or = [
+      { name: { $regex: trimmed, $options: "i" } },
+      { description: { $regex: trimmed, $options: "i" } },
+      { brand: { $regex: trimmed, $options: "i" } },
+      { category: { $regex: trimmed, $options: "i" } },
+    ];
   }
 
   if (category) {
@@ -283,4 +286,26 @@ export const getRelatedProductsService = async (productId) => {
     .limit(4);
 
   return relatedProducts;
+};
+
+// SEARCH PRODUCTS DEDICATED SERVICE
+export const searchProductsService = async (keyword = "") => {
+  let queryFilter = {
+    isListed: true,
+    isBlocked: false,
+  };
+
+  if (keyword && keyword.trim() !== "") {
+    const trimmed = keyword.trim();
+    queryFilter.$or = [
+      { name: { $regex: trimmed, $options: "i" } },
+      { description: { $regex: trimmed, $options: "i" } },
+      { brand: { $regex: trimmed, $options: "i" } },
+      { category: { $regex: trimmed, $options: "i" } },
+    ];
+  }
+
+  const products = await Product.find(queryFilter).sort({ createdAt: -1 });
+  const productsWithOffers = await applyProductOffers(products);
+  return productsWithOffers;
 };

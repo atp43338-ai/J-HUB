@@ -1,4 +1,4 @@
-import { Link, useLocation, useNavigate } from "react-router";
+import { Link, useLocation, useNavigate, useSearchParams } from "react-router";
 import { useCart } from "../../cart/context/CartContext";
 import { useEffect, useState } from "react";
 import { getWishlist } from "../../wishlist/services/wishlistService";
@@ -6,6 +6,7 @@ import { getWishlist } from "../../wishlist/services/wishlistService";
 function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [wishlistCount, setWishlistCount] = useState(0);
+  const [searchTerm, setSearchTerm] = useState("");
 
   const token = localStorage.getItem("token");
 
@@ -13,6 +14,24 @@ function Navbar() {
 
   const location = useLocation();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+
+  // Sync searchTerm with URL query param if present
+  useEffect(() => {
+    const query = searchParams.get("search") || searchParams.get("q") || "";
+    if (query) {
+      setSearchTerm(query);
+    }
+  }, [searchParams]);
+
+  const handleSearch = (e) => {
+    if (e) e.preventDefault();
+    if (searchTerm.trim()) {
+      navigate(`/shop?search=${encodeURIComponent(searchTerm.trim())}`);
+    } else {
+      navigate("/shop");
+    }
+  };
 
   // Get wishlist count
   const fetchWishlistCount = async () => {
@@ -225,29 +244,50 @@ function Navbar() {
         </div>
 
         {/* Right Side */}
-        <div className="flex items-center gap-10">
+        <div className="flex items-center gap-5 sm:gap-7 md:gap-8">
 
           {/* Search */}
-          <Link
-            to="/products"
-            className={`transition ${textColor} hover:text-[#d90416]`}
-            title="Search"
+          <form
+            onSubmit={handleSearch}
+            className="relative flex items-center"
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="w-5 h-5"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth="2"
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleSearch(e)}
+              placeholder="Search jerseys..."
+              className={`h-9 pl-3.5 pr-8 rounded-full text-xs font-medium transition-all duration-300 outline-none ${
+                useWhiteText
+                  ? "bg-white/15 text-white placeholder-gray-300 border border-white/30 focus:bg-white focus:text-black focus:placeholder-gray-400 focus:border-white"
+                  : "bg-gray-100 text-black placeholder-gray-400 border border-gray-200 focus:bg-white focus:border-[#d90416]"
+              } w-24 sm:w-36 md:w-52 focus:w-36 sm:focus:w-48 md:focus:w-60`}
+            />
+
+            <button
+              type="submit"
+              onClick={handleSearch}
+              className={`absolute right-2.5 p-1 transition ${
+                useWhiteText ? "text-white" : "text-black"
+              } hover:text-[#d90416]`}
+              title="Search"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="m21 21-4.35-4.35m2.35-5.65a8 8 0 1 1-16 0 8 8 0 0 1 16 0Z"
-              />
-            </svg>
-          </Link>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="w-4 h-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="m21 21-4.35-4.35m2.35-5.65a8 8 0 1 1-16 0 8 8 0 0 1 16 0Z"
+                />
+              </svg>
+            </button>
+          </form>
 
           {/* Wishlist */}
           <div className="relative">

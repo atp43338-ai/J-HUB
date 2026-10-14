@@ -1,6 +1,7 @@
 function ProductSearchSort({
   search,
   setSearch,
+  setSearchParams,
   sort,
   setSort,
   setCurrentPage,
@@ -15,7 +16,15 @@ function ProductSearchSort({
           type="text"
           value={search}
           onChange={(e) => {
-            setSearch(e.target.value);
+            const val = e.target.value;
+            setSearch(val);
+            if (setSearchParams) {
+              if (val.trim()) {
+                setSearchParams({ search: val.trim() });
+              } else {
+                setSearchParams({});
+              }
+            }
             setCurrentPage(1);
           }}
           placeholder="Search jerseys..."
@@ -34,6 +43,9 @@ function ProductSearchSort({
         <button
           onClick={() => {
             setSearch("");
+            if (setSearchParams) {
+              setSearchParams({});
+            }
             setCurrentPage(1);
           }}
           className="

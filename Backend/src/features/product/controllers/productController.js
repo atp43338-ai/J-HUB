@@ -5,6 +5,7 @@ import {
   updateProductService,
   deleteProductService,
   getRelatedProductsService,
+  searchProductsService,
 } from "../services/productService.js";
 
 export const createProduct = async (req, res) => {
@@ -36,7 +37,7 @@ export const getProducts = async (req, res) => {
     const page = Number(req.query.page) || 1;
     const limit = Number(req.query.limit) || 6;
 
-    const search = req.query.search || "";
+    const search = req.query.search || req.query.q || "";
     const sort = req.query.sort || "";
     const category = req.query.category || "";
     const minPrice = req.query.minPrice || "";
@@ -56,9 +57,31 @@ export const getProducts = async (req, res) => {
       collection,
     );
 
-    res.status(200).json(data);
+    res.status(200).json({
+      success: true,
+      ...data,
+    });
   } catch (error) {
     res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+// DEDICATED SEARCH PRODUCTS CONTROLLER
+export const searchProducts = async (req, res) => {
+  try {
+    const keyword = req.query.search || req.query.q || "";
+    const products = await searchProductsService(keyword);
+
+    res.status(200).json({
+      success: true,
+      products,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
       message: error.message,
     });
   }

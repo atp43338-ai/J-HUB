@@ -154,6 +154,11 @@ function UserRoutes() {
       />
 
       <Route
+        path="/shop"
+        element={<ProductListing />}
+      />
+
+      <Route
         path="/products/:id"
         element={<ProductDetails />}
       />
