@@ -13,6 +13,7 @@ import {
 } from "../services/orderService";
 
 import { createReturn } from "../services/returnService";
+import OrderStatusBadge from "../components/OrderStatusBadge";
 
 function OrderDetails() {
   const { orderId } = useParams();
@@ -335,12 +336,9 @@ function OrderDetails() {
                       Current Status
                     </p>
 
-                    <p
-                      className="text-lg font-semibold capitalize mt-1"
-                      style={{ color: "#d90416" }}
-                    >
-                      {order.status?.replace(/_/g, " ")}
-                    </p>
+                    <div className="mt-1">
+                      <OrderStatusBadge status={order.status} />
+                    </div>
                   </div>
 
                   <div className="text-right">

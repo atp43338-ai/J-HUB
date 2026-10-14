@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router";
 import OrderStatus from "./OrderStatus";
+import OrderStatusBadge from "./OrderStatusBadge";
 
 function OrderCard({ order }) {
   const navigate = useNavigate();
@@ -33,11 +34,14 @@ function OrderCard({ order }) {
 
         {/* Order ID */}
         <div className="min-w-0">
-          <p className="text-sm text-gray-500">
-            Order ID
-          </p>
+          <div className="flex items-center gap-2">
+            <p className="text-sm text-gray-500">
+              Order ID
+            </p>
+            <OrderStatusBadge status={order.status} />
+          </div>
 
-          <h2 className="font-bold text-black text-lg break-all">
+          <h2 className="font-bold text-black text-lg break-all mt-1">
             #{order.id}
           </h2>
         </div>

@@ -71,9 +71,9 @@ function OrderManagement() {
 
             status:
               order.status === "out_for_delivery"
-                ? "Out for Delivery"
+                ? "Shipped"
                 : order.status.charAt(0).toUpperCase() +
-                  order.status.slice(1),
+                  order.status.slice(1).toLowerCase(),
           })
         );
 
@@ -204,7 +204,7 @@ function OrderManagement() {
         </div>
 
         {/* Summary Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
 
           {/* Total Orders */}
           <div className="bg-white rounded-xl shadow-sm p-5">
@@ -237,6 +237,24 @@ function OrderManagement() {
 
           </div>
 
+          {/* Processing */}
+          <div className="bg-white rounded-xl shadow-sm p-5">
+
+            <p className="text-sm text-gray-500">
+              Processing
+            </p>
+
+            <h2 className="text-2xl font-bold !text-blue-600 mt-2">
+              {
+                orders.filter(
+                  (order) =>
+                    order.status === "Processing"
+                ).length
+              }
+            </h2>
+
+          </div>
+
           {/* Shipped */}
           <div className="bg-white rounded-xl shadow-sm p-5">
 
@@ -244,7 +262,7 @@ function OrderManagement() {
               Shipped
             </p>
 
-            <h2 className="text-2xl font-bold !text-blue-600 mt-2">
+            <h2 className="text-2xl font-bold !text-purple-600 mt-2">
               {
                 orders.filter(
                   (order) =>

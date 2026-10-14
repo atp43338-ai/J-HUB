@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import toast from "react-hot-toast";
 
@@ -23,8 +23,6 @@ function OrderDetails() {
 
   const [updatingStatus, setUpdatingStatus] =
     useState(false);
-
-  const fetchedIdRef = useRef(null);
 
   // ==================================================
   // IMAGE URL
@@ -68,13 +66,17 @@ function OrderDetails() {
       return "";
     }
 
-    if (status === "out_for_delivery") {
-      return "Out for Delivery";
-    }
+    const s = String(status).toLowerCase().trim();
+    if (s === "pending") return "Pending";
+    if (s === "processing") return "Processing";
+    if (s === "shipped") return "Shipped";
+    if (s === "delivered") return "Delivered";
+    if (s === "cancelled" || s === "canceled") return "Cancelled";
+    if (s === "out_for_delivery") return "Shipped";
 
     return (
       status.charAt(0).toUpperCase() +
-      status.slice(1)
+      status.slice(1).toLowerCase()
     );
   };
 
@@ -129,42 +131,43 @@ function OrderDetails() {
   // ==================================================
 
   useEffect(() => {
-    if (!id || fetchedIdRef.current === id) return;
+    if (!id) {
+      setLoading(false);
+      setOrder(null);
+      return;
+    }
 
     let isMounted = true;
 
-    const fetchOrder = async () => {
+    const fetchOrderDetails = async () => {
       try {
-        fetchedIdRef.current = id;
         setLoading(true);
 
-        const data = await getAdminOrderById(id);
+        const res = await getAdminOrderById(id);
 
-        if (isMounted && data?.order) {
-          setOrder(data.order);
-          setSelectedStatus(data.order.status || "");
+        if (!isMounted) return;
+
+        if (res && res.order) {
+          setOrder(res.order);
+          setSelectedStatus(res.order.status || "");
+        } else {
+          setOrder(null);
+          toast.error(res?.message || "Order not found");
         }
       } catch (error) {
         if (isMounted) {
-          console.error(
-            "Failed to fetch admin order:",
-            error
-          );
-
-          toast.error(
-            error.message ||
-              "Failed to load order details"
-          );
+          console.error("Failed to load order:", error);
           setOrder(null);
+          toast.error(error.message || "Failed to load order details");
         }
       } finally {
         if (isMounted) {
-          setLoading(false);
+          setLoading(false); // ALWAYS unset loading
         }
       }
     };
 
-    fetchOrder();
+    fetchOrderDetails();
 
     return () => {
       isMounted = false;
@@ -177,20 +180,24 @@ function OrderDetails() {
   // ==================================================
 
   const handleUpdateStatus = async () => {
-    if (!selectedStatus) {
-      toast.error(
-        "Please select an order status"
-      );
+    if (!order) return;
+
+    const currentNorm = String(order.status || "").toLowerCase().trim();
+    if (["delivered", "cancelled", "returned"].includes(currentNorm)) {
+      toast.error("This order is closed and its status cannot be modified");
       return;
     }
 
+    if (!selectedStatus) {
+      toast.error("Please select an order status");
+      return;
+    }
+
+    const selectedNorm = String(selectedStatus).toLowerCase().trim();
+
     // No change
-    if (
-      selectedStatus === order.status
-    ) {
-      toast.error(
-        "Please select a different status"
-      );
+    if (selectedNorm === currentNorm) {
+      toast.error("Please select a different next status");
       return;
     }
 
@@ -198,35 +205,24 @@ function OrderDetails() {
       setUpdatingStatus(true);
 
       const targetId = order.orderId || order._id || id;
-      const data =
-        await updateAdminOrderStatus(
-          targetId,
-          selectedStatus
-        );
+      const data = await updateAdminOrderStatus(
+        targetId,
+        selectedNorm
+      );
 
       // Update order with backend response
       if (data?.order) {
         setOrder(data.order);
-        setSelectedStatus(
-          data.order.status || ""
-        );
+        setSelectedStatus(data.order.status || "");
       }
 
-      toast.success(
-        "Order status updated successfully"
-      );
-
+      toast.success("Order status updated successfully");
     } catch (error) {
-      console.error(
-        "Failed to update order status:",
-        error
-      );
+      console.error("Failed to update order status:", error);
 
       toast.error(
-        error.message ||
-          "Failed to update order status"
+        error.message || "Failed to update order status"
       );
-
     } finally {
       setUpdatingStatus(false);
     }
@@ -268,7 +264,7 @@ function OrderDetails() {
           onClick={() =>
             navigate("/admin/orders")
           }
-          className="px-5 py-3 bg-black text-white rounded-lg"
+          className="px-5 py-3 bg-black text-white rounded-lg hover:bg-gray-800 transition cursor-pointer"
         >
           Back to Orders
         </button>
@@ -281,6 +277,13 @@ function OrderDetails() {
   // ==================================================
   // UI
   // ==================================================
+
+  const currentOrderStatus = String(order?.status || "").toLowerCase().trim();
+  const isTerminalStatus = [
+    "delivered",
+    "cancelled",
+    "returned",
+  ].includes(currentOrderStatus);
 
   return (
     <div className="min-h-screen bg-gray-100 p-6">
@@ -616,83 +619,103 @@ function OrderDetails() {
                 Order Status
               </h2>
 
-
               {/* Status Select */}
-<select
-  value={selectedStatus}
-  onChange={(e) =>
-    setSelectedStatus(e.target.value)
-  }
-  className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white outline-none focus:border-[#d90416]"
->
+              <select
+                value={selectedStatus}
+                onChange={(e) =>
+                  setSelectedStatus(e.target.value)
+                }
+                disabled={
+                  isTerminalStatus || updatingStatus
+                }
+                className={`w-full px-4 py-3 border border-gray-300 rounded-lg outline-none focus:border-[#d90416] transition ${
+                  isTerminalStatus
+                    ? "bg-gray-100 text-gray-500 cursor-not-allowed"
+                    : "bg-white text-black"
+                }`}
+              >
+                {/* PENDING: Allowed -> Processing, Cancelled */}
+                {currentOrderStatus === "pending" && (
+                  <>
+                    <option value="pending" disabled>
+                      Pending (Current)
+                    </option>
+                    <option value="processing">
+                      Processing
+                    </option>
+                    <option value="cancelled">
+                      Cancelled
+                    </option>
+                  </>
+                )}
 
-  {/* PENDING */}
-  {order.status === "pending" && (
-    <>
-      <option value="pending">
-        Pending
-      </option>
+                {/* PROCESSING: Allowed -> Shipped, Cancelled */}
+                {currentOrderStatus === "processing" && (
+                  <>
+                    <option value="processing" disabled>
+                      Processing (Current)
+                    </option>
+                    <option value="shipped">
+                      Shipped
+                    </option>
+                    <option value="cancelled">
+                      Cancelled
+                    </option>
+                  </>
+                )}
 
-      <option value="shipped">
-        Shipped
-      </option>
+                {/* SHIPPED: Allowed -> Delivered */}
+                {currentOrderStatus === "shipped" && (
+                  <>
+                    <option value="shipped" disabled>
+                      Shipped (Current)
+                    </option>
+                    <option value="delivered">
+                      Delivered
+                    </option>
+                  </>
+                )}
 
-      <option value="cancelled">
-        Cancelled
-      </option>
-    </>
-  )}
+                {/* OUT FOR DELIVERY (legacy support) */}
+                {currentOrderStatus === "out_for_delivery" && (
+                  <>
+                    <option value="out_for_delivery" disabled>
+                      Out for Delivery (Current)
+                    </option>
+                    <option value="delivered">
+                      Delivered
+                    </option>
+                  </>
+                )}
 
+                {/* DELIVERED (terminal) */}
+                {currentOrderStatus === "delivered" && (
+                  <option value="delivered">
+                    Delivered (Completed)
+                  </option>
+                )}
 
-  {/* SHIPPED */}
-  {order.status === "shipped" && (
-    <>
-      <option value="shipped">
-        Shipped
-      </option>
+                {/* CANCELLED (terminal) */}
+                {currentOrderStatus === "cancelled" && (
+                  <option value="cancelled">
+                    Cancelled (Closed)
+                  </option>
+                )}
 
-      <option value="out_for_delivery">
-        Out for Delivery
-      </option>
-
-      <option value="delivered">
-        Delivered
-      </option>
-    </>
-  )}
-
-
-  {/* OUT FOR DELIVERY */}
-  {order.status === "out_for_delivery" && (
-    <>
-      <option value="out_for_delivery">
-        Out for Delivery
-      </option>
-
-      <option value="delivered">
-        Delivered
-      </option>
-    </>
-  )}
-
-
-  {/* DELIVERED */}
-  {order.status === "delivered" && (
-    <option value="delivered">
-      Delivered
-    </option>
-  )}
-
-
-  {/* CANCELLED */}
-  {order.status === "cancelled" && (
-    <option value="cancelled">
-      Cancelled
-    </option>
-  )}
-
-</select>
-
+                {/* Other fallback */}
+                {![
+                  "pending",
+                  "processing",
+                  "shipped",
+                  "out_for_delivery",
+                  "delivered",
+                  "cancelled",
+                ].includes(currentOrderStatus) && (
+                  <option value={order.status}>
+                    {formatStatus(order.status)}
+                  </option>
+                )}
+              </select>
 
               {/* Update Button */}
               <button
@@ -701,7 +724,9 @@ function OrderDetails() {
                   handleUpdateStatus
                 }
                 disabled={
-                  updatingStatus
+                  isTerminalStatus ||
+                  updatingStatus ||
+                  selectedStatus === currentOrderStatus
                 }
                 className="
                   w-full
@@ -721,7 +746,6 @@ function OrderDetails() {
                   gap-2
                 "
               >
-
                 {updatingStatus ? (
                   <>
                     <span
@@ -736,16 +760,24 @@ function OrderDetails() {
                         [animation-duration:1s]
                       "
                     />
-
                     <span>
                       Updating...
                     </span>
                   </>
+                ) : isTerminalStatus ? (
+                  currentOrderStatus === "delivered"
+                    ? "Order Delivered (Locked)"
+                    : "Order Cancelled (Locked)"
                 ) : (
                   "Update Status"
                 )}
-
               </button>
+
+              {isTerminalStatus && (
+                <p className="mt-3 text-xs text-center text-gray-500">
+                  This order is {currentOrderStatus === "delivered" ? "delivered" : "cancelled"} and its status cannot be modified.
+                </p>
+              )}
 
             </div>
 

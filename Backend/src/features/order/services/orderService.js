@@ -508,23 +508,17 @@ export const cancelOrderService = async (
   order.cancellationReason = reason || "";
   order.cancelledAt = new Date();
 
-  // STRICT REFUND CALCULATION
-  // Prepaid orders (UPI, CARD, WALLET) or already paid COD orders receive net amount paid
-  const isPrepaid =
-    order.paymentMethod &&
-    String(order.paymentMethod).toUpperCase() !== "COD";
-  const isPaidStatus = ["paid", "refunded", "partially_refunded"].includes(
-    String(order.paymentStatus).toLowerCase()
-  );
-  const hasPriorRefundedItems = order.items.some(
-    (it) => it.isRefunded === true || Number(it.refundAmount || 0) > 0
-  );
-  const isDeliveredCOD =
-    String(order.paymentMethod).toUpperCase() === "COD" &&
-    order.status === "delivered";
+  // STRICT COD vs PREPAID REFUND RULES:
+  // For COD orders cancelled before delivery, customer has NOT handed over any cash yet.
+  // Balance change must strictly be ₹0. Bypass wallet crediting completely.
+  const isCod =
+    String(order.paymentMethod || "").toUpperCase() === "COD" ||
+    String(order.paymentMethod || "").toLowerCase() === "cash on delivery";
+  const isDelivered =
+    String(order.status).toLowerCase() === "delivered";
 
-  const isPaid =
-    isPrepaid || isPaidStatus || hasPriorRefundedItems || isDeliveredCOD;
+  // Only prepaid orders or already delivered orders qualify for wallet refund
+  const isPaid = !isCod || isDelivered;
 
   // Calculate actual refund: net final price of non-cancelled items
   let refundAmount = 0;
@@ -575,6 +569,9 @@ export const cancelOrderService = async (
     if (isPaid) {
       item.isRefunded = true;
       item.refundAmount = Number(item.total || item.price * item.quantity || 0);
+    } else {
+      item.isRefunded = false;
+      item.refundAmount = 0;
     }
   }
 
@@ -585,6 +582,8 @@ export const cancelOrderService = async (
   if (isPaid) {
     order.paymentStatus = "refunded";
     order.isRefunded = true;
+  } else {
+    order.isRefunded = false;
   }
 
   await order.save();
@@ -679,27 +678,21 @@ export const cancelOrderItemService = async (
     couponShare = Math.min(couponShare, itemTotal);
   }
 
-  // Refund only when payment has actually succeeded (Prepaid methods, paid COD, or prior refunds)
-  const isPrepaid =
-    order.paymentMethod &&
-    String(order.paymentMethod).toUpperCase() !== "COD";
-  const isPaidStatus = ["paid", "refunded", "partially_refunded"].includes(
-    String(order.paymentStatus).toLowerCase()
-  );
-  const hasPriorRefundedItems = order.items.some(
-    (it) => it.isRefunded === true || Number(it.refundAmount || 0) > 0
-  );
-  const isDeliveredCOD =
-    String(order.paymentMethod).toUpperCase() === "COD" &&
-    order.status === "delivered";
+  // STRICT COD vs PREPAID REFUND RULES:
+  // For COD orders cancelled before delivery, customer has NOT handed over any cash yet.
+  // Balance change must strictly be ₹0. Bypass wallet crediting completely.
+  const isCod =
+    String(order.paymentMethod || "").toUpperCase() === "COD" ||
+    String(order.paymentMethod || "").toLowerCase() === "cash on delivery";
+  const isDelivered =
+    String(order.status).toLowerCase() === "delivered";
 
-  const isPaid =
-    isPrepaid || isPaidStatus || hasPriorRefundedItems || isDeliveredCOD;
+  // Only prepaid orders or delivered orders qualify for wallet refund
+  const isPaid = !isCod || isDelivered;
 
-  const refundAmount = Math.max(
-    0,
-    Math.round((itemTotal - couponShare) * 100) / 100
-  );
+  const refundAmount = isPaid
+    ? Math.max(0, Math.round((itemTotal - couponShare) * 100) / 100)
+    : 0;
 
   // Unique identifier for this item's refund
   const refundReason = `Product cancellation refund (${order.orderId} - ${item._id})`;
@@ -747,6 +740,9 @@ export const cancelOrderItemService = async (
   if (isPaid && refundAmount > 0) {
     item.isRefunded = true;
     item.refundAmount = refundAmount;
+  } else {
+    item.isRefunded = false;
+    item.refundAmount = 0;
   }
 
   // 8. Calculate the remaining items
@@ -806,6 +802,8 @@ export const cancelOrderItemService = async (
     if (isPaid) {
       order.paymentStatus = "refunded";
       order.isRefunded = true;
+    } else {
+      order.isRefunded = false;
     }
   } else {
     order.status = "pending";

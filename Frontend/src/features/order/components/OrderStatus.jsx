@@ -1,6 +1,6 @@
 
 const orderSteps = [
-  { key: "pending", label: "Order Placed" },
+  { key: "pending", label: "Pending" },
   { key: "processing", label: "Processing" },
   { key: "shipped", label: "Shipped" },
   { key: "delivered", label: "Delivered" },

@@ -74,23 +74,23 @@ function AdminDashboard() {
 
   // Helper for Status Badge Styling
   const getStatusStyle = (status) => {
-    const s = (status || "").toLowerCase().replace(/_/g, " ");
+    const s = (status || "").toLowerCase().replace(/[\s_-]+/g, "");
     if (s === "delivered") {
-      return "bg-green-50 text-green-700 border border-green-200";
+      return "bg-green-100 text-green-800 border border-green-200";
     }
     if (s === "shipped") {
-      return "bg-blue-50 text-blue-700 border border-blue-200";
+      return "bg-purple-100 text-purple-800 border border-purple-200";
     }
-    if (s === "out for delivery") {
-      return "bg-purple-50 text-purple-700 border border-purple-200";
+    if (s === "processing") {
+      return "bg-blue-100 text-blue-800 border border-blue-200";
     }
-    if (s === "cancelled") {
-      return "bg-red-50 text-red-700 border border-red-200";
+    if (s === "cancelled" || s === "canceled") {
+      return "bg-red-100 text-red-800 border border-red-200";
     }
     if (s === "returned") {
-      return "bg-orange-50 text-orange-700 border border-orange-200";
+      return "bg-orange-100 text-orange-800 border border-orange-200";
     }
-    return "bg-amber-50 text-amber-700 border border-amber-200";
+    return "bg-yellow-100 text-yellow-800 border border-yellow-200";
   };
 
   // Helper for Product Image URLs
@@ -112,10 +112,11 @@ function AdminDashboard() {
   // Status color map for Donut Chart & Legend
   const statusColors = {
     Delivered: { bg: "#10b981", class: "bg-emerald-500" },
-    Shipped: { bg: "#3b82f6", class: "bg-blue-500" },
-    "Out for Delivery": { bg: "#a855f7", class: "bg-purple-500" },
+    Shipped: { bg: "#8b5cf6", class: "bg-purple-500" },
+    Processing: { bg: "#3b82f6", class: "bg-blue-500" },
     Pending: { bg: "#f59e0b", class: "bg-amber-500" },
     Cancelled: { bg: "#ef4444", class: "bg-red-500" },
+    "Out for Delivery": { bg: "#8b5cf6", class: "bg-purple-500" },
   };
 
   // Category color palette for Donut Chart

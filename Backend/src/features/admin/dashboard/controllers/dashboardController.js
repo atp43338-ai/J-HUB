@@ -46,11 +46,12 @@ export const getDashboardStats = async (req, res) => {
 
     const statusCounts = {
       pending: 0,
+      processing: 0,
       shipped: 0,
-      out_for_delivery: 0,
       delivered: 0,
       cancelled: 0,
       returned: 0,
+      out_for_delivery: 0,
     };
 
     const statusAgg = await Order.aggregate([
@@ -71,8 +72,8 @@ export const getDashboardStats = async (req, res) => {
 
     const orderStatus = [
       { name: "Pending", count: statusCounts.pending },
-      { name: "Shipped", count: statusCounts.shipped },
-      { name: "Out for Delivery", count: statusCounts.out_for_delivery },
+      { name: "Processing", count: statusCounts.processing },
+      { name: "Shipped", count: statusCounts.shipped + statusCounts.out_for_delivery },
       { name: "Delivered", count: statusCounts.delivered },
       { name: "Cancelled", count: statusCounts.cancelled },
     ];

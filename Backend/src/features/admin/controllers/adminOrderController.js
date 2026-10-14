@@ -29,6 +29,14 @@ export const getAllOrdersForAdmin = async (req, res) => {
 export const getAdminOrderDetails = async (req, res) => {
   try {
     const id = req.params.id || req.params.orderId;
+
+    if (!id) {
+      return res.status(400).json({
+        success: false,
+        message: "Order ID parameter is required",
+      });
+    }
+
     let order = null;
 
     if (mongoose.Types.ObjectId.isValid(id)) {
@@ -46,20 +54,19 @@ export const getAdminOrderDetails = async (req, res) => {
     if (!order) {
       return res.status(404).json({
         success: false,
-        message: "Order not found in database",
+        message: "Order not found",
       });
     }
 
     return res.status(200).json({
       success: true,
-      message: "Order fetched successfully",
       order,
     });
   } catch (error) {
-    console.error("Get admin order details error:", error);
+    console.error("getAdminOrderDetails error:", error);
     return res.status(500).json({
       success: false,
-      message: error.message || "Failed to fetch order details",
+      message: "Server error fetching order",
     });
   }
 };

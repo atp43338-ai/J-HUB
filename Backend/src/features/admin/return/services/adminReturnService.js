@@ -89,6 +89,15 @@ export const approveReturnService = async (returnId) => {
     );
   }
 
+  const isCod =
+    String(order.paymentMethod || "").toUpperCase() === "COD" ||
+    String(order.paymentMethod || "").toLowerCase() === "cash on delivery";
+
+  // For COD orders that reached Delivered, cash has been collected so payment is completed
+  if (isCod && order.paymentStatus !== "paid") {
+    order.paymentStatus = "paid";
+  }
+
 
   // ---------------------------------------------------
   // 6. CALCULATE STRICT NET PAID REFUND AMOUNT
@@ -118,8 +127,16 @@ export const approveReturnService = async (returnId) => {
       couponShare = (itemTotal / activeItemsTotal) * currentCouponDiscount;
     }
     couponShare = Math.round(couponShare * 100) / 100;
+    couponShare = Math.min(couponShare, itemTotal);
 
     refundAmount = Math.max(0, Math.round((itemTotal - couponShare) * 100) / 100);
+
+    // Mark the item as returned and refunded
+    item.cancelled = true;
+    item.isRefunded = true;
+    item.refundAmount = refundAmount;
+    item.cancelledAt = new Date();
+    item.cancellationReason = returnRequest.reason || "Returned";
 
     // Restore stock for this single returned item
     const product = await Product.findById(item.product);
@@ -131,6 +148,17 @@ export const approveReturnService = async (returnId) => {
         variant.stock += item.quantity;
         await product.save();
       }
+    }
+
+    // If all items are now cancelled/returned, transition whole order to returned
+    const remainingActive = order.items.filter((it) => !it.cancelled);
+    if (remainingActive.length === 0) {
+      order.status = "returned";
+      order.returnReason = returnRequest.reason;
+      order.returnedAt = new Date();
+      order.finalPrice = 0;
+      order.paymentStatus = "refunded";
+      order.isRefunded = true;
     }
   } else {
     // Full order return: refund net amount paid
@@ -155,7 +183,20 @@ export const approveReturnService = async (returnId) => {
         variant.stock += item.quantity;
         await product.save();
       }
+
+      item.cancelled = true;
+      item.isRefunded = true;
+      item.refundAmount = Number(item.total || 0);
+      item.cancelledAt = new Date();
+      item.cancellationReason = returnRequest.reason || "Order returned";
     }
+
+    order.status = "returned";
+    order.returnReason = returnRequest.reason;
+    order.returnedAt = new Date();
+    order.finalPrice = 0;
+    order.paymentStatus = "refunded";
+    order.isRefunded = true;
   }
 
   refundAmount = Math.round(refundAmount * 100) / 100;
@@ -168,7 +209,9 @@ export const approveReturnService = async (returnId) => {
   // 7. REFUND MONEY TO WALLET
   // ---------------------------------------------------
 
-  const refundDescription = `Refund for returned ${isSingleItemReturn ? "item" : "order"} in #${order.orderId}`;
+  const refundDescription = isCod
+    ? `Refund for returned ${isSingleItemReturn ? "item" : "order"} (COD delivered) - Order #${order.orderId}`
+    : `Refund for returned ${isSingleItemReturn ? "item" : "order"} - Order #${order.orderId}`;
 
   await addMoneyToWallet(
     order.user,
@@ -188,15 +231,8 @@ export const approveReturnService = async (returnId) => {
   returnRequest.status = "approved";
 
   // ---------------------------------------------------
-  // 9. UPDATE ORDER
+  // 9. SAVE CHANGES
   // ---------------------------------------------------
-
-  if (!isSingleItemReturn) {
-    order.status = "returned";
-    order.returnReason = returnRequest.reason;
-    order.returnedAt = new Date();
-    order.finalPrice = 0;
-  }
 
   await order.save();
   await returnRequest.save();

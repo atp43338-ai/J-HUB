@@ -26,6 +26,15 @@ export const createReturnService = async (
     );
   }
 
+  // For COD orders that reached Delivered status, ensure paymentStatus is marked as paid
+  const isCod =
+    String(order.paymentMethod || "").toUpperCase() === "COD" ||
+    String(order.paymentMethod || "").toLowerCase() === "cash on delivery";
+  if (isCod && order.paymentStatus !== "paid") {
+    order.paymentStatus = "paid";
+    await order.save();
+  }
+
   // Check existing return request
   const query = {
     order: order._id,

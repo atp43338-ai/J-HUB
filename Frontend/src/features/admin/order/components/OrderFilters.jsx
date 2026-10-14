@@ -24,12 +24,12 @@ function OrderFilters({
           Pending
         </option>
 
-        <option value="Shipped">
-          Shipped
+        <option value="Processing">
+          Processing
         </option>
 
-        <option value="Out for Delivery">
-          Out for Delivery
+        <option value="Shipped">
+          Shipped
         </option>
 
         <option value="Delivered">

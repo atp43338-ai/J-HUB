@@ -196,6 +196,7 @@ paymentRetryExpiresAt: {
       type: String,
       enum: [
         "pending",
+        "processing",
         "shipped",
         "out_for_delivery",
         "delivered",

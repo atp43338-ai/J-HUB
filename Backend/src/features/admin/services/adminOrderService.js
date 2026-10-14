@@ -53,21 +53,20 @@ export const updateOrderStatusForAdminService = async (
   orderId,
   status
 ) => {
-
   const allowedStatuses = [
     "pending",
+    "processing",
     "shipped",
-    "out_for_delivery",
     "delivered",
     "cancelled",
   ];
 
-  // Check status
+  const targetStatus = String(status || "").toLowerCase().trim();
 
-  if (!allowedStatuses.includes(status)) {
+  // Check valid status
+  if (!allowedStatuses.includes(targetStatus)) {
     throw new Error("Invalid order status");
   }
-
 
   // Find order
   let order = null;
@@ -84,20 +83,48 @@ export const updateOrderStatusForAdminService = async (
     throw new Error("Order not found");
   }
 
+  const currentStatus = String(order.status || "").toLowerCase().trim();
 
-  // PREVENT DUPLICATE REFERRAL REWARD
+  // If already at the requested status, return early
+  if (currentStatus === targetStatus) {
+    return order;
+  }
+
+  // Sequential transition guard
+  const allowedTransitions = {
+    pending: ["processing", "cancelled"],
+    processing: ["shipped", "cancelled"],
+    shipped: ["delivered"],
+    delivered: [],
+    cancelled: [],
+    // Legacy support for older existing orders
+    out_for_delivery: ["delivered"],
+    returned: [],
+  };
+
+  const allowedNext = allowedTransitions[currentStatus] || [];
+  if (!allowedNext.includes(targetStatus)) {
+    throw new Error(
+      `Cannot change status from ${currentStatus} to ${targetStatus}`
+    );
+  }
 
   const previousStatus = order.status;
 
-
   // Update status
-
-  order.status = status;
-
+  order.status = targetStatus;
 
   // If order is cancelled
-  if (status === "cancelled" && previousStatus !== "cancelled") {
+  if (targetStatus === "cancelled" && previousStatus !== "cancelled") {
     order.cancelledAt = new Date();
+
+    const isCod =
+      String(order.paymentMethod || "").toUpperCase() === "COD" ||
+      String(order.paymentMethod || "").toLowerCase() === "cash on delivery";
+    const isDelivered = previousStatus === "delivered";
+
+    // STRICT REFUND: If COD and NOT delivered, customer never paid: ₹0 refund!
+    const isPaid = !isCod || isDelivered;
 
     // RESTORE STOCK
     for (const item of order.items) {
@@ -111,12 +138,18 @@ export const updateOrderStatusForAdminService = async (
           await product.save();
         }
       }
-    }
 
-    // STRICT REFUND: Refund only if order was prepaid or paid
-    const isPaid =
-      order.paymentStatus === "paid" ||
-      (order.paymentMethod && order.paymentMethod !== "COD");
+      item.cancelled = true;
+      item.cancelledAt = new Date();
+      item.cancellationReason = "Cancelled by admin";
+      if (isPaid) {
+        item.isRefunded = true;
+        item.refundAmount = Number(item.total || 0);
+      } else {
+        item.isRefunded = false;
+        item.refundAmount = 0;
+      }
+    }
 
     let refundAmount = 0;
     if (isPaid) {
@@ -132,10 +165,16 @@ export const updateOrderStatusForAdminService = async (
         refundReason,
         order._id
       );
+      order.paymentStatus = "refunded";
+      order.isRefunded = true;
+    } else {
+      order.isRefunded = false;
     }
 
     order.finalPrice = 0;
-  } else if (status === "delivered") {
+    order.totalAmount = 0;
+    order.finalAmount = 0;
+  } else if (targetStatus === "delivered") {
     order.cancelledAt = null;
     // When COD order is delivered, it is paid in cash
     if (order.paymentMethod === "COD") {
@@ -147,12 +186,10 @@ export const updateOrderStatusForAdminService = async (
 
   await order.save();
 
-
   // APPLY REFERRAL REWARD
   // Only when order becomes delivered
-
   if (
-    status === "delivered" &&
+    targetStatus === "delivered" &&
     previousStatus !== "delivered"
   ) {
     await applyReferralRewardService(
@@ -161,12 +198,8 @@ export const updateOrderStatusForAdminService = async (
     );
   }
 
-
   // Return updated order
-
-  const updatedOrder = await Order.findOne({
-    orderId,
-  })
+  const updatedOrder = await Order.findById(order._id)
     .populate("user", "name email phone")
     .populate("items.product");
 
