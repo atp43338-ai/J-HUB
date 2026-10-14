@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import Order from "../../order/models/Order.js";
 import Product from "../../product/models/Product.js";
 import { addMoneyToWallet } from "../../wallet/services/walletService.js";
@@ -23,9 +24,19 @@ export const getAllOrdersForAdminService = async () => {
 export const getSingleOrderForAdminService = async (
   orderId
 ) => {
-  const order = await Order.findOne({ orderId })
-    .populate("user", "name email phone")
-    .populate("items.product");
+  let order = null;
+
+  if (mongoose.Types.ObjectId.isValid(orderId)) {
+    order = await Order.findById(orderId)
+      .populate("user", "name email phone")
+      .populate("items.product", "name images price");
+  }
+
+  if (!order) {
+    order = await Order.findOne({ orderId })
+      .populate("user", "name email phone")
+      .populate("items.product", "name images price");
+  }
 
   if (!order) {
     throw new Error("Order not found");
@@ -33,6 +44,7 @@ export const getSingleOrderForAdminService = async (
 
   return order;
 };
+
 
 
 // UPDATE ORDER STATUS
@@ -58,10 +70,15 @@ export const updateOrderStatusForAdminService = async (
 
 
   // Find order
-
-  const order = await Order.findOne({
-    orderId,
-  });
+  let order = null;
+  if (mongoose.Types.ObjectId.isValid(orderId)) {
+    order = await Order.findById(orderId);
+  }
+  if (!order) {
+    order = await Order.findOne({
+      orderId,
+    });
+  }
 
   if (!order) {
     throw new Error("Order not found");

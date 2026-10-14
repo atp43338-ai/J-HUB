@@ -43,6 +43,8 @@ import couponRoutes from "./features/coupon/routes/couponRoutes.js";
 
 import paymentRoutes from "./features/payment/routes/paymentRoutes.js";
 import reviewRoutes from "./features/review/routes/reviewRoutes.js";
+import adminReviewRoutes from "./features/admin/review/routes/adminReviewRoutes.js";
+import dashboardRoutes from "./features/admin/dashboard/routes/dashboardRoutes.js";
 
 
 
@@ -122,6 +124,9 @@ app.use("/api/admin/offers", adminOfferRoutes);
 app.use("/api/admin/coupons", adminCouponRoutes);
 app.use("/api/admin/sales", adminSalesRoutes);
 app.use("/api/admin/referrals", adminReferralRoutes);
+app.use("/api/admin/reviews", adminReviewRoutes);
+app.use("/api/admin/dashboard", dashboardRoutes);
+app.use("/api/admin/dashboard-stats", dashboardRoutes);
 
 app.use("/api/wallet", walletRoutes);
 app.use("/api/referral", referralRoutes);

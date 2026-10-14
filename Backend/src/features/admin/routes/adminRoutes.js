@@ -6,10 +6,14 @@ import {
   getUsers,
   updateUserBlock,
 } from "../controllers/adminController.js";
+import { getDashboardStats } from "../dashboard/controllers/dashboardController.js";
 
 import adminMiddleware from "../middleware/adminMiddleware.js";
 
 const router = express.Router();
+
+// Dashboard Statistics
+router.get("/dashboard-stats", adminMiddleware, getDashboardStats);
 
 
 // Admin Login

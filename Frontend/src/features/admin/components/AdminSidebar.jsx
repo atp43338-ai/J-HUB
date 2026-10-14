@@ -17,16 +17,16 @@ function AdminSidebar({ isOpen, setIsOpen }) {
       path: "/admin/products",
     },
     {
+      name: "Review Management",
+      path: "/admin/reviews",
+    },
+    {
       name: "Category Management",
       path: "/admin/categories",
     },
     {
       name: "Order Management",
       path: "/admin/orders",
-    },
-    {
-      name: "Inventory",
-      path: "/admin/inventory",
     },
     {
       name: "Coupon Management",

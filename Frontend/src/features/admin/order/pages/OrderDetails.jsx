@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useNavigate, useParams } from "react-router";
 import toast from "react-hot-toast";
 
@@ -24,6 +24,7 @@ function OrderDetails() {
   const [updatingStatus, setUpdatingStatus] =
     useState(false);
 
+  const fetchedIdRef = useRef(null);
 
   // ==================================================
   // IMAGE URL
@@ -128,38 +129,46 @@ function OrderDetails() {
   // ==================================================
 
   useEffect(() => {
+    if (!id || fetchedIdRef.current === id) return;
+
+    let isMounted = true;
+
     const fetchOrder = async () => {
       try {
+        fetchedIdRef.current = id;
         setLoading(true);
 
-        const data =
-          await getAdminOrderById(id);
+        const data = await getAdminOrderById(id);
 
-        setOrder(data.order);
-
-        // Set current order status
-        setSelectedStatus(
-          data.order.status
-        );
-
+        if (isMounted && data?.order) {
+          setOrder(data.order);
+          setSelectedStatus(data.order.status || "");
+        }
       } catch (error) {
-        console.error(
-          "Failed to fetch admin order:",
-          error
-        );
+        if (isMounted) {
+          console.error(
+            "Failed to fetch admin order:",
+            error
+          );
 
-        toast.error(
-          error.message ||
-            "Failed to load order details"
-        );
+          toast.error(
+            error.message ||
+              "Failed to load order details"
+          );
+          setOrder(null);
+        }
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
 
-    if (id) {
-      fetchOrder();
-    }
+    fetchOrder();
+
+    return () => {
+      isMounted = false;
+    };
   }, [id]);
 
 
@@ -188,19 +197,20 @@ function OrderDetails() {
     try {
       setUpdatingStatus(true);
 
+      const targetId = order.orderId || order._id || id;
       const data =
         await updateAdminOrderStatus(
-          order.orderId,
+          targetId,
           selectedStatus
         );
 
       // Update order with backend response
-      setOrder(data.order);
-
-      // Update dropdown
-      setSelectedStatus(
-        data.order.status
-      );
+      if (data?.order) {
+        setOrder(data.order);
+        setSelectedStatus(
+          data.order.status || ""
+        );
+      }
 
       toast.success(
         "Order status updated successfully"
@@ -221,6 +231,7 @@ function OrderDetails() {
       setUpdatingStatus(false);
     }
   };
+
 
 
   // ==================================================

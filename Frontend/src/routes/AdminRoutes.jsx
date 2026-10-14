@@ -4,12 +4,12 @@ import AdminLogin from "../features/admin/auth/pages/AdminLogin";
 import UserManagement from "../features/admin/user/pages/UserManagement";
 
 import ProductManagement from "../features/admin/product/pages/ProductManagement";
+import ReviewManagement from "../features/admin/review/pages/ReviewManagement";
 import CategoryManagement from "../features/admin/category/pages/CategoryManagement";
 
 import OrderManagement from "../features/admin/order/pages/OrderManagement";
 import AdminOrderDetails from "../features/admin/order/pages/OrderDetails";
 
-import InventoryManagement from "../features/admin/inventory/pages/InventoryManagement";
 import ReturnManagement from "../features/admin/return/pages/ReturnManagement";
 
 import OfferManagement from "../features/admin/offer/pages/OfferManagement";
@@ -50,14 +50,13 @@ function AdminRoutes() {
         <Route path="users" element={<UserManagement />} />
 
         <Route path="products" element={<ProductManagement />} />
+        <Route path="reviews" element={<ReviewManagement />} />
 
         <Route path="categories" element={<CategoryManagement />} />
 
         <Route path="orders" element={<OrderManagement />} />
 
         <Route path="orders/:id" element={<AdminOrderDetails />} />
-
-        <Route path="inventory" element={<InventoryManagement />} />
 
         <Route path="returns" element={<ReturnManagement />} />
 

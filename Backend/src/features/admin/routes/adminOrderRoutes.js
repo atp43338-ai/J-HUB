@@ -2,14 +2,13 @@ import express from "express";
 
 import {
   getAllOrdersForAdmin,
-  getSingleOrderForAdmin,
+  getAdminOrderDetails,
   updateOrderStatusForAdmin,
 } from "../controllers/adminOrderController.js";
 
 import adminMiddleware from "../middleware/adminMiddleware.js";
 
 const router = express.Router();
-
 
 // GET ALL ORDERS
 router.get(
@@ -18,21 +17,18 @@ router.get(
   getAllOrdersForAdmin
 );
 
-
 // UPDATE ORDER STATUS
 router.patch(
-  "/:orderId/status",
+  "/:id/status",
   adminMiddleware,
   updateOrderStatusForAdmin
 );
 
-
-// GET SINGLE ORDER
+// GET SINGLE ORDER DETAILS
 router.get(
-  "/:orderId",
+  "/:id",
   adminMiddleware,
-  getSingleOrderForAdmin
+  getAdminOrderDetails
 );
-
 
 export default router;
