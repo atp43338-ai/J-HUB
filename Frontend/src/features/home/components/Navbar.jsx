@@ -88,7 +88,7 @@ function Navbar() {
   // Detect scroll
   useEffect(() => {
     const handleScroll = () => {
-      setIsScrolled(window.scrollY > 50);
+      setIsScrolled(window.scrollY > 20);
     };
 
     window.addEventListener("scroll", handleScroll);
@@ -181,31 +181,25 @@ function Navbar() {
     }
   };
 
-  /*
-    White pages:
-    → Black text/icons before scrolling
+  // Route & Contrast detection (transparent overlay on Home and Products/Shop hero banners)
+  const isHeroPage =
+    location.pathname === "/" ||
+    location.pathname === "/products" ||
+    location.pathname === "/shop";
 
-    Home dark hero:
-    → White text/icons before scrolling
-
-    After scrolling:
-    → Black text/icons
-  */
-
-  const isHomePage = location.pathname === "/";
-
-  const useWhiteText = isHomePage && !isScrolled;
-
-  const textColor = useWhiteText
-    ? "text-white"
-    : "text-black";
+  const isLightPage = !isHeroPage || isScrolled;
+  const navTextColor = isLightPage ? "text-gray-800" : "text-white";
+  const navIconColor = isLightPage
+    ? "text-gray-700 hover:text-[#d90416]"
+    : "text-white hover:text-red-400";
+  const badgeBg = "bg-[#d90416] text-white";
 
   return (
     <nav
       className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ${
-        isScrolled
-          ? "bg-white border-b border-gray-200 shadow-sm"
-          : "bg-transparent border-b border-transparent"
+        isLightPage
+          ? "bg-white/95 backdrop-blur-md shadow-sm border-b border-gray-100 text-gray-900"
+          : "bg-transparent border-b border-transparent shadow-none text-white"
       }`}
     >
       <div className="max-w-[1400px] mx-auto px-6 md:px-10 h-[80px] flex items-center justify-between">
@@ -216,11 +210,11 @@ function Navbar() {
           onClick={handleHome}
           className="text-2xl md:text-3xl font-extrabold tracking-wide"
         >
-          <span className={textColor}>
+          <span className={navTextColor}>
             J
           </span>
 
-          <span className={textColor}>
+          <span className={navTextColor}>
             {" - "}
           </span>
 
@@ -236,7 +230,7 @@ function Navbar() {
           <button
             type="button"
             onClick={handleHome}
-            className={`font-medium transition ${textColor} hover:text-[#d90416]`}
+            className={`font-medium transition ${navTextColor} hover:text-[#d90416]`}
           >
             Home
           </button>
@@ -245,7 +239,7 @@ function Navbar() {
           <button
             type="button"
             onClick={handleShop}
-            className={`font-medium transition ${textColor} hover:text-[#d90416]`}
+            className={`font-medium transition ${navTextColor} hover:text-[#d90416]`}
           >
             Shop
           </button>
@@ -254,7 +248,7 @@ function Navbar() {
           <button
             type="button"
             onClick={handleAbout}
-            className={`font-medium transition ${textColor} hover:text-[#d90416]`}
+            className={`font-medium transition ${navTextColor} hover:text-[#d90416]`}
           >
             About
           </button>
@@ -263,7 +257,7 @@ function Navbar() {
           <button
             type="button"
             onClick={handleContact}
-            className={`font-medium transition ${textColor} hover:text-[#d90416]`}
+            className={`font-medium transition ${navTextColor} hover:text-[#d90416]`}
           >
             Contact Us
           </button>
@@ -285,18 +279,16 @@ function Navbar() {
               onKeyDown={(e) => e.key === "Enter" && handleSearch(e)}
               placeholder="Search jerseys..."
               className={`h-9 pl-3.5 pr-8 rounded-full text-xs font-medium transition-all duration-300 outline-none ${
-                useWhiteText
-                  ? "bg-white/15 text-white placeholder-gray-300 border border-white/30 focus:bg-white focus:text-black focus:placeholder-gray-400 focus:border-white"
-                  : "bg-gray-100 text-black placeholder-gray-400 border border-gray-200 focus:bg-white focus:border-[#d90416]"
+                isLightPage
+                  ? "bg-gray-100 text-gray-800 placeholder-gray-400 border border-gray-200 focus:bg-white focus:border-[#d90416]"
+                  : "bg-white/15 text-white placeholder-gray-300 border border-white/30 focus:bg-white focus:text-black focus:placeholder-gray-400 focus:border-white"
               } w-24 sm:w-36 md:w-52 focus:w-36 sm:focus:w-48 md:focus:w-60`}
             />
 
             <button
               type="submit"
               onClick={handleSearch}
-              className={`absolute right-2.5 p-1 transition ${
-                useWhiteText ? "text-white" : "text-black"
-              } hover:text-[#d90416]`}
+              className={`absolute right-2.5 p-1 transition ${navIconColor}`}
               title="Search"
             >
               <svg
@@ -321,7 +313,7 @@ function Navbar() {
 
             <Link
               to="/wishlist"
-              className={`transition ${textColor} hover:text-[#d90416]`}
+              className={`transition ${navIconColor}`}
               title="Wishlist"
             >
               <svg
@@ -341,7 +333,7 @@ function Navbar() {
             </Link>
 
             {wishlistCount > 0 && (
-              <span className="absolute -top-3 -right-3 w-5 h-5 rounded-full bg-[#d90416] text-white text-[11px] font-bold flex items-center justify-center">
+              <span className={`absolute -top-3 -right-3 w-5 h-5 rounded-full ${badgeBg} text-[11px] font-bold flex items-center justify-center`}>
                 {wishlistCount}
               </span>
             )}
@@ -353,7 +345,7 @@ function Navbar() {
 
             <Link
               to="/cart"
-              className={`transition ${textColor} hover:text-[#d90416]`}
+              className={`transition ${navIconColor}`}
               title="Cart"
             >
               <svg
@@ -385,7 +377,7 @@ function Navbar() {
             </Link>
 
             {cartCount > 0 && (
-              <span className="absolute -top-3 -right-3 w-5 h-5 rounded-full bg-[#d90416] text-white text-[11px] font-bold flex items-center justify-center">
+              <span className={`absolute -top-3 -right-3 w-5 h-5 rounded-full ${badgeBg} text-[11px] font-bold flex items-center justify-center`}>
                 {cartCount}
               </span>
             )}
@@ -404,9 +396,9 @@ function Navbar() {
             <Link
               to="/profile"
               className={`w-11 h-11 rounded-full flex items-center justify-center transition overflow-hidden border-2 ${
-                useWhiteText
-                  ? "bg-white text-black hover:bg-[#d90416] hover:text-white border-white/40"
-                  : "bg-black text-white hover:bg-[#d90416] border-transparent"
+                isLightPage
+                  ? "bg-gray-100 text-gray-800 hover:bg-[#d90416] hover:text-white border-gray-200"
+                  : "bg-white/20 text-white hover:bg-[#d90416] border-white/40"
               }`}
               title="Profile"
             >
