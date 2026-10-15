@@ -19,11 +19,28 @@ function EditProductModal({
   const [brand, setBrand] = useState("");
   const [discount, setDiscount] = useState("");
 
-  const [images, setImages] = useState([]);
   const [existingImages, setExistingImages] = useState([]);
+  const [newImages, setNewImages] = useState([]);
+  const [newImagePreviews, setNewImagePreviews] = useState([]);
 
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
+
+  // Format Image URL helper
+  const formatImageUrl = (url) => {
+    if (!url) return "";
+    if (url.startsWith("http")) {
+      return url.replace("http://localhost:5000", "https://api.afsal.online");
+    }
+    return `https://api.afsal.online${url}`;
+  };
+
+  // Cleanup object URLs on unmount
+  useEffect(() => {
+    return () => {
+      newImagePreviews.forEach((url) => URL.revokeObjectURL(url));
+    };
+  }, [newImagePreviews]);
 
   // Fetch product
   useEffect(() => {
@@ -58,13 +75,49 @@ function EditProductModal({
     fetchProduct();
   }, [productId, onClose]);
 
-  // Image change
-  const handleImageChange = (e) => {
-    const selectedImage = e.target.files[0];
+  // Remove an existing image
+  const handleRemoveExistingImage = (indexToRemove) => {
+    setExistingImages((prev) => prev.filter((_, i) => i !== indexToRemove));
+  };
 
-    if (selectedImage) {
-      setImages([selectedImage]);
+  // Remove a newly selected image preview
+  const handleRemoveNewImage = (indexToRemove) => {
+    setNewImages((prev) => prev.filter((_, i) => i !== indexToRemove));
+    setNewImagePreviews((prev) => {
+      const target = prev[indexToRemove];
+      if (target) URL.revokeObjectURL(target);
+      return prev.filter((_, i) => i !== indexToRemove);
+    });
+  };
+
+  // Handle multiple file selection
+  const handleImageChange = (e) => {
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+
+    const totalAllowed = 5 - (existingImages.length + newImages.length);
+    if (totalAllowed <= 0) {
+      toast.error("You can have a maximum of 5 images in total");
+      e.target.value = "";
+      return;
     }
+
+    if (files.length > totalAllowed) {
+      toast.error(
+        `You can only add ${totalAllowed} more image${
+          totalAllowed > 1 ? "s" : ""
+        } (maximum 5 total)`
+      );
+      e.target.value = "";
+      return;
+    }
+
+    const createdPreviews = files.map((file) => URL.createObjectURL(file));
+
+    setNewImages((prev) => [...prev, ...files]);
+    setNewImagePreviews((prev) => [...prev, ...createdPreviews]);
+
+    e.target.value = "";
   };
 
   // Submit
@@ -130,6 +183,11 @@ function EditProductModal({
       return;
     }
 
+    if (existingImages.length === 0 && newImages.length === 0) {
+      toast.error("Product must have at least one image");
+      return;
+    }
+
     const formData = new FormData();
 
     formData.append("name", name);
@@ -152,8 +210,14 @@ function EditProductModal({
       discount
     );
 
-    // Only send new image if selected
-    images.forEach((image) => {
+    // Send remaining existing images as JSON string
+    formData.append(
+      "existingImages",
+      JSON.stringify(existingImages)
+    );
+
+    // Append newly selected image files
+    newImages.forEach((image) => {
       formData.append("images", image);
     });
 
@@ -392,51 +456,106 @@ function EditProductModal({
 
           </div>
 
-          {/* Existing Image */}
+          {/* Product Images */}
           <div className="mb-6">
+            <div className="flex items-center justify-between mb-2">
+              <label className="block text-sm font-medium text-gray-700">
+                Current Product Images ({existingImages.length})
+              </label>
+              <span className="text-xs text-gray-500">
+                {existingImages.length + newImages.length}/5 total
+              </span>
+            </div>
 
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Current Product Image
-            </label>
-
-            {existingImages.length > 0 && (
-              <div className="mb-4">
-
-                <img
-                  src={
-                    existingImages[0]?.startsWith("http")
-                      ? existingImages[0].replace("http://localhost:5000", "https://api.afsal.online")
-                      : `https://api.afsal.online${existingImages[0]}`
-                  }
-                  alt={name}
-                  className="w-32 h-32 object-contain rounded-lg bg-gray-100 border"
-                />
-
+            {/* Existing Images Grid */}
+            {existingImages.length > 0 ? (
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 my-2">
+                {existingImages.map((imgUrl, index) => (
+                  <div
+                    key={`existing-${index}`}
+                    className="relative group rounded-lg overflow-hidden border border-gray-200 bg-gray-50 aspect-square flex items-center justify-center shadow-sm"
+                  >
+                    <img
+                      src={formatImageUrl(imgUrl)}
+                      alt={`Product ${index + 1}`}
+                      className="w-full h-full object-cover"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveExistingImage(index)}
+                      className="absolute top-1 right-1 bg-red-600 hover:bg-red-700 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs opacity-90 hover:opacity-100 transition shadow cursor-pointer"
+                      title="Remove image"
+                    >
+                      ✕
+                    </button>
+                    <span className="absolute bottom-1 left-1 bg-black/60 text-white text-[10px] px-1.5 py-0.5 rounded font-medium">
+                      #{index + 1}
+                    </span>
+                  </div>
+                ))}
               </div>
-            )}
-
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Change Product Image
-            </label>
-
-            <input
-              type="file"
-              accept="image/*"
-              onChange={handleImageChange}
-              className="w-full border border-gray-300 rounded-lg px-4 py-3 bg-white outline-none focus:border-[#d90416]"
-            />
-
-            <p className="mt-2 text-sm text-gray-500">
-              Select a new image only if you want to replace the current image.
-            </p>
-
-            {images.length > 0 && (
-              <p className="mt-2 text-sm text-gray-700">
-                New image selected:{" "}
-                {images[0].name}
+            ) : (
+              <p className="text-xs text-gray-400 italic my-2">
+                No existing images remaining.
               </p>
             )}
 
+            {/* New Images Previews Grid */}
+            {newImagePreviews.length > 0 && (
+              <div className="mt-4 mb-3">
+                <p className="text-xs font-semibold text-green-700 uppercase tracking-wider mb-2">
+                  New Images To Upload ({newImagePreviews.length})
+                </p>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  {newImagePreviews.map((previewUrl, index) => (
+                    <div
+                      key={`new-${index}`}
+                      className="relative group rounded-lg overflow-hidden border-2 border-green-500/40 bg-gray-50 aspect-square flex items-center justify-center shadow-sm"
+                    >
+                      <img
+                        src={previewUrl}
+                        alt={`New upload ${index + 1}`}
+                        className="w-full h-full object-cover"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveNewImage(index)}
+                        className="absolute top-1 right-1 bg-red-600 hover:bg-red-700 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs opacity-90 hover:opacity-100 transition shadow cursor-pointer"
+                        title="Remove new image"
+                      >
+                        ✕
+                      </button>
+                      <span className="absolute bottom-1 left-1 bg-green-700 text-white text-[10px] px-1.5 py-0.5 rounded font-medium">
+                        New
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Add More Images Input */}
+            {existingImages.length + newImages.length < 5 ? (
+              <div className="mt-3">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Add New / Additional Images
+                </label>
+                <input
+                  type="file"
+                  multiple
+                  accept="image/*"
+                  onChange={handleImageChange}
+                  className="w-full border border-gray-300 rounded-lg px-4 py-3 bg-white outline-none focus:border-[#d90416] text-sm file:mr-4 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200 cursor-pointer"
+                />
+                <p className="mt-2 text-xs text-gray-500">
+                  Select one or more images (JPEG, PNG, WebP) to add to the product.
+                </p>
+              </div>
+            ) : (
+              <p className="mt-3 text-xs text-amber-600 font-medium">
+                Maximum 5 images reached. Remove an image to upload a different one.
+              </p>
+            )}
           </div>
 
           {/* Discount */}

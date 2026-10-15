@@ -79,13 +79,32 @@ export const updateProduct = async (req, res) => {
       ...req.body,
     };
 
-    if (req.files && req.files.length > 0) {
-      const imagePaths = req.files.map(
-        (file) => `/uploads/${file.filename}`
-      );
+    const newUploads =
+      req.files && req.files.length > 0
+        ? req.files.map(
+            (file) => file.path || file.secure_url || `/uploads/${file.filename}`
+          )
+        : [];
 
-      productData.images = imagePaths;
+    if (req.body.existingImages !== undefined || newUploads.length > 0) {
+      let existing = [];
+      if (req.body.existingImages !== undefined) {
+        try {
+          existing = Array.isArray(req.body.existingImages)
+            ? req.body.existingImages
+            : JSON.parse(req.body.existingImages);
+        } catch {
+          existing = [req.body.existingImages].flat().filter(Boolean);
+        }
+      } else {
+        const currentProd = await getProductByIdService(req.params.id);
+        existing = currentProd?.images || [];
+      }
+
+      productData.images = [...existing, ...newUploads];
     }
+
+    delete productData.existingImages;
 
     const product = await updateProductService(
       req.params.id,

@@ -20,7 +20,13 @@ createRoot(document.getElementById("root")).render(
         <CartProvider>
           <WishlistProvider>
             <App />
-            <Toaster position="top-right" reverseOrder={false} />
+            <Toaster
+              position="top-center"
+              reverseOrder={false}
+              containerStyle={{
+                zIndex: 99999,
+              }}
+            />
           </WishlistProvider>
         </CartProvider>
       </BrowserRouter>
