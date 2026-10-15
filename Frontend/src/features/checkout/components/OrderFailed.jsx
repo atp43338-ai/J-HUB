@@ -8,6 +8,7 @@ import {
   retryPaymentOrder,
   completeRetryPaymentOrder,
 } from "../../order/services/orderService";
+import toast from "react-hot-toast";
 
 function OrderFailed() {
   const navigate = useNavigate();
@@ -168,7 +169,7 @@ const handleRetryPayment = async () => {
   } catch (error) {
     console.error("Retry payment error:", error);
 
-    alert(
+    toast.error(
       error.message ||
         "Payment retry is no longer available"
     );
