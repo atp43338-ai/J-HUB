@@ -318,3 +318,40 @@ export const deleteReviewForAdmin = async (req, res) => {
   }
 };
 
+export const deleteReview = deleteReviewForAdmin;
+
+// UPDATE REVIEW STATUS / MODERATION (Protected: Admin)
+export const updateReviewStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status, isApproved } = req.body;
+
+    const updateFields = {};
+    if (status) updateFields.status = status;
+    if (typeof isApproved === "boolean") updateFields.isApproved = isApproved;
+
+    const review = await Review.findByIdAndUpdate(id, updateFields, {
+      new: true,
+    });
+
+    if (!review) {
+      return res.status(404).json({
+        success: false,
+        message: "Review not found",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Review status updated successfully",
+      review,
+    });
+  } catch (error) {
+    console.error("Update review status error:", error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Failed to update review status",
+    });
+  }
+};
+

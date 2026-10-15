@@ -129,6 +129,7 @@ app.use("/api/admin/coupons", adminCouponRoutes);
 app.use("/api/admin/sales", adminSalesRoutes);
 app.use("/api/admin/referrals", adminReferralRoutes);
 app.use("/api/admin/reviews", adminReviewRoutes);
+app.use("/api/admin/reviews", reviewRoutes);
 app.use("/api/admin/dashboard", dashboardRoutes);
 app.use("/api/admin/dashboard-stats", dashboardRoutes);
 
