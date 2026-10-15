@@ -6,7 +6,6 @@ import Navbar from "../../home/components/Navbar";
 
 import ProductImages from "../components/ProductImages";
 import ProductInfo from "../components/ProductInfo";
-import ProductHighlights from "../components/ProductHighlights";
 import ProductReviews from "../components/ProductReviews";
 import RelatedProducts from "../components/RelatedProducts";
 import Footer from "../../home/components/Footer";
@@ -184,11 +183,6 @@ function ProductDetails() {
               />
 
             </div>
-
-            {/* Product Highlights */}
-            <ProductHighlights
-              product={product}
-            />
 
             {/* Reviews */}
             <ProductReviews
