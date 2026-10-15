@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { getProducts } from "../../product/services/productService";
 import { useNavigate, Link } from "react-router";
+import { getProductPricing } from "../../../utils/pricing";
 
 import {
   getWishlist,
@@ -276,6 +277,9 @@ function FeaturedProducts() {
                   product._id
                 );
 
+              const { sellingPrice, originalPrice, discount, hasDiscount } =
+                getProductPricing(product);
+
               return (
                 <motion.div
                   key={product._id}
@@ -327,6 +331,13 @@ function FeaturedProducts() {
                       )
                     }
                   >
+
+                    {/* Discount Corner Badge */}
+                    {hasDiscount && (
+                      <div className="absolute top-3 left-3 bg-[#d90416] text-white text-[11px] font-bold px-2 py-0.5 rounded-full z-10 shadow-sm tracking-wide">
+                        {discount}% OFF
+                      </div>
+                    )}
 
                     <motion.img
                       src={
@@ -410,9 +421,27 @@ function FeaturedProducts() {
                       {product.name}
                     </h3>
 
-                    <p className="mt-2 text-xl font-bold text-black">
-                      ₹{product.price}
-                    </p>
+                    {/* Price & Offer Display */}
+                    <div className="mt-2">
+                      <div className="flex items-baseline gap-2 flex-wrap">
+                        {/* Selling Price */}
+                        <span className="text-xl font-bold text-gray-900">
+                          ₹{sellingPrice}
+                        </span>
+
+                        {/* Original Price / MRP (if discount exists) */}
+                        {hasDiscount && originalPrice && originalPrice > sellingPrice && (
+                          <>
+                            <span className="text-sm text-gray-400 line-through">
+                              ₹{originalPrice}
+                            </span>
+                            <span className="text-xs font-semibold text-emerald-600 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded">
+                              {discount}% OFF
+                            </span>
+                          </>
+                        )}
+                      </div>
+                    </div>
 
                     {/* Buy Now */}
                     <button

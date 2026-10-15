@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router";
 import toast from "react-hot-toast";
 import { useWishlist } from "../../wishlist/context/WishlistContext";
+import { getProductPricing } from "../../../utils/pricing";
 
 function ProductCard({ product }) {
   const navigate = useNavigate();
@@ -10,6 +11,9 @@ function ProductCard({ product }) {
     removeFromWishlist,
     isInWishlist,
   } = useWishlist();
+
+  const { sellingPrice, originalPrice, discount, hasDiscount } =
+    getProductPricing(product);
 
   const handleProductClick = () => {
     navigate(`/products/${product._id}`);
@@ -53,6 +57,13 @@ function ProductCard({ product }) {
     >
       {/* Image */}
       <div className="relative w-full">
+
+        {/* Discount Corner Badge */}
+        {hasDiscount && (
+          <div className="absolute top-3 left-3 bg-[#d90416] text-white text-[11px] font-bold px-2 py-0.5 rounded-full z-10 shadow-sm tracking-wide">
+            {discount}% OFF
+          </div>
+        )}
 
         <img
           src={
@@ -122,36 +133,31 @@ function ProductCard({ product }) {
       {/* Details */}
       <div className="p-5">
 
-        <h3 className="text-lg font-semibold">
+        <h3 className="text-lg font-semibold text-gray-900">
           {product.name}
         </h3>
 
-        {/* Price */}
-        {product.offerDiscount > 0 ? (
-          <div className="mt-2">
+        {/* Price & Offer Display */}
+        <div className="mt-2">
+          <div className="flex items-baseline gap-2 flex-wrap">
+            {/* Selling Price */}
+            <span className="text-xl font-bold text-gray-900">
+              ₹{sellingPrice}
+            </span>
 
-            <div className="flex items-center gap-3">
-
-              <p className="text-xl font-bold text-[#d90416]">
-                ₹{product.offerPrice}
-              </p>
-
-              <p className="text-sm text-gray-400 line-through">
-                ₹{product.price}
-              </p>
-
-            </div>
-
-            <p className="mt-1 text-sm font-semibold text-green-600">
-              {product.offerDiscount}% OFF
-            </p>
-
+            {/* Original Price / MRP (if discount exists) */}
+            {hasDiscount && originalPrice && originalPrice > sellingPrice && (
+              <>
+                <span className="text-sm text-gray-400 line-through">
+                  ₹{originalPrice}
+                </span>
+                <span className="text-xs font-semibold text-emerald-600 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded">
+                  {discount}% OFF
+                </span>
+              </>
+            )}
           </div>
-        ) : (
-          <p className="mt-2 text-xl font-bold">
-            ₹{product.price}
-          </p>
-        )}
+        </div>
 
         {/* Buy Now */}
         <button
