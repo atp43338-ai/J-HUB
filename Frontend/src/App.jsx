@@ -29,6 +29,8 @@ function App() {
       <AdminQueryRedirect />
       <Routes>
         <Route path="/admin-login" element={<Navigate to="/admin/login" replace />} />
+        <Route path="/adminlogin" element={<Navigate to="/admin/login" replace />} />
+        <Route path="/AdminLogin" element={<Navigate to="/admin/login" replace />} />
         <Route path="/admin/*" element={<AdminRoutes />} />
         <Route path="/*" element={<UserRoutes />} />
         <Route path="*" element={<NotFound />} />

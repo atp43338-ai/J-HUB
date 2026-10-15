@@ -12,7 +12,7 @@ function PublicRoute({ children, admin = false }) {
   if (token) {
     return (
       <Navigate
-        to={admin ? "/admin" : "/"}
+        to={admin ? "/admin/dashboard" : "/"}
         replace
         state={{ from: location.pathname }}
       />

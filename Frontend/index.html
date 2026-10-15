@@ -12,11 +12,29 @@
       (function(l) {
         if (l.search[1] === '/' ) {
           var decoded = l.search.slice(1).split('&').map(function(s) { 
-            return s.replace(/~and~/g, '&')
+            return s.replace(/~and~/g, '&');
           }).join('?');
+          var normalized = decoded;
+          var lower = decoded.toLowerCase();
+          if (lower === '/adminlogin' || lower === '/admin-login') {
+            normalized = '/admin/login';
+          }
           window.history.replaceState(null, null,
-              l.pathname.slice(0, -1) + decoded + l.hash
+              l.pathname.slice(0, -1) + normalized + l.hash
           );
+        } else if (l.search && l.search.length > 1) {
+          var query = l.search.slice(1).split('&')[0];
+          var lowerQuery = query.toLowerCase();
+          if (
+            lowerQuery === 'adminlogin' ||
+            lowerQuery === 'admin-login' ||
+            lowerQuery === 'admin' ||
+            lowerQuery === 'admin/login'
+          ) {
+            window.history.replaceState(null, null, '/admin/login' + l.hash);
+          } else if (lowerQuery.startsWith('admin/')) {
+            window.history.replaceState(null, null, '/' + query + l.hash);
+          }
         }
       }(window.location))
     </script>
