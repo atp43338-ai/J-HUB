@@ -50,6 +50,7 @@ export const getAllReviewsForAdmin = async (req, res) => {
       success: true,
       reviews,
       totalReviews,
+      total: totalReviews,
       totalPages,
       currentPage: page,
     });
@@ -61,6 +62,8 @@ export const getAllReviewsForAdmin = async (req, res) => {
     });
   }
 };
+
+export const getAllReviews = getAllReviewsForAdmin;
 
 // DELETE REVIEW FOR ADMIN
 export const deleteReviewForAdmin = async (req, res) => {

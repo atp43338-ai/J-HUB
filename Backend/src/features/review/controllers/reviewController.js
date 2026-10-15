@@ -252,6 +252,7 @@ export const getAllReviewsForAdmin = async (req, res) => {
       success: true,
       reviews,
       totalReviews,
+      total: totalReviews,
       totalPages,
       currentPage: page,
     });
@@ -263,6 +264,8 @@ export const getAllReviewsForAdmin = async (req, res) => {
     });
   }
 };
+
+export const getAllReviews = getAllReviewsForAdmin;
 
 // DELETE REVIEW FOR ADMIN (Protected: Admin)
 export const deleteReviewForAdmin = async (req, res) => {
