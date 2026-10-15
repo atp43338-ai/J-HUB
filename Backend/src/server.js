@@ -140,6 +140,15 @@ app.use("/api/payment", paymentRoutes);
 app.use("/api/coupon", couponRoutes);
 app.use("/api/reviews", reviewRoutes);
 
+// Fallback for undefined API endpoints
+// app.use("/api/*", (req, res) => {
+//   res.status(404).json({ success: false, message: "API route not found" });
+// });
+
+app.use("/api", (req, res) => {
+  res.status(404).json({ success: false, message: "API route not found" });
+});
+
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });

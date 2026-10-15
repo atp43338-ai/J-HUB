@@ -24,6 +24,7 @@ import AdminLayout from "../features/admin/components/AdminLayout";
 
 import ProtectedRoute from "../middleware/ProtectedRoute";
 import PublicRoute from "../middleware/PublicRoute";
+import NotFound from "../pages/NotFound";
 
 function AdminRoutes() {
   return (
@@ -68,6 +69,9 @@ function AdminRoutes() {
 
         <Route path="referrals" element={<ReferralOfferManagement />} />
       </Route>
+
+      {/* 404 CATCH-ALL ROUTE */}
+      <Route path="*" element={<NotFound />} />
     </Routes>
   );
 }

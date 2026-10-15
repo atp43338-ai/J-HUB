@@ -34,6 +34,7 @@ import Wallet from "../features/wallet/pages/Wallet";
 
 import ProtectedRoute from "../middleware/ProtectedRoute";
 import PublicRoute from "../middleware/PublicRoute";
+import NotFound from "../pages/NotFound";
 
 function UserRoutes() {
   return (
@@ -239,6 +240,9 @@ function UserRoutes() {
           </ProtectedRoute>
         }
       />
+
+      {/* 404 CATCH-ALL ROUTE */}
+      <Route path="*" element={<NotFound />} />
     </Routes>
   );
 }
