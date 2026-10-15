@@ -1,5 +1,26 @@
 import { api } from "../../../services/api";
 
+// Helper to resolve profile image URL
+export const getProfileImageUrl = (image) => {
+  if (!image || typeof image !== "string") return null;
+  if (image.startsWith("blob:") || image.startsWith("data:")) return image;
+  if (
+    image.startsWith("http://localhost:5000") ||
+    image.startsWith("https://localhost:5000")
+  ) {
+    const backendBase = (
+      import.meta.env.VITE_API_URL || "https://api.afsal.online/api"
+    ).replace(/\/api\/?$/, "");
+    return image.replace(/https?:\/\/localhost:5000/, backendBase);
+  }
+  if (image.startsWith("http://") || image.startsWith("https://")) {
+    return image;
+  }
+  const backendBase = (
+    import.meta.env.VITE_API_URL || "https://api.afsal.online/api"
+  ).replace(/\/api\/?$/, "");
+  return `${backendBase}${image.startsWith("/") ? "" : "/"}${image}`;
+};
 
 // Get Profile
 export const getProfile = async (token) => {
@@ -10,7 +31,6 @@ export const getProfile = async (token) => {
     },
   });
 };
-
 
 // Change Email
 export const changeEmail = async (
@@ -32,7 +52,6 @@ export const changeEmail = async (
   });
 };
 
-
 // Change Password
 export const changePassword = async (
   token,
@@ -51,10 +70,9 @@ export const changePassword = async (
   });
 };
 
-
 // Update Profile
 export const updateProfile = async (token, formData) => {
-  return api("/profile", {
+  return api("/profile/update-profile", {
     method: "PUT",
     headers: {
       Authorization: `Bearer ${token}`,
@@ -62,7 +80,6 @@ export const updateProfile = async (token, formData) => {
     body: formData,
   });
 };
-
 
 // Verify Email Change
 export const verifyEmailChange = async (token, otp) => {
@@ -76,7 +93,6 @@ export const verifyEmailChange = async (token, otp) => {
     }),
   });
 };
-
 
 // Resend Email Change OTP
 export const resendEmailChangeOTP = async (token) => {

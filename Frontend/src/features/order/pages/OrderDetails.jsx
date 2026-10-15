@@ -553,9 +553,21 @@ function OrderDetails() {
                     </span>
 
                     <span style={{ color: "#111827" }}>
-                      ₹{order.discount}
+                      ₹{order.discount || 0}
                     </span>
                   </div>
+
+                  {Number(order.couponDiscount) > 0 && (
+                    <div className="flex justify-between">
+                      <span style={{ color: "#6b7280" }}>
+                        Coupon Discount {order.couponCode ? `(${order.couponCode})` : ""}
+                      </span>
+
+                      <span className="text-green-600 font-medium">
+                        -₹{order.couponDiscount}
+                      </span>
+                    </div>
+                  )}
 
                   <div className="flex justify-between">
                     <span style={{ color: "#6b7280" }}>
@@ -563,7 +575,7 @@ function OrderDetails() {
                     </span>
 
                     <span style={{ color: "#111827" }}>
-                      ₹{order.tax}
+                      ₹{order.tax || 0}
                     </span>
                   </div>
 
@@ -573,7 +585,7 @@ function OrderDetails() {
                     </span>
 
                     <span style={{ color: "#111827" }}>
-                      ₹{order.shipping}
+                      ₹{order.shippingFee ?? order.shipping ?? 0}
                     </span>
                   </div>
 

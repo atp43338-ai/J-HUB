@@ -55,8 +55,13 @@ export const updateProfileService = async (
     throw new Error("User not found");
   }
 
-  user.name = name;
-  user.phone = phone;
+  if (name !== undefined && name !== null && typeof name === "string" && name.trim()) {
+    user.name = name.trim();
+  }
+
+  if (phone !== undefined && phone !== null && typeof phone === "string" && phone.trim()) {
+    user.phone = phone.trim();
+  }
 
   if (profileImage) {
     user.profileImage = profileImage;
@@ -65,11 +70,15 @@ export const updateProfileService = async (
   await user.save();
 
   return {
+    _id: user._id,
     id: user._id,
     name: user.name,
     email: user.email,
     phone: user.phone,
     profileImage: user.profileImage,
+    isEmailVerified: user.isEmailVerified,
+    isBlocked: user.isBlocked,
+    referralCode: user.referralCode,
   };
 };
 

@@ -4,6 +4,7 @@ dns.setServers(["8.8.8.8"]);
 import "dotenv/config";
 
 import express from "express";
+import path from "path";
 import dotenv from "dotenv";
 import connectDB from "./config/db.js";
 
@@ -89,7 +90,8 @@ app.use((req, res, next) => {
 
 app.use(express.json());
 
-app.use("/uploads", express.static("src/uploads"));
+app.use("/uploads", express.static(path.resolve("uploads")));
+app.use("/uploads", express.static(path.resolve("src/uploads")));
 
 connectDB();
 
@@ -101,6 +103,8 @@ app.get("/", (req, res) => {
 });
 
 app.use("/api/profile", profileRoutes);
+app.use("/api/user", profileRoutes);
+app.use("/api/users", profileRoutes);
 app.use("/api/address", addressRoutes);
 
 app.use("/api/admin", adminRoutes);

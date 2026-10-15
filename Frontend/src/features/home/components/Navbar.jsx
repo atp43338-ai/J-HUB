@@ -2,6 +2,7 @@ import { Link, useLocation, useNavigate, useSearchParams } from "react-router";
 import { useCart } from "../../cart/context/CartContext";
 import { useEffect, useState } from "react";
 import { getWishlist } from "../../wishlist/services/wishlistService";
+import { getProfileImageUrl } from "../../profile/services/profileService";
 
 function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -9,6 +10,32 @@ function Navbar() {
   const [searchTerm, setSearchTerm] = useState("");
 
   const token = localStorage.getItem("token");
+
+  const [currentUser, setCurrentUser] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem("user")) || null;
+    } catch {
+      return null;
+    }
+  });
+
+  useEffect(() => {
+    const syncUser = () => {
+      try {
+        setCurrentUser(JSON.parse(localStorage.getItem("user")) || null);
+      } catch {
+        setCurrentUser(null);
+      }
+    };
+
+    window.addEventListener("userUpdated", syncUser);
+    window.addEventListener("storage", syncUser);
+
+    return () => {
+      window.removeEventListener("userUpdated", syncUser);
+      window.removeEventListener("storage", syncUser);
+    };
+  }, []);
 
   const { cartCount } = useCart();
 
@@ -376,13 +403,22 @@ function Navbar() {
           ) : (
             <Link
               to="/profile"
-              className={`w-11 h-11 rounded-full flex items-center justify-center transition ${
+              className={`w-11 h-11 rounded-full flex items-center justify-center transition overflow-hidden border-2 ${
                 useWhiteText
-                  ? "bg-white text-black hover:bg-[#d90416] hover:text-white"
-                  : "bg-black text-white hover:bg-[#d90416]"
+                  ? "bg-white text-black hover:bg-[#d90416] hover:text-white border-white/40"
+                  : "bg-black text-white hover:bg-[#d90416] border-transparent"
               }`}
+              title="Profile"
             >
-              👤
+              {currentUser?.profileImage ? (
+                <img
+                  src={getProfileImageUrl(currentUser.profileImage)}
+                  alt={currentUser.name || "User"}
+                  className="w-full h-full object-cover rounded-full"
+                />
+              ) : (
+                <span className="text-sm">👤</span>
+              )}
             </Link>
           )}
 

@@ -83,6 +83,10 @@ function OTPVerification() {
         data = await verifyLoginOTP(email, otp);
 
         localStorage.setItem("token", data.token);
+        if (data.user) {
+          localStorage.setItem("user", JSON.stringify(data.user));
+          window.dispatchEvent(new Event("userUpdated"));
+        }
 
         toast.success("Login successful");
 

@@ -40,15 +40,16 @@ export const updateProfile = async (req, res) => {
   try {
     const { name, phone } = req.body;
 
-    if (!name || !phone) {
-      return res.status(400).json({
-        message: "Name and phone are required",
-      });
-    }
-
     const profileImage = req.file
       ? `/uploads/profile/${req.file.filename}`
       : null;
+
+    if (!name && !phone && !profileImage) {
+      return res.status(400).json({
+        success: false,
+        message: "No profile details or image provided to update",
+      });
+    }
 
     const user = await updateProfileService(
       req.user.id,
@@ -58,7 +59,11 @@ export const updateProfile = async (req, res) => {
     );
 
     res.status(200).json({
-      message: "Profile updated successfully",
+      success: true,
+      message: req.file && !name && !phone
+        ? "Profile image updated successfully"
+        : "Profile updated successfully",
+      imageUrl: user.profileImage,
       user,
     });
 
@@ -66,7 +71,8 @@ export const updateProfile = async (req, res) => {
     console.error("Update profile error:", error);
 
     res.status(500).json({
-      message: error.message,
+      success: false,
+      message: error.message || "Failed to update profile",
     });
   }
 };

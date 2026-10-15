@@ -176,6 +176,11 @@ paymentRetryExpiresAt: {
       default: 0,
     },
 
+    shippingFee: {
+      type: Number,
+      default: 0,
+    },
+
     finalPrice: {
       type: Number,
       required: true,

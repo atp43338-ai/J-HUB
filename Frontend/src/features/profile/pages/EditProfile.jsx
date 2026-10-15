@@ -1,12 +1,11 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 
-import ProfileImage from "../asset/Profile-bg.png";
-
 import {
   getProfile,
   changeEmail,
   updateProfile,
+  getProfileImageUrl,
 } from "../services/profileService";
 
 import toast from "react-hot-toast";
@@ -25,7 +24,9 @@ function EditProfile() {
   const [phone, setPhone] = useState("");
 
   const [oldEmail, setOldEmail] = useState("");
-  const [profileImage, setProfileImage] = useState(null);
+  const [imageFile, setImageFile] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState(null);
+  const [saving, setSaving] = useState(false);
 
   // Get logged-in user
   useEffect(() => {
@@ -49,6 +50,15 @@ function EditProfile() {
 
         // Store original email
         setOldEmail(data.user.email || "");
+
+        if (data.user) {
+          const stored = JSON.parse(localStorage.getItem("user") || "{}");
+          localStorage.setItem(
+            "user",
+            JSON.stringify({ ...stored, ...data.user })
+          );
+          window.dispatchEvent(new Event("userUpdated"));
+        }
       } catch (error) {
         console.error("Profile error:", error);
         toast.error(error.message);
@@ -57,6 +67,45 @@ function EditProfile() {
 
     fetchProfile();
   }, [navigate]);
+
+  // Clean up object URL on unmount
+  useEffect(() => {
+    return () => {
+      if (previewUrl && previewUrl.startsWith("blob:")) {
+        URL.revokeObjectURL(previewUrl);
+      }
+    };
+  }, [previewUrl]);
+
+  // Handle image selection with validation and instant preview
+  const handleImageChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Reset input so re-selecting same file works
+    e.target.value = "";
+
+    const allowedTypes = [
+      "image/jpeg",
+      "image/jpg",
+      "image/png",
+      "image/webp",
+    ];
+
+    if (!allowedTypes.includes(file.type.toLowerCase())) {
+      toast.error("Please select a valid image file (JPEG, PNG, WebP)");
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Image size must be less than 5MB");
+      return;
+    }
+
+    setImageFile(file);
+    const objectUrl = URL.createObjectURL(file);
+    setPreviewUrl(objectUrl);
+  };
 
   // Save changes
   const handleSubmit = async (e) => {
@@ -78,6 +127,7 @@ function EditProfile() {
     }
 
     try {
+      setSaving(true);
       const token = localStorage.getItem("token");
 
       if (!token) {
@@ -115,18 +165,39 @@ function EditProfile() {
       formData.append("name", name);
       formData.append("phone", phone);
 
-      if (profileImage) {
-        formData.append("profileImage", profileImage);
+      if (imageFile) {
+        formData.append("profileImage", imageFile);
       }
 
-      await updateProfile(token, formData);
+      const res = await updateProfile(token, formData);
+      const newUrl = res?.imageUrl || res?.user?.profileImage;
 
-      toast.success("Profile updated successfully");
+      // Update localStorage & sync global state
+      const stored = JSON.parse(localStorage.getItem("user") || "{}");
+      localStorage.setItem(
+        "user",
+        JSON.stringify({
+          ...stored,
+          ...(res?.user || {}),
+          name,
+          phone,
+          profileImage: newUrl || stored.profileImage,
+        })
+      );
+      window.dispatchEvent(new Event("userUpdated"));
+
+      toast.success(
+        imageFile
+          ? "Profile and photo updated successfully"
+          : "Profile updated successfully"
+      );
 
       navigate("/profile");
     } catch (error) {
       console.error("Update profile error:", error);
-      toast.error(error.message);
+      toast.error(error.message || "Failed to update profile");
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -146,16 +217,8 @@ function EditProfile() {
     );
   }
 
-  // Profile image preview
-  const imagePreview = profileImage
-    ? URL.createObjectURL(profileImage)
-    : user.profileImage
-      ? user.profileImage.startsWith("http://localhost:5000")
-        ? user.profileImage.replace("http://localhost:5000", "https://api.afsal.online")
-        : user.profileImage.startsWith("http")
-        ? user.profileImage
-        : `https://api.afsal.online${user.profileImage}`
-      : null;
+  // Profile image preview (prioritizes local object URL preview)
+  const displayImage = previewUrl || getProfileImageUrl(user.profileImage);
 
   return (
     <ProfileLayout
@@ -176,9 +239,9 @@ function EditProfile() {
 
           <div className="w-28 h-28 rounded-full overflow-hidden border-4 border-[#d90416] bg-gray-100 flex items-center justify-center">
 
-            {imagePreview ? (
+            {displayImage ? (
               <img
-                src={imagePreview}
+                src={displayImage}
                 alt="Profile"
                 className="w-full h-full object-cover"
               />
@@ -192,7 +255,7 @@ function EditProfile() {
 
           {/* Edit Image Button */}
           <label
-            htmlFor="profileImage"
+            htmlFor="profileImageInput"
             className="
               absolute
               right-0
@@ -209,7 +272,9 @@ function EditProfile() {
               cursor-pointer
               hover:bg-[#b90312]
               transition
+              shadow-md
             "
+            title="Change Profile Photo"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -229,12 +294,10 @@ function EditProfile() {
 
           {/* Hidden File Input */}
           <input
-            id="profileImage"
+            id="profileImageInput"
             type="file"
-            accept="image/*"
-            onChange={(e) =>
-              setProfileImage(e.target.files[0])
-            }
+            accept="image/jpeg,image/jpg,image/png,image/webp"
+            onChange={handleImageChange}
             className="hidden"
           />
 
@@ -250,7 +313,7 @@ function EditProfile() {
           </p>
 
           <p className="mt-2 text-xs text-gray-400">
-            JPG, PNG or other image formats
+            JPG, PNG or WebP formats (Max 5MB)
           </p>
         </div>
 
@@ -309,6 +372,7 @@ function EditProfile() {
 
           <button
             type="submit"
+            disabled={saving}
             className="
               h-[48px]
               px-8
@@ -319,9 +383,11 @@ function EditProfile() {
               text-sm
               font-semibold
               transition
+              disabled:opacity-50
+              disabled:cursor-not-allowed
             "
           >
-            Save Changes
+            {saving ? "Saving Changes..." : "Save Changes"}
           </button>
 
           <button

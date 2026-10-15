@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
 
-import { getProfile } from "../services/profileService";
+import { getProfile, updateProfile } from "../services/profileService";
 
 import toast from "react-hot-toast";
 
@@ -12,6 +12,8 @@ import ProfileInput from "../components/ProfileInput";
 
 function Profile() {
   const [user, setUser] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -28,6 +30,15 @@ function Profile() {
         const data = await getProfile(token);
 
         setUser(data.user);
+
+        if (data.user) {
+          const stored = JSON.parse(localStorage.getItem("user") || "{}");
+          localStorage.setItem(
+            "user",
+            JSON.stringify({ ...stored, ...data.user })
+          );
+          window.dispatchEvent(new Event("userUpdated"));
+        }
       } catch (error) {
         console.error("Profile error:", error);
         toast.error(error.message);
@@ -36,6 +47,87 @@ function Profile() {
 
     fetchProfile();
   }, [navigate]);
+
+  // Clean up object URL on unmount
+  useEffect(() => {
+    return () => {
+      if (previewUrl && previewUrl.startsWith("blob:")) {
+        URL.revokeObjectURL(previewUrl);
+      }
+    };
+  }, [previewUrl]);
+
+  // Direct avatar change handler
+  const handleAvatarUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Reset input value so same file can be selected again
+    e.target.value = "";
+
+    const allowedTypes = [
+      "image/jpeg",
+      "image/jpg",
+      "image/png",
+      "image/webp",
+    ];
+
+    if (!allowedTypes.includes(file.type.toLowerCase())) {
+      toast.error("Please select a valid image file (JPEG, PNG, WebP)");
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Image size must be less than 5MB");
+      return;
+    }
+
+    // Instant local preview
+    const objectUrl = URL.createObjectURL(file);
+    setPreviewUrl(objectUrl);
+
+    try {
+      setUploadingImage(true);
+      const token = localStorage.getItem("token");
+
+      if (!token) {
+        toast.error("Please login first");
+        navigate("/login");
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append("profileImage", file);
+
+      const res = await updateProfile(token, formData);
+      const newUrl = res?.imageUrl || res?.user?.profileImage;
+
+      setUser((prev) => ({
+        ...prev,
+        profileImage: newUrl || objectUrl,
+      }));
+
+      // Update localStorage & sync global state
+      const stored = JSON.parse(localStorage.getItem("user") || "{}");
+      localStorage.setItem(
+        "user",
+        JSON.stringify({
+          ...stored,
+          ...(res?.user || {}),
+          profileImage: newUrl || stored.profileImage,
+        })
+      );
+      window.dispatchEvent(new Event("userUpdated"));
+
+      toast.success("Profile image updated successfully");
+    } catch (err) {
+      console.error("Upload profile image error:", err);
+      setPreviewUrl(null);
+      toast.error(err.message || "Failed to upload profile image");
+    } finally {
+      setUploadingImage(false);
+    }
+  };
 
   const copyReferralCode = () => {
     if (!user?.referralCode) return;
@@ -90,8 +182,11 @@ function Profile() {
 
         {/* Avatar */}
         <ProfileAvatar
-          image={user.profileImage}
+          image={previewUrl || user.profileImage}
           name={user.name}
+          editable={true}
+          onImageChange={handleAvatarUpload}
+          uploading={uploadingImage}
         />
 
         {/* Edit Button */}

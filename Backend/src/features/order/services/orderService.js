@@ -411,6 +411,7 @@ const order = await Order.create({
   couponDiscount,
   tax,
   shipping,
+  shippingFee: shipping,
   finalPrice,
   totalAmount: finalPrice,
   finalAmount: finalPrice,
@@ -1069,6 +1070,8 @@ export const createFailedPaymentOrderService = async (
     tax,
 
     shipping,
+
+    shippingFee: shipping,
 
     finalPrice,
     totalAmount: finalPrice,

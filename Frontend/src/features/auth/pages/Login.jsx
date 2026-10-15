@@ -49,8 +49,12 @@ function Login() {
 
       const data = await loginUser(email, password);
 
-      // Save JWT token after successful login
+      // Save JWT token and user info after successful login
       localStorage.setItem("token", data.token);
+      if (data.user) {
+        localStorage.setItem("user", JSON.stringify(data.user));
+        window.dispatchEvent(new Event("userUpdated"));
+      }
 
       toast.success("Login successful");
 
@@ -75,6 +79,10 @@ function Login() {
       );
 
       localStorage.setItem("token", data.token);
+      if (data.user) {
+        localStorage.setItem("user", JSON.stringify(data.user));
+        window.dispatchEvent(new Event("userUpdated"));
+      }
 
       toast.success("Google login successful");
 
