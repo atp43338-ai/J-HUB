@@ -1,7 +1,19 @@
 function PaymentMethod({
   paymentMethod,
   setPaymentMethod,
+  wallet,
+  finalPrice,
 }) {
+  const walletBalance =
+    wallet && typeof wallet.balance === "number"
+      ? Number(wallet.balance)
+      : null;
+
+  const isWalletInsufficient =
+    walletBalance !== null &&
+    typeof finalPrice === "number" &&
+    walletBalance < finalPrice;
+
   return (
     <section className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
 
@@ -78,7 +90,7 @@ function PaymentMethod({
 
       {/* WALLET */}
       <label
-        className={`flex items-center gap-4 border rounded-xl p-5 mt-4 cursor-pointer transition ${
+        className={`flex items-start gap-4 border rounded-xl p-5 mt-4 cursor-pointer transition ${
           paymentMethod === "wallet"
             ? "border-[#d90416] bg-red-50"
             : "border-gray-200 hover:border-gray-400"
@@ -92,17 +104,31 @@ function PaymentMethod({
           onChange={(e) =>
             setPaymentMethod(e.target.value)
           }
-          className="w-5 h-5 accent-[#d90416]"
+          className="w-5 h-5 accent-[#d90416] mt-0.5"
         />
 
-        <div>
-          <h3 className="font-semibold text-black">
-            Wallet
-          </h3>
+        <div className="flex-1">
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <h3 className="font-semibold text-black">
+              Wallet
+            </h3>
+
+            {walletBalance !== null && (
+              <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-gray-100 text-gray-800 border border-gray-200">
+                Available: ₹{walletBalance.toFixed(2)}
+              </span>
+            )}
+          </div>
 
           <p className="text-sm text-gray-500 mt-1">
             Pay securely using your wallet balance.
           </p>
+
+          {isWalletInsufficient && (
+            <p className="text-xs text-[#d90416] font-medium mt-2">
+              Insufficient balance (₹{(finalPrice - walletBalance).toFixed(2)} more needed). Please choose another payment method or add funds.
+            </p>
+          )}
         </div>
       </label>
 

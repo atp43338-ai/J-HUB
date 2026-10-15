@@ -54,7 +54,9 @@ export const createOrderService = async (
 
   // CHECK PAYMENT METHOD
 
-  if (!["COD", "UPI", "CARD","WALLET"].includes(paymentMethod)) {
+  const normalizedPaymentMethod = (paymentMethod || "").toUpperCase();
+
+  if (!["COD", "UPI", "CARD", "WALLET"].includes(normalizedPaymentMethod)) {
     throw new Error("Invalid payment method");
   }
 
@@ -373,6 +375,21 @@ export const createOrderService = async (
       (discountedSubtotal - couponDiscount + tax + shipping) * 100
     ) / 100;
 
+  // VERIFY WALLET BALANCE IF PAYMENT METHOD IS WALLET
+  let userWallet = null;
+  if (normalizedPaymentMethod === "WALLET") {
+    userWallet = await getOrCreateWallet(userId);
+    if (!userWallet || Number(userWallet.balance || 0) < finalPrice) {
+      // Revert product variant stock decrements done in previous loop
+      for (const itm of orderItems) {
+        await Product.updateOne(
+          { _id: itm.product, "variants.size": itm.size },
+          { $inc: { "variants.$.stock": itm.quantity } }
+        );
+      }
+      throw new Error("Insufficient wallet balance");
+    }
+  }
 
   // CREATE UNIQUE ORDER ID
 
@@ -404,8 +421,8 @@ const order = await Order.create({
     state: address.state,
     pincode: address.pincode,
   },
-  paymentMethod,
-  paymentStatus: "pending",
+  paymentMethod: normalizedPaymentMethod,
+  paymentStatus: normalizedPaymentMethod === "WALLET" ? "paid" : "pending",
   subtotal,
   discount,
   couponDiscount,
@@ -417,6 +434,23 @@ const order = await Order.create({
   finalAmount: finalPrice,
   status: "pending",
 });
+
+// ATOMIC WALLET DEBIT
+if (normalizedPaymentMethod === "WALLET" && userWallet) {
+  userWallet.balance = Number(
+    (Number(userWallet.balance) - finalPrice).toFixed(2)
+  );
+  userWallet.transactions.unshift({
+    type: "debit",
+    amount: finalPrice,
+    reason: `Payment for Order #${orderId}`,
+    description: `Payment for Order #${orderId}`,
+    status: "Completed",
+    order: order._id,
+    date: new Date(),
+  });
+  await userWallet.save();
+}
 
 // REMOVE PURCHASED ITEMS FROM CART
 await removePurchasedItemsFromCartService(userId, items);

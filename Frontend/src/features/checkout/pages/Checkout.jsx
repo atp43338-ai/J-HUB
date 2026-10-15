@@ -23,6 +23,8 @@ import {
   verifyPayment,
 } from "../../payment/services/paymentService";
 
+import { getWallet } from "../../wallet/services/walletService";
+
 import { applyCoupon } from "../../coupon/services/couponService";
 
 import toast from "react-hot-toast";
@@ -55,6 +57,10 @@ function Checkout() {
 
   const [placingOrder, setPlacingOrder] =
     useState(false);
+
+  // WALLET STATES
+  const [wallet, setWallet] = useState(null);
+  const [walletLoading, setWalletLoading] = useState(false);
 
   // COUPON STATES
   const [couponCode, setCouponCode] =
@@ -130,6 +136,30 @@ function Checkout() {
 
     fetchAddresses();
   }, [navigate]);
+
+  // FETCH WALLET
+  useEffect(() => {
+    const fetchWallet = async () => {
+      const token = localStorage.getItem("token");
+      if (!token) return;
+
+      try {
+        setWalletLoading(true);
+        const data = await getWallet(token);
+        if (data && data.wallet) {
+          setWallet(data.wallet);
+        } else if (data && typeof data.balance === "number") {
+          setWallet(data);
+        }
+      } catch (error) {
+        console.error("Failed to fetch wallet:", error);
+      } finally {
+        setWalletLoading(false);
+      }
+    };
+
+    fetchWallet();
+  }, []);
 
   // CONVERT PRODUCTS FOR CHECKOUT UI
   const items = buyNowItems.map((item) => {
@@ -327,6 +357,10 @@ function Checkout() {
           data
         );
 
+        await removeOrderedItemsFromCart();
+
+        setPlacingOrder(false);
+
         const finalAmountValue = getOrderTotal(data.order);
 
         navigate("/order-success", {
@@ -349,6 +383,9 @@ function Checkout() {
             status:
               data.order.status,
 
+            paymentStatus:
+              data.order.paymentStatus || "pending",
+
             paymentMethod:
               data.order.paymentMethod,
           },
@@ -357,24 +394,80 @@ function Checkout() {
         return;
       }
 
-      const removeOrderedItemsFromCart = async () => {
-        try {
-          for (const item of buyNowItems) {
-            if (item._id) {
-              await removeCartItem(item._id);
-            }
+      // ==============================
+      // WALLET PAYMENT
+      // ==============================
+
+      if (paymentMethod === "wallet") {
+        let currentWallet = wallet;
+        if (!currentWallet) {
+          try {
+            const wRes = await getWallet(token);
+            currentWallet = wRes?.wallet || wRes;
+            if (currentWallet) setWallet(currentWallet);
+          } catch (e) {
+            console.error("Wallet check error:", e);
           }
-
-          window.dispatchEvent(new Event("cartUpdated"));
-
-          console.log("Ordered items removed from cart");
-        } catch (error) {
-          console.error(
-            "Failed to remove ordered items from cart:",
-            error
-          );
         }
-      };
+
+        const walletBalance = Number(currentWallet?.balance || 0);
+
+        if (walletBalance < finalPrice) {
+          toast.error(
+            "Insufficient wallet balance. Please choose another payment method or add funds."
+          );
+          setPlacingOrder(false);
+          return;
+        }
+
+        const orderData = {
+          addressId: selectedAddress,
+          paymentMethod: "WALLET",
+          couponCode: appliedCoupon || null,
+          subtotal,
+          discount,
+          totalAmount: finalPrice,
+          finalAmount: finalPrice,
+          items: items.map((item) => ({
+            productId: item.id,
+            size: item.size,
+            quantity: item.quantity,
+            price: item.price,
+            originalPrice: item.originalPrice,
+            discount: item.originalPrice - item.price,
+            unitDiscount: item.originalPrice - item.price,
+          })),
+        };
+
+        console.log("Wallet Order data:", orderData);
+
+        const data = await createOrder(orderData);
+
+        console.log("Wallet Order created:", data);
+
+        await removeOrderedItemsFromCart();
+
+        toast.success("Order placed successfully using wallet balance!");
+
+        setPlacingOrder(false);
+
+        const finalAmountValue = getOrderTotal(data.order);
+
+        navigate("/order-success", {
+          state: {
+            orderId: data.order.orderId,
+            total: finalAmountValue,
+            finalAmount: finalAmountValue,
+            totalAmount: finalAmountValue,
+            finalPrice: finalAmountValue,
+            status: data.order.status,
+            paymentStatus: data.order.paymentStatus || "paid",
+            paymentMethod: data.order.paymentMethod,
+          },
+        });
+
+        return;
+      }
 
       // ==============================
       // RAZORPAY PAYMENT
@@ -874,6 +967,8 @@ navigate("/order-success", {
                 <PaymentMethod
                   paymentMethod={paymentMethod}
                   setPaymentMethod={setPaymentMethod}
+                  wallet={wallet}
+                  finalPrice={finalPrice}
                 />
               </div>
 

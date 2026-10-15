@@ -56,6 +56,7 @@ export const createOrder = async (req, res) => {
     // SUCCESS RESPONSE
 
     return res.status(201).json({
+      success: true,
       message: "Order placed successfully",
 
       order: {
@@ -66,6 +67,7 @@ export const createOrder = async (req, res) => {
         finalAmount: order.finalPrice,
         totalAmount: order.finalPrice,
         status: order.status,
+        paymentStatus: order.paymentStatus,
         paymentMethod: order.paymentMethod,
       },
     });
