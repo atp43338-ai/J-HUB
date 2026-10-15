@@ -108,8 +108,12 @@ function Navbar() {
 
   // Update wishlist count when wishlist changes
   useEffect(() => {
-    const handleWishlistUpdate = () => {
-      fetchWishlistCount();
+    const handleWishlistUpdate = (e) => {
+      if (e?.detail?.count !== undefined) {
+        setWishlistCount(e.detail.count);
+      } else {
+        fetchWishlistCount();
+      }
     };
 
     window.addEventListener(

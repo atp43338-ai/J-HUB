@@ -2,6 +2,7 @@ import { useNavigate } from "react-router";
 import toast from "react-hot-toast";
 import { useWishlist } from "../context/WishlistContext";
 import { addToCart } from "../../cart/services/cartService";
+import { useCart } from "../../cart/context/CartContext";
 
 function WishlistItem({ product }) {
   const navigate = useNavigate();
@@ -10,19 +11,27 @@ function WishlistItem({ product }) {
     removeFromWishlist,
   } = useWishlist();
 
-  const handleRemove = () => {
-    removeFromWishlist(product._id);
+  const { refreshCartCount } = useCart();
 
-    toast.success("Removed from wishlist");
+  const handleRemove = async () => {
+    await removeFromWishlist(product._id);
   };
 
   const handleMoveToCart = async () => {
-    // Find first available variant
-    const availableVariant = product.variants?.find(
-      (variant) => variant.stock > 0
-    );
+    const token = localStorage.getItem("token");
+    if (!token) {
+      toast.error("Please login to manage your cart");
+      navigate("/login");
+      return;
+    }
 
-    if (!availableVariant) {
+    // Find saved size or first available variant
+    const selectedSize =
+      product.size ||
+      product.variants?.find((variant) => variant.stock > 0)?.size ||
+      product.variants?.[0]?.size;
+
+    if (!selectedSize) {
       toast.error("Product is out of stock");
       return;
     }
@@ -30,15 +39,17 @@ function WishlistItem({ product }) {
     try {
       await addToCart({
         productId: product._id,
-        size: availableVariant.size,
+        size: selectedSize,
         quantity: 1,
       });
 
-      removeFromWishlist(product._id);
+      if (refreshCartCount) {
+        await refreshCartCount();
+      }
 
-      toast.success("Added to cart");
+      await removeFromWishlist(product._id, true);
 
-      navigate("/cart");
+      toast.success("Item moved to cart successfully");
     } catch (error) {
       toast.error(error.message);
     }
@@ -118,7 +129,7 @@ function WishlistItem({ product }) {
             onClick={handleMoveToCart}
             className="flex-1 py-3 bg-[#d90416] text-white rounded-lg font-semibold hover:bg-[#b90312] transition"
           >
-            Add to Cart
+            Move to Cart
           </button>
 
         </div>

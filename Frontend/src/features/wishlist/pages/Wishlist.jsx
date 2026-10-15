@@ -24,9 +24,21 @@ function Wishlist() {
     await removeFromWishlist(productId);
   };
 
-  // Add wishlist product to cart using saved size
+  // Add wishlist product to cart using saved size or available variant
   const handleMoveToCart = async (product) => {
-    if (!product.size) {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      toast.error("Please login to manage your cart");
+      navigate("/login");
+      return;
+    }
+
+    const selectedSize =
+      product.size ||
+      product.variants?.find((v) => v.stock > 0)?.size ||
+      product.variants?.[0]?.size;
+
+    if (!selectedSize) {
       toast.error("Size is not available");
       return;
     }
@@ -34,19 +46,18 @@ function Wishlist() {
     try {
       await addToCart({
         productId: product._id,
-        size: product.size,
+        size: selectedSize,
         quantity: 1,
       });
 
-      await refreshCartCount();
+      if (refreshCartCount) {
+        await refreshCartCount();
+      }
 
-      await removeFromWishlist(product._id);
+      // Immediately remove from wishlist view without showing separate removed toast
+      await removeFromWishlist(product._id, true);
 
-      toast.success(
-        `Product added to cart with size ${product.size}`
-      );
-
-      navigate("/cart");
+      toast.success("Item moved to cart successfully");
     } catch (error) {
       toast.error(error.message);
     }
@@ -200,7 +211,7 @@ function Wishlist() {
                       Remove
                     </button>
 
-                    {/* Add to Cart */}
+                    {/* Move to Cart */}
                     <button
                       type="button"
                       onClick={() =>
@@ -208,7 +219,7 @@ function Wishlist() {
                       }
                       className="w-full mt-3 py-2 bg-[#d90416] text-white rounded-lg font-semibold hover:bg-[#b90312] transition"
                     >
-                      Add to Cart
+                      Move to Cart
                     </button>
 
                   </div>

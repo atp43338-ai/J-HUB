@@ -28,16 +28,21 @@ export const addToCart = async (req, res) => {
       });
     }
 
-    const cart = await addToCartService(
+    const result = await addToCartService(
       userId,
       productId,
       size,
       Number(quantity)
     );
 
+    const cart = result?.cart || result;
+
     res.status(201).json({
       message: "Product added to cart successfully",
       cart,
+      removedFromWishlist: result?.removedFromWishlist ?? false,
+      wishlistCount: result?.wishlistCount,
+      removedProductId: productId,
     });
   } catch (error) {
     res.status(400).json({

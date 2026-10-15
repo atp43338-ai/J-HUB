@@ -1,5 +1,6 @@
 import Cart from "../models/Cart.js";
 import Product from "../../product/models/Product.js";
+import Wishlist from "../../wishlist/models/Wishlist.js";
 import { applyProductOffers } from "../../product/services/productService.js";
 
 // Add item to cart
@@ -45,36 +46,59 @@ export const addToCartService = async (
         },
       ],
     });
+  } else {
+    // Check if same product + same size already exists
+    const existingItem = cart.items.find(
+      (item) =>
+        item.product.toString() === productId &&
+        item.size === size
+    );
 
-    return cart;
-  }
+    if (existingItem) {
+      const newQuantity = existingItem.quantity + quantity;
 
-  // Check if same product + same size already exists
-  const existingItem = cart.items.find(
-    (item) =>
-      item.product.toString() === productId &&
-      item.size === size
-  );
+      if (variant.stock < newQuantity) {
+        throw new Error("Not enough stock");
+      }
 
-  if (existingItem) {
-    const newQuantity = existingItem.quantity + quantity;
-
-    if (variant.stock < newQuantity) {
-      throw new Error("Not enough stock");
+      existingItem.quantity = newQuantity;
+    } else {
+      cart.items.push({
+        product: productId,
+        size,
+        quantity,
+      });
     }
 
-    existingItem.quantity = newQuantity;
-  } else {
-    cart.items.push({
-      product: productId,
-      size,
-      quantity,
-    });
+    await cart.save();
   }
 
-  await cart.save();
+  // Automatically remove product from user's wishlist if it exists
+  let removedFromWishlist = false;
+  let wishlistCount = 0;
+  try {
+    const updateResult = await Wishlist.updateOne(
+      { user: userId },
+      { $pull: { products: { product: productId } } }
+    );
+    if (
+      updateResult &&
+      (updateResult.modifiedCount > 0 || updateResult.nModified > 0)
+    ) {
+      removedFromWishlist = true;
+    }
+    const updatedWishlist = await Wishlist.findOne({ user: userId });
+    wishlistCount = updatedWishlist?.products?.length || 0;
+  } catch (wishlistErr) {
+    console.error("Auto remove from wishlist error:", wishlistErr);
+  }
 
-  return cart;
+  return {
+    cart,
+    removedFromWishlist,
+    wishlistCount,
+    removedProductId: productId,
+  };
 };
 
 // Get user's cart

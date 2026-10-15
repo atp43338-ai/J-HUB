@@ -24,10 +24,8 @@ function ProductCard({ product }) {
 
     if (isInWishlist(product._id)) {
       removeFromWishlist(product._id);
-      toast.success("Removed from wishlist");
     } else {
-      addToWishlist(product);
-      // toast.success("Added to wishlist");
+      addToWishlist(product._id);
     }
   };
 

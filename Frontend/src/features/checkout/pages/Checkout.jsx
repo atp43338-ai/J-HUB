@@ -16,7 +16,10 @@ import {
   completeRetryPaymentOrder,
 } from "../../order/services/orderService";
 
-import { removeCartItem } from "../../cart/services/cartService";
+import {
+  getCart,
+  removeCartItem,
+} from "../../cart/services/cartService";
 
 import {
   createPaymentOrder,
@@ -34,20 +37,89 @@ function Checkout() {
 
   const location = useLocation();
 
-  // ITEMS RECEIVED FROM BUY NOW
-  const buyNowItems = location.state?.items || [];
-
   // RETRY PAYMENT INFORMATION
-  const retryOrderId = location.state?.retryOrderId;
+  const [retryOrderId] = useState(() => {
+    return (
+      location.state?.retryOrderId ||
+      sessionStorage.getItem("checkout_retry_order_id") ||
+      null
+    );
+  });
 
-  const isRetryPayment =
-    location.state?.retryPayment === true;
+  const [isRetryPayment] = useState(() => {
+    return (
+      location.state?.retryPayment === true ||
+      sessionStorage.getItem("checkout_is_retry") === "true"
+    );
+  });
+
+  // ITEMS FOR CHECKOUT (PERSISTENT ON RELOAD / CTRL + F5)
+  const [checkoutItems, setCheckoutItems] = useState(() => {
+    // 1. Try location.state?.items
+    if (
+      location.state?.items &&
+      Array.isArray(location.state.items) &&
+      location.state.items.length > 0
+    ) {
+      try {
+        sessionStorage.setItem(
+          "checkout_items",
+          JSON.stringify(location.state.items)
+        );
+        if (location.state.retryOrderId) {
+          sessionStorage.setItem(
+            "checkout_retry_order_id",
+            location.state.retryOrderId
+          );
+        }
+        if (location.state.retryPayment) {
+          sessionStorage.setItem("checkout_is_retry", "true");
+        }
+      } catch (e) {
+        console.error("Failed to save checkout items to sessionStorage:", e);
+      }
+      return location.state.items;
+    }
+
+    // 2. Try sessionStorage fallback
+    try {
+      const saved = sessionStorage.getItem("checkout_items");
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed;
+        }
+      }
+    } catch (e) {
+      console.error("Failed to parse checkout items from sessionStorage:", e);
+    }
+
+    return [];
+  });
+
+  const [itemsLoading, setItemsLoading] = useState(
+    checkoutItems.length === 0
+  );
 
   // STATES
   const [addresses, setAddresses] = useState([]);
 
-  const [selectedAddress, setSelectedAddress] =
-    useState("");
+  const [selectedAddress, setSelectedAddress] = useState(() => {
+    try {
+      return sessionStorage.getItem("checkout_selected_address") || "";
+    } catch {
+      return "";
+    }
+  });
+
+  const handleSelectAddress = (addressId) => {
+    setSelectedAddress(addressId);
+    try {
+      sessionStorage.setItem("checkout_selected_address", addressId);
+    } catch (e) {
+      console.error("Failed to save selected address to sessionStorage:", e);
+    }
+  };
 
   const [addressLoading, setAddressLoading] =
     useState(true);
@@ -75,12 +147,66 @@ function Checkout() {
   const [couponLoading, setCouponLoading] =
     useState(false);
 
-  // CHECK CHECKOUT ITEMS
-  useEffect(() => {
-    if (!buyNowItems.length) {
-      navigate("/products");
+  // CLEAN STORAGE HELPER
+  const cleanCheckoutStorage = () => {
+    try {
+      sessionStorage.removeItem("checkout_items");
+      sessionStorage.removeItem("checkout_selected_address");
+      sessionStorage.removeItem("checkout_retry_order_id");
+      sessionStorage.removeItem("checkout_is_retry");
+    } catch (e) {
+      console.error("Storage cleanup error:", e);
     }
-  }, [buyNowItems.length, navigate]);
+  };
+
+  // RESTORE ACTIVE CART ITEMS IF LOCATION.STATE AND SESSIONSTORAGE ARE EMPTY
+  useEffect(() => {
+    if (checkoutItems.length > 0) {
+      setItemsLoading(false);
+      return;
+    }
+
+    const restoreCartItems = async () => {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        setItemsLoading(false);
+        navigate("/login", { state: { from: location } });
+        return;
+      }
+
+      try {
+        setItemsLoading(true);
+        const data = await getCart();
+        const serverItems = data?.cart?.items || [];
+
+        if (serverItems.length > 0) {
+          setCheckoutItems(serverItems);
+          try {
+            sessionStorage.setItem(
+              "checkout_items",
+              JSON.stringify(serverItems)
+            );
+          } catch (err) {
+            console.error("Failed to cache server items in sessionStorage:", err);
+          }
+        }
+      } catch (error) {
+        console.error("Failed to fetch cart fallback for checkout:", error);
+      } finally {
+        setItemsLoading(false);
+      }
+    };
+
+    restoreCartItems();
+  }, [location, navigate]);
+
+  // REDIRECT ONLY AFTER FETCH COMPLETES AND CONFIRMED EMPTY
+  useEffect(() => {
+    if (!itemsLoading && checkoutItems.length === 0) {
+      toast.error("Your checkout session is empty");
+      navigate("/cart", { replace: true });
+    }
+  }, [itemsLoading, checkoutItems.length, navigate]);
 
   // FETCH ADDRESSES
   useEffect(() => {
@@ -88,7 +214,7 @@ function Checkout() {
       const token = localStorage.getItem("token");
 
       if (!token) {
-        navigate("/login");
+        navigate("/login", { state: { from: location } });
         return;
       }
 
@@ -102,22 +228,24 @@ function Checkout() {
 
         setAddresses(userAddresses);
 
-        // Select default address
-        const defaultAddress =
-          userAddresses.find(
-            (address) => address.isDefault
-          );
+        // Select address: restore previously selected if present in addresses,
+        // otherwise default address, otherwise first address
+        const savedAddressId = sessionStorage.getItem("checkout_selected_address");
+        const foundSaved = userAddresses.find(
+          (address) => address._id === savedAddressId
+        );
+        const defaultAddress = userAddresses.find(
+          (address) => address.isDefault
+        );
 
-        if (defaultAddress) {
-          setSelectedAddress(
-            defaultAddress._id
-          );
-        } else if (
-          userAddresses.length > 0
-        ) {
-          setSelectedAddress(
-            userAddresses[0]._id
-          );
+        if (foundSaved) {
+          setSelectedAddress(foundSaved._id);
+        } else if (defaultAddress) {
+          setSelectedAddress(defaultAddress._id);
+          sessionStorage.setItem("checkout_selected_address", defaultAddress._id);
+        } else if (userAddresses.length > 0) {
+          setSelectedAddress(userAddresses[0]._id);
+          sessionStorage.setItem("checkout_selected_address", userAddresses[0]._id);
         }
       } catch (error) {
         console.error(
@@ -135,7 +263,7 @@ function Checkout() {
     };
 
     fetchAddresses();
-  }, [navigate]);
+  }, [location, navigate]);
 
   // FETCH WALLET
   useEffect(() => {
@@ -162,31 +290,34 @@ function Checkout() {
   }, []);
 
   // CONVERT PRODUCTS FOR CHECKOUT UI
-  const items = buyNowItems.map((item) => {
-    const originalPrice = Number(item.product.price) || 0;
-    const offerDiscount = Number(item.product.offerDiscount) || 0;
-    const offerPrice = Number(item.product.offerPrice);
+  const items = checkoutItems
+    .filter((item) => item && item.product)
+    .map((item) => {
+      const prod = typeof item.product === "object" ? item.product : {};
+      const originalPrice = Number(prod.price) || 0;
+      const offerDiscount = Number(prod.offerDiscount) || 0;
+      const offerPrice = Number(prod.offerPrice);
 
-    const price =
-      offerDiscount > 0 && Number.isFinite(offerPrice)
-        ? offerPrice
-        : originalPrice -
-          (originalPrice * (Number(item.product.discount) || 0)) / 100;
+      const price =
+        offerDiscount > 0 && Number.isFinite(offerPrice)
+          ? offerPrice
+          : originalPrice -
+            (originalPrice * (Number(prod.discount) || 0)) / 100;
 
-    return {
-      id: item.product._id,
-      name: item.product.name,
-      image: item.product.images?.[0],
-      size: item.size,
-      quantity: item.quantity,
-      price,
-      originalPrice,
-      offerDiscount:
-        offerDiscount > 0
-          ? offerDiscount
-          : Number(item.product.discount) || 0,
-    };
-  });
+      return {
+        id: prod._id,
+        name: prod.name,
+        image: prod.images?.[0],
+        size: item.size,
+        quantity: item.quantity,
+        price,
+        originalPrice,
+        offerDiscount:
+          offerDiscount > 0
+            ? offerDiscount
+            : Number(prod.discount) || 0,
+      };
+    });
 
   // PRICE CALCULATION
   const subtotal = items.reduce(
@@ -258,7 +389,7 @@ function Checkout() {
 
   const removeOrderedItemsFromCart = async () => {
     try {
-      for (const item of buyNowItems) {
+      for (const item of checkoutItems) {
         if (item._id) {
           await removeCartItem(item._id);
         }
@@ -300,7 +431,7 @@ function Checkout() {
     }
 
     // Check items
-    if (!buyNowItems.length) {
+    if (!checkoutItems.length) {
       toast.error(
         "No products found"
       );
@@ -358,6 +489,8 @@ function Checkout() {
         );
 
         await removeOrderedItemsFromCart();
+
+        cleanCheckoutStorage();
 
         setPlacingOrder(false);
 
@@ -446,6 +579,8 @@ function Checkout() {
         console.log("Wallet Order created:", data);
 
         await removeOrderedItemsFromCart();
+
+        cleanCheckoutStorage();
 
         toast.success("Order placed successfully using wallet balance!");
 
@@ -597,6 +732,8 @@ function Checkout() {
 
                 setPlacingOrder(false);
 
+                cleanCheckoutStorage();
+
                 toast.success(
                   "Payment completed successfully"
                 );
@@ -683,12 +820,13 @@ function Checkout() {
                 "Order placed successfully"
               );
 
+              cleanCheckoutStorage();
+
               // ==============================
               // SUCCESS PAGE
               // ==============================
 
-
-setPlacingOrder(false);
+              setPlacingOrder(false);
 
 const onlineTotalValue = Number(
   orderDataResponse.order.finalPrice ??
@@ -741,7 +879,7 @@ navigate("/order-success", {
                   error.message ||
                   "Payment verification failed. Please try again.",
 
-                items: buyNowItems,
+                items: checkoutItems,
               },
             });
           }
@@ -855,7 +993,7 @@ navigate("/order-success", {
                   response.error?.description ||
                   "Your payment could not be completed. You can retry the payment within 5 minutes.",
 
-                items: buyNowItems,
+                items: checkoutItems,
               },
             });
           } catch (error) {
@@ -881,7 +1019,7 @@ navigate("/order-success", {
                   response.error?.description ||
                   "Your payment could not be completed. Please try again.",
 
-                items: buyNowItems,
+                items: checkoutItems,
 
                 paymentRetryExpiresAt:
                   new Date(
@@ -914,8 +1052,24 @@ navigate("/order-success", {
     }
   };
 
+  // LOADING SKELETON / SPINNER DURING CHECKOUT INITIALIZATION
+  if (itemsLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 text-gray-900 flex flex-col justify-between">
+        <Navbar />
+        <div className="flex-1 flex flex-col items-center justify-center py-24">
+          <div className="w-12 h-12 border-4 border-[#d90416] border-t-transparent rounded-full animate-spin"></div>
+          <p className="mt-4 text-gray-600 font-medium text-sm">
+            Loading checkout details...
+          </p>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
   // EMPTY CHECKOUT
-  if (!buyNowItems.length) {
+  if (!checkoutItems.length) {
     return null;
   }
 
@@ -950,8 +1104,9 @@ navigate("/order-success", {
                 <CheckoutAddress
                   addresses={addresses}
                   selectedAddress={selectedAddress}
-                  setSelectedAddress={setSelectedAddress}
-                  checkoutItems={buyNowItems}
+                  setSelectedAddress={handleSelectAddress}
+                  checkoutItems={checkoutItems}
+                  addressLoading={addressLoading}
                 />
               </div>
 

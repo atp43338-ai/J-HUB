@@ -10,11 +10,15 @@ function PublicRoute({ children, admin = false }) {
 
   // If already logged in
   if (token) {
+    const fromPath =
+      location.state?.from?.pathname ||
+      location.state?.from ||
+      (admin ? "/admin/dashboard" : "/");
+
     return (
       <Navigate
-        to={admin ? "/admin/dashboard" : "/"}
+        to={fromPath}
         replace
-        state={{ from: location.pathname }}
       />
     );
   }

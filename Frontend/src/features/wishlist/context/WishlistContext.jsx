@@ -44,24 +44,48 @@ export const WishlistProvider = ({ children }) => {
   };
 
   // Check if product is in wishlist
-  const isInWishlist = (productId) => {
-    return wishlist.some(
-      (product) => product._id === productId
-    );
+  const isInWishlist = (productOrId) => {
+    if (!productOrId) return false;
+    const targetId = String(productOrId?._id || productOrId);
+    return wishlist.some((item) => {
+      if (!item) return false;
+      const id = item.product?._id || item.product || item._id;
+      return String(id) === targetId;
+    });
   };
 
   // Add product with selected size
   const handleAddToWishlist = async (
-    productId,
+    productOrId,
     size
   ) => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      toast.error("Please login to manage your wishlist");
+      return;
+    }
+
+    const productId = String(productOrId?._id || productOrId);
+    const selectedSize =
+      size ||
+      (typeof productOrId === "object"
+        ? productOrId.variants?.find((v) => v.stock > 0)?.size ||
+          productOrId.variants?.[0]?.size
+        : undefined);
+
     try {
       const data = await addToWishlist(
         productId,
-        size
+        selectedSize
       );
 
-      setWishlist(data.wishlist?.products || []);
+      const updated = data.wishlist?.products || [];
+      setWishlist(updated);
+      window.dispatchEvent(
+        new CustomEvent("wishlistUpdated", {
+          detail: { count: updated.length },
+        })
+      );
 
       toast.success("Added to wishlist");
     } catch (error) {
@@ -69,21 +93,66 @@ export const WishlistProvider = ({ children }) => {
     }
   };
 
-  // Remove product
+  // Remove product (optimistically updates state for real-time UI feedback)
   const handleRemoveFromWishlist = async (
-    productId
+    productOrId,
+    silent = false
   ) => {
-    try {
-      const data = await removeFromWishlist(
-        productId
+    if (!productOrId) return;
+    const targetId = String(productOrId?._id || productOrId);
+
+    // Optimistic local state update
+    setWishlist((prev) => {
+      const next = prev.filter((item) => {
+        const id = item.product?._id || item.product || item._id;
+        return String(id) !== targetId;
+      });
+      window.dispatchEvent(
+        new CustomEvent("wishlistUpdated", {
+          detail: { count: next.length },
+        })
       );
+      return next;
+    });
 
-      setWishlist(data.wishlist?.products || []);
+    try {
+      const data = await removeFromWishlist(targetId);
 
-      toast.success("Removed from wishlist");
+      if (data?.wishlist?.products) {
+        setWishlist(data.wishlist.products);
+        window.dispatchEvent(
+          new CustomEvent("wishlistUpdated", {
+            detail: { count: data.wishlist.products.length },
+          })
+        );
+      }
+      if (!silent) {
+        toast.success("Removed from wishlist");
+      }
     } catch (error) {
-      toast.error(error.message);
+      if (!silent) {
+        toast.error(error.message);
+      }
+      fetchWishlist();
     }
+  };
+
+  // Instantly remove product when it is added to cart
+  const removeProductOnAddToCart = (productOrId) => {
+    if (!productOrId) return;
+    const targetId = String(productOrId?._id || productOrId);
+    setWishlist((prev) => {
+      const next = prev.filter((item) => {
+        const id = item.product?._id || item.product || item._id;
+        return String(id) !== targetId;
+      });
+      window.dispatchEvent(
+        new CustomEvent("wishlistUpdated", {
+          detail: { count: next.length },
+        })
+      );
+      return next;
+    });
   };
 
   // Clear wishlist
@@ -92,6 +161,11 @@ export const WishlistProvider = ({ children }) => {
       const data = await clearWishlist();
 
       setWishlist(data.wishlist?.products || []);
+      window.dispatchEvent(
+        new CustomEvent("wishlistUpdated", {
+          detail: { count: 0 },
+        })
+      );
 
       toast.success("Wishlist cleared");
     } catch (error) {
@@ -111,8 +185,8 @@ export const WishlistProvider = ({ children }) => {
         fetchWishlist,
         isInWishlist,
         addToWishlist: handleAddToWishlist,
-        removeFromWishlist:
-          handleRemoveFromWishlist,
+        removeFromWishlist: handleRemoveFromWishlist,
+        removeProductOnAddToCart,
         clearWishlist: handleClearWishlist,
       }}
     >

@@ -17,8 +17,10 @@ function ProductInfo({ product }) {
 
   const {
     wishlist,
+    isInWishlist,
     addToWishlist,
     removeFromWishlist,
+    removeProductOnAddToCart,
   } = useWishlist();
 
   // Maximum allowed purchase quantity per item
@@ -30,12 +32,17 @@ function ProductInfo({ product }) {
   );
 
   // Check whether product is in wishlist
-  const isInWishlist = wishlist.some(
-    (item) => item._id === product._id
-  );
+  const isProductInWishlist = isInWishlist(product?._id);
 
   // Add to Cart
   const handleAddToCart = async () => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      toast.error("Please login to add products to cart");
+      navigate("/login");
+      return;
+    }
+
     if (!selectedSize) {
       toast.error("Please select a size");
       return;
@@ -57,7 +64,7 @@ function ProductInfo({ product }) {
     }
 
     try {
-      // Add product to cart
+      // Add product to cart (backend automatically pulls from wishlist)
       await addToCart({
         productId: product._id,
         size: selectedSize,
@@ -67,10 +74,8 @@ function ProductInfo({ product }) {
       // Refresh cart count
       await refreshCartCount();
 
-      // Remove from wishlist if it exists there
-      if (isInWishlist) {
-        await removeFromWishlist(product._id);
-      }
+      // Instantly remove product from wishlist state and sync badge count
+      removeProductOnAddToCart(product._id);
 
       toast.success("Product added to cart");
     } catch (error) {
@@ -80,6 +85,13 @@ function ProductInfo({ product }) {
 
   // Buy Now
   const handleBuyNow = () => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      toast.error("Please login to continue");
+      navigate("/login");
+      return;
+    }
+
     if (!selectedSize) {
       toast.error("Please select a size");
       return;
@@ -98,6 +110,12 @@ function ProductInfo({ product }) {
     if (selectedVariant.stock < quantity) {
       toast.error("Not enough stock");
       return;
+    }
+
+    // Immediately remove from wishlist if present
+    if (isProductInWishlist) {
+      removeProductOnAddToCart(product._id);
+      removeFromWishlist(product._id, true);
     }
 
     navigate("/checkout", {
@@ -115,10 +133,16 @@ function ProductInfo({ product }) {
 
   // Wishlist
   const handleWishlist = async () => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      toast.error("Please login to manage your wishlist");
+      navigate("/login");
+      return;
+    }
+
     try {
-      if (isInWishlist) {
+      if (isProductInWishlist) {
         await removeFromWishlist(product._id);
-        toast.success("Removed from wishlist");
         return;
       }
 
@@ -141,8 +165,6 @@ function ProductInfo({ product }) {
         product._id,
         selectedSize
       );
-
-      toast.success("Added to wishlist");
     } catch (error) {
       toast.error(error.message);
     }
@@ -414,7 +436,7 @@ function ProductInfo({ product }) {
               type="button"
               onClick={handleWishlist}
               aria-label={
-                isInWishlist
+                isProductInWishlist
                   ? "Remove from wishlist"
                   : "Add to wishlist"
               }
@@ -433,7 +455,7 @@ function ProductInfo({ product }) {
                 transition
               "
             >
-              {isInWishlist ? "♥" : "♡"}
+              {isProductInWishlist ? "♥" : "♡"}
             </button>
           </div>
         </div>
