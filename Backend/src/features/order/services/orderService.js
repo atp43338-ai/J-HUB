@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import Order from "../models/Order.js";
 import Product from "../../product/models/Product.js";
 import Address from "../../address/models/Address.js";
@@ -12,6 +13,8 @@ import {
   addMoneyToWallet,
   getOrCreateWallet,
 } from "../../wallet/services/walletService.js";
+
+export { applyReferralRewardService } from "../../referral/services/referralService.js";
 
 // GENERATE ORDER ID
 const generateOrderId = () => {
@@ -467,21 +470,49 @@ return order;
 
 // GET ORDER BY ID
 
-export const getOrderByIdService = async (
-  userId,
-  orderId
-) => {
+export const getOrderByIdService = async (identifier, userId) => {
+  let targetId = identifier;
+  let targetUserId = userId;
 
-  const order = await Order.findOne({
-    $or: [
-      { orderId },
-      { _id: mongoose.isValidObjectId(orderId) ? orderId : null },
-    ],
-    user: userId,
-  }).populate("items.product");
+  // Support reverse argument order if called as (userId, identifier)
+  if (
+    typeof userId === "string" &&
+    userId.startsWith("JHUB-") &&
+    typeof identifier === "string" &&
+    !identifier.startsWith("JHUB-")
+  ) {
+    targetId = userId;
+    targetUserId = identifier;
+  }
+
+  let query = {};
+
+  // If valid 24-character hex ObjectId, search by _id or orderId:
+  if (mongoose.Types.ObjectId.isValid(targetId)) {
+    query = {
+      $or: [
+        { _id: targetId },
+        { orderId: targetId }
+      ]
+    };
+  } else {
+    // Otherwise, query exclusively by the custom formatted string orderId
+    query = { orderId: targetId };
+  }
+
+  // Restrict to the requesting user if userId is provided
+  if (targetUserId) {
+    query.user = targetUserId;
+  }
+
+  const order = await Order.findOne(query)
+    .populate('items.product')
+    .populate('user', 'name email phone');
 
   if (!order) {
-    throw new Error("Order not found");
+    const error = new Error('Order not found');
+    error.statusCode = 404;
+    throw error;
   }
 
   return order;

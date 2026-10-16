@@ -326,11 +326,12 @@ export const getOrderById = async (
 
     const order =
       await getOrderByIdService(
-        req.user.id,
-        orderId
+        orderId,
+        req.user?.id || req.user?._id
       );
 
     return res.status(200).json({
+      success: true,
       message: "Order fetched successfully",
       order,
     });
@@ -342,8 +343,16 @@ export const getOrderById = async (
       error
     );
 
-    return res.status(404).json({
-      message: error.message,
+    if (error.statusCode === 404 || error.message === "Order not found") {
+      return res.status(404).json({
+        success: false,
+        message: "Order not found",
+      });
+    }
+
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Failed to fetch order",
     });
   }
 };

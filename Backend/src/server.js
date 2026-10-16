@@ -35,7 +35,6 @@ import adminCollectionRoutes from "./features/admin/collection/routes/adminColle
 import adminOfferRoutes from "./features/admin/offer/routes/adminOfferRoutes.js";
 import adminCouponRoutes from "./features/admin/coupon/routes/adminCouponRoutes.js";
 import adminSalesRoutes from "./features/admin/sales/routes/adminSalesRoutes.js";
-import adminReferralRoutes from "./features/admin/referral/routes/adminReferralRoutes.js";
 
 import walletRoutes from "./features/wallet/routes/walletRoutes.js";
 import referralRoutes from "./features/referral/routes/referralRoutes.js";
@@ -127,7 +126,6 @@ app.use("/api/orders/return", returnRoutes);
 app.use("/api/admin/offers", adminOfferRoutes);
 app.use("/api/admin/coupons", adminCouponRoutes);
 app.use("/api/admin/sales", adminSalesRoutes);
-app.use("/api/admin/referrals", adminReferralRoutes);
 app.use("/api/admin/reviews", adminReviewRoutes);
 app.use("/api/admin/reviews", reviewRoutes);
 app.use("/api/admin/dashboard", dashboardRoutes);
@@ -135,6 +133,7 @@ app.use("/api/admin/dashboard-stats", dashboardRoutes);
 
 app.use("/api/wallet", walletRoutes);
 app.use("/api/referral", referralRoutes);
+app.use("/api/referrals", referralRoutes);
 
 app.use("/api/payment", paymentRoutes);
 

@@ -23,6 +23,10 @@ createRoot(document.getElementById("root")).render(
             <Toaster
               position="top-center"
               reverseOrder={false}
+              gutter={8}
+              toastOptions={{
+                duration: 3000,
+              }}
               containerStyle={{
                 zIndex: 99999,
               }}

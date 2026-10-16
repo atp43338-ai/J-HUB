@@ -8,6 +8,7 @@ import {
   sendRegisterOTPEmail,
   sendForgotPasswordOTPEmail,
 } from "./emailService.js";
+import Wallet from "../../wallet/models/Wallet.js";
 import {
   addMoneyToWallet,
   creditUserWallet,
@@ -138,21 +139,47 @@ export const registerUserService = async (
   await newUser.save();
 
   // Dual-sided referral rewards:
-  // Referrer earns ₹99, New user earns ₹49
+  // Referrer earns ₹99, New user (referee) earns ₹49
   if (validReferrer) {
     try {
-      // 1. Credit ₹49 to newly registered user
-      await creditUserWallet(
-        newUser._id,
-        49,
-        "Referral signup welcome bonus"
+      // 1. Credit New User (Referee): Add ₹49 to new user's wallet
+      await Wallet.findOneAndUpdate(
+        { $or: [{ user: newUser._id }, { userId: newUser._id }] },
+        {
+          $setOnInsert: { user: newUser._id, userId: newUser._id },
+          $inc: { balance: 49 },
+          $push: {
+            transactions: {
+              type: "Credit",
+              amount: 49,
+              description: "Referral welcome bonus for joining J-HUB",
+              reason: "Referral welcome bonus for joining J-HUB",
+              date: new Date(),
+              status: "Completed",
+            },
+          },
+        },
+        { upsert: true, new: true }
       );
 
-      // 2. Credit ₹99 to referrer
-      await creditUserWallet(
-        validReferrer._id,
-        99,
-        `Referral reward for inviting ${newUser.name || "a new user"}`
+      // 2. Credit Referrer: Add ₹99 to referring user's wallet
+      await Wallet.findOneAndUpdate(
+        { $or: [{ user: validReferrer._id }, { userId: validReferrer._id }] },
+        {
+          $setOnInsert: { user: validReferrer._id, userId: validReferrer._id },
+          $inc: { balance: 99 },
+          $push: {
+            transactions: {
+              type: "Credit",
+              amount: 99,
+              description: `Referral reward for inviting ${newUser.name || "a friend"}`,
+              reason: `Referral reward for inviting ${newUser.name || "a friend"}`,
+              date: new Date(),
+              status: "Completed",
+            },
+          },
+        },
+        { upsert: true, new: true }
       );
     } catch (creditError) {
       console.error("Referral wallet credit failed:", creditError);
@@ -366,7 +393,8 @@ export const resetPasswordService = async (
 
 // Google Login
 export const googleLoginService = async (
-  credential
+  credential,
+  referralCode = null
 ) => {
   const ticket = await googleClient.verifyIdToken({
     idToken: credential,
@@ -390,6 +418,22 @@ export const googleLoginService = async (
       newReferralToken = generateReferralToken();
     } while (await User.findOne({ referralToken: newReferralToken }));
 
+    let referredBy = null;
+    let validReferrer = null;
+
+    if (referralCode) {
+      const cleanCode = String(referralCode).trim().toUpperCase();
+      const referrer = await User.findOne({ referralCode: cleanCode });
+      if (
+        referrer &&
+        referrer.email?.toLowerCase() !== email.toLowerCase() &&
+        referrer.referralCode?.toUpperCase() !== newReferralCode
+      ) {
+        referredBy = referrer._id;
+        validReferrer = referrer;
+      }
+    }
+
     user = await User.create({
       name,
       email,
@@ -400,7 +444,54 @@ export const googleLoginService = async (
       isEmailVerified: true,
       referralCode: newReferralCode,
       referralToken: newReferralToken,
+      referredBy,
+      referralRewardClaimed: Boolean(validReferrer),
+      isReferralRewardClaimed: Boolean(validReferrer),
     });
+
+    if (validReferrer) {
+      try {
+        await Wallet.findOneAndUpdate(
+          { $or: [{ user: user._id }, { userId: user._id }] },
+          {
+            $setOnInsert: { user: user._id, userId: user._id },
+            $inc: { balance: 49 },
+            $push: {
+              transactions: {
+                type: "Credit",
+                amount: 49,
+                description: "Referral welcome bonus for joining J-HUB",
+                reason: "Referral welcome bonus for joining J-HUB",
+                date: new Date(),
+                status: "Completed",
+              },
+            },
+          },
+          { upsert: true, new: true }
+        );
+
+        await Wallet.findOneAndUpdate(
+          { $or: [{ user: validReferrer._id }, { userId: validReferrer._id }] },
+          {
+            $setOnInsert: { user: validReferrer._id, userId: validReferrer._id },
+            $inc: { balance: 99 },
+            $push: {
+              transactions: {
+                type: "Credit",
+                amount: 99,
+                description: `Referral reward for inviting ${user.name || "a friend"}`,
+                reason: `Referral reward for inviting ${user.name || "a friend"}`,
+                date: new Date(),
+                status: "Completed",
+              },
+            },
+          },
+          { upsert: true, new: true }
+        );
+      } catch (creditError) {
+        console.error("Google login referral wallet credit failed:", creditError);
+      }
+    }
   } else {
     let updated = false;
 

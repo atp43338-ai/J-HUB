@@ -208,6 +208,7 @@ export const resetPassword = async (req, res) => {
 export const googleLogin = async (req, res) => {
   try {
     const { credential } = req.body;
+    const referralCode = req.body.referralCode || req.query.ref || null;
 
     if (!credential) {
       return res.status(400).json({
@@ -216,7 +217,8 @@ export const googleLogin = async (req, res) => {
     }
 
     const result = await googleLoginService(
-      credential
+      credential,
+      referralCode
     );
 
     res.status(200).json({

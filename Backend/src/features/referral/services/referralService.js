@@ -4,6 +4,12 @@ import Wallet from "../../wallet/models/Wallet.js";
 import { addMoneyToWallet } from "../../wallet/services/walletService.js";
 
 
+// GET ACTIVE REFERRAL OFFER (Fixed instant referral program)
+export const getActiveReferralOfferService = async () => {
+  return null;
+};
+
+
 // GET REFERRAL DETAILS
 
 export const getReferralDetailsService = async (userId) => {
@@ -38,9 +44,10 @@ export const getReferralDetailsService = async (userId) => {
     user.isReferralRewardClaimed ||
     wallet?.transactions?.some(
       (transaction) =>
-        transaction.type === "credit" &&
+        (transaction.type === "credit" || transaction.type === "Credit") &&
         (transaction.reason === "Referral reward" ||
-          transaction.reason === "Referral signup welcome bonus")
+          transaction.reason === "Referral signup welcome bonus" ||
+          String(transaction.description || "").startsWith("Referral reward"))
     ) || false;
 
   return {
@@ -52,67 +59,51 @@ export const getReferralDetailsService = async (userId) => {
 };
 
 
-// APPLY REFERRAL REWARD
-
+// APPLY REFERRAL REWARD (Order completion fallback if not claimed upon signup)
 export const applyReferralRewardService = async (
   userId,
   order
 ) => {
-
   // FIND REFERRED USER
-
   const user = await User.findById(userId);
 
   if (!user) {
-    throw new Error("User not found");
+    return null;
   }
 
-
   // CHECK IF USER WAS REFERRED
-
   if (!user.referredBy) {
     return null;
   }
 
-
-  // PREVENT DUPLICATE REWARD
-
-  if (user.referralRewardClaimed) {
+  // PREVENT DUPLICATE REWARD (Already rewarded at signup)
+  if (user.referralRewardClaimed || user.isReferralRewardClaimed) {
     return null;
   }
 
-
-  // REFERRAL REWARD
-
-  const reward = 100;
-
-
-  // SAFETY CHECK
-
-  if (!reward || reward <= 0) {
-    return null;
-  }
-
+  const reward = 99;
+  const orderIdentifier = order?.orderId || order?._id || "First Order";
+  const description = `Referral reward for order #${orderIdentifier}`;
 
   // ADD REWARD TO REFERRER WALLET
-
   await addMoneyToWallet(
     user.referredBy,
     reward,
-    "Referral reward",
-    order._id
+    description,
+    order?._id || null,
+    null,
+    description
   );
 
-
   // MARK REWARD AS CLAIMED
-
   user.referralRewardClaimed = true;
+  user.isReferralRewardClaimed = true;
 
   await user.save();
-
 
   return {
     reward,
     referrerId: user.referredBy,
+    campaignName: "Instant Referral",
   };
 };

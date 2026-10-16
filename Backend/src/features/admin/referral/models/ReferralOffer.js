@@ -10,17 +10,37 @@ const referralOfferSchema = new mongoose.Schema(
 
     rewardType: {
       type: String,
-      enum: ["percentage", "fixed"],
+      enum: ["percentage", "fixed", "flat"],
       required: true,
+      default: "flat",
     },
 
     rewardValue: {
       type: Number,
       required: true,
-      min: 1,
+      default: 0,
+      min: 0,
+    },
+
+    rewardAmount: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+
+    rewardPercentage: {
+      type: Number,
+      default: 0,
+      min: 0,
     },
 
     minimumPurchase: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+
+    minPurchase: {
       type: Number,
       default: 0,
       min: 0,
@@ -37,8 +57,8 @@ const referralOfferSchema = new mongoose.Schema(
     },
 
     status: {
-      type: Boolean,
-      default: true,
+      type: mongoose.Schema.Types.Mixed,
+      default: "Active",
     },
   },
   {

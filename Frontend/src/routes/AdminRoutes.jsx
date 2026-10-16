@@ -1,4 +1,4 @@
-import { Routes, Route } from "react-router";
+import { Routes, Route, Navigate } from "react-router";
 
 import AdminLogin from "../features/admin/auth/pages/AdminLogin";
 import UserManagement from "../features/admin/user/pages/UserManagement";
@@ -16,7 +16,6 @@ import OfferManagement from "../features/admin/offer/pages/OfferManagement";
 import CouponManagement from "../features/admin/coupon/pages/CouponManagement";
 
 import SalesReport from "../features/admin/sales/pages/SalesReport";
-import ReferralOfferManagement from "../features/admin/referral/pages/ReferralOfferManagement";
 
 import AdminDashboard from "../features/admin/dashboard/pages/AdminDashboard";
 
@@ -67,7 +66,7 @@ function AdminRoutes() {
 
         <Route path="sales" element={<SalesReport />} />
 
-        <Route path="referrals" element={<ReferralOfferManagement />} />
+        <Route path="referrals" element={<Navigate to="/admin/dashboard" replace />} />
       </Route>
 
       {/* 404 CATCH-ALL ROUTE */}

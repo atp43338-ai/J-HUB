@@ -44,10 +44,6 @@ function AdminSidebar({ isOpen, setIsOpen }) {
       name: "Sales Report",
       path: "/admin/sales",
     },
-    {
-      name: "Rferral Management",
-      path: "/admin/referrals",
-    },
   ];
 
   const handleLogout = () => {

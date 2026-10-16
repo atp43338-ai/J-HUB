@@ -103,12 +103,19 @@ const ReferralOfferManagement = () => {
         name: formData.name.trim(),
         rewardType: formData.rewardType,
         rewardValue: Number(formData.rewardValue),
-        minimumPurchase: Number(
-          formData.minimumPurchase || 0
-        ),
+        rewardAmount:
+          formData.rewardType !== "percentage"
+            ? Number(formData.rewardValue)
+            : 0,
+        rewardPercentage:
+          formData.rewardType === "percentage"
+            ? Number(formData.rewardValue)
+            : 0,
+        minimumPurchase: Number(formData.minimumPurchase || 0),
+        minPurchase: Number(formData.minimumPurchase || 0),
         startDate: formData.startDate,
         endDate: formData.endDate,
-        status: formData.status,
+        status: formData.status ? "Active" : "Inactive",
       };
 
       if (editingOffer) {
@@ -147,9 +154,14 @@ const ReferralOfferManagement = () => {
     setFormData({
       name: offer.name || "",
       rewardType: offer.rewardType || "percentage",
-      rewardValue: offer.rewardValue || "",
+      rewardValue:
+        offer.rewardValue ||
+        (offer.rewardType === "percentage"
+          ? offer.rewardPercentage
+          : offer.rewardAmount) ||
+        "",
       minimumPurchase:
-        offer.minimumPurchase || "",
+        offer.minimumPurchase || offer.minPurchase || "",
       startDate: offer.startDate
         ? new Date(offer.startDate)
             .toISOString()
@@ -160,7 +172,10 @@ const ReferralOfferManagement = () => {
             .toISOString()
             .split("T")[0]
         : "",
-      status: offer.status ?? true,
+      status:
+        offer.status === "Active" ||
+        offer.status === true ||
+        offer.status === "active",
     });
 
     setShowForm(true);
@@ -174,14 +189,20 @@ const ReferralOfferManagement = () => {
 
   const handleStatusChange = async (offer) => {
     try {
+      const isCurrentlyActive =
+        offer.status === "Active" ||
+        offer.status === true ||
+        offer.status === "active";
+      const nextStatus = isCurrentlyActive ? "Inactive" : "Active";
+
       await updateReferralOfferStatus(
         offer._id,
-        !offer.status
+        nextStatus
       );
 
       toast.success(
         `Referral offer ${
-          offer.status ? "deactivated" : "activated"
+          isCurrentlyActive ? "deactivated" : "activated"
         } successfully`
       );
 
@@ -228,24 +249,31 @@ const ReferralOfferManagement = () => {
     );
   };
 
+  const isOfferActive = (offer) =>
+    offer.status === "Active" ||
+    offer.status === true ||
+    offer.status === "active";
+
   const formatReward = (offer) => {
+    const val =
+      offer.rewardValue ||
+      (offer.rewardType === "percentage"
+        ? offer.rewardPercentage
+        : offer.rewardAmount) ||
+      0;
+
     if (offer.rewardType === "percentage") {
-      return `${offer.rewardValue}%`;
+      return `${val}%`;
     }
 
-    return `₹${Number(
-      offer.rewardValue || 0
-    ).toLocaleString("en-IN")}`;
+    return `₹${Number(val).toLocaleString("en-IN")}`;
   };
 
   const totalOffers = referralOffers.length;
 
-  const activeOffers = referralOffers.filter(
-    (offer) => offer.status
-  ).length;
+  const activeOffers = referralOffers.filter(isOfferActive).length;
 
-  const inactiveOffers =
-    totalOffers - activeOffers;
+  const inactiveOffers = totalOffers - activeOffers;
 
   return (
     <div className="min-h-screen bg-gray-100 p-6">
@@ -401,12 +429,12 @@ const ReferralOfferManagement = () => {
                           handleStatusChange(offer)
                         }
                         className={`rounded-full px-3 py-1 text-xs font-medium ${
-                          offer.status
+                          isOfferActive(offer)
                             ? "bg-green-100 text-green-700"
                             : "bg-gray-100 text-gray-600"
                         }`}
                       >
-                        {offer.status
+                        {isOfferActive(offer)
                           ? "Active"
                           : "Inactive"}
                       </button>

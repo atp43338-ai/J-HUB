@@ -13,11 +13,13 @@ const Referral = () => {
   useEffect(() => {
     const fetchReferral = async () => {
       try {
+        setLoading(true);
+
         const data = await getReferralDetails();
 
         setReferral(data.referral);
       } catch (error) {
-        console.error("Referral error:", error);
+        console.error("Referral fetch error:", error);
       } finally {
         setLoading(false);
       }
@@ -113,21 +115,53 @@ const Referral = () => {
       <ProfileHeader
         title="Referral"
         highlight="Program"
-        description="Share your code! You get ₹99 and your friend gets ₹49 in their wallet when they sign up."
+        description="Invite your friends to J-HUB and earn together!"
       />
 
-      {/* Incentive Banner */}
-      <div className="mt-6 p-4 rounded-xl bg-red-50 border border-red-100 flex items-center gap-3.5">
-        <div className="w-10 h-10 rounded-full bg-[#d90416] text-white flex items-center justify-center font-bold text-base shrink-0">
-          ₹
-        </div>
-        <div>
-          <h4 className="text-sm font-bold text-gray-900">
-            Refer & Earn Wallet Cash
-          </h4>
-          <p className="text-xs text-gray-600 mt-0.5">
-            Share your code! You get <span className="font-semibold text-[#d90416]">₹99</span> and your friend gets <span className="font-semibold text-[#d90416]">₹49</span> in their wallet when they sign up.
-          </p>
+      {/* Fixed Instant Reward Banner */}
+      <div className="mt-6 overflow-hidden rounded-2xl border border-red-200 bg-gradient-to-br from-red-50 via-white to-rose-50 p-6 shadow-sm">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-start gap-4">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#d90416] text-white shadow-md shadow-red-500/20 font-bold text-xl">
+              ₹
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="inline-flex items-center rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-bold uppercase tracking-wider text-[#d90416]">
+                  Instant Rewards
+                </span>
+                <h4 className="text-base font-extrabold text-gray-900">
+                  Invite your friends to J-HUB and earn together!
+                </h4>
+              </div>
+
+              <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="flex items-start gap-2.5 rounded-xl bg-white/90 border border-red-100 p-3 shadow-xs">
+                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-green-100 text-green-700 font-bold text-xs">
+                    ₹99
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-gray-900">You Get</p>
+                    <p className="text-xs text-gray-600 mt-0.5">
+                      <span className="font-semibold text-[#d90416]">₹99</span> added directly to your wallet when your friend registers.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-2.5 rounded-xl bg-white/90 border border-red-100 p-3 shadow-xs">
+                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-blue-100 text-blue-700 font-bold text-xs">
+                    ₹49
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-gray-900">Your Friend Gets</p>
+                    <p className="text-xs text-gray-600 mt-0.5">
+                      <span className="font-semibold text-[#d90416]">₹49</span> welcome wallet credit to start shopping immediately.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -174,7 +208,7 @@ const Referral = () => {
                 text-white
                 text-sm
                 font-semibold
-                transition
+                transition cursor-pointer
               "
             >
               Copy
@@ -237,7 +271,7 @@ const Referral = () => {
                 text-white
                 text-sm
                 font-semibold
-                transition
+                transition cursor-pointer
               "
             >
               Copy

@@ -61,90 +61,68 @@ function OrderDetails() {
     fetchOrder();
   }, [orderId, navigate]);
 
-  // CANCEL ORDER
-  const handleCancelOrder = async () => {
-    const confirmCancel = window.confirm(
-      "Are you sure you want to cancel this order?"
-    );
+  // CANCEL CONFIRMATION MODAL STATE
+  const [cancelModal, setCancelModal] = useState({
+    isOpen: false,
+    type: null, // "order" | "item"
+    itemId: null,
+    reason: "",
+  });
 
-    if (!confirmCancel) {
-      return;
-    }
-
-    const reason = window.prompt(
-      "Enter cancellation reason (optional):"
-    );
-
-    if (reason === null) {
-      return;
-    }
-
-    try {
-      setCancelling(true);
-
-      const data = await cancelOrder(
-        orderId,
-        reason
-      );
-
-      setOrder(data.order);
-
-      toast.success("Order cancelled successfully");
-    } catch (error) {
-      console.error(
-        "Failed to cancel order:",
-        error
-      );
-
-      toast.error(
-        error.message || "Failed to cancel order"
-      );
-    } finally {
-      setCancelling(false);
-    }
+  // OPEN CANCEL ORDER MODAL
+  const handleCancelOrder = () => {
+    setCancelModal({
+      isOpen: true,
+      type: "order",
+      itemId: null,
+      reason: "",
+    });
   };
 
-  // CANCEL SPECIFIC PRODUCT
-  const handleCancelItem = async (itemId) => {
-    const confirmCancel = window.confirm(
-      "Are you sure you want to cancel this product?"
-    );
+  // OPEN CANCEL ITEM MODAL
+  const handleCancelItem = (itemId) => {
+    setCancelModal({
+      isOpen: true,
+      type: "item",
+      itemId,
+      reason: "",
+    });
+  };
 
-    if (!confirmCancel) {
-      return;
-    }
+  // CONFIRM CANCEL ACTION
+  const handleConfirmCancel = async () => {
+    const { type, itemId, reason } = cancelModal;
+    setCancelModal({
+      isOpen: false,
+      type: null,
+      itemId: null,
+      reason: "",
+    });
 
-    const reason = window.prompt(
-      "Enter cancellation reason (optional):"
-    );
-
-    if (reason === null) {
-      return;
-    }
-
-    try {
-      setCancellingItem(itemId);
-
-      const data = await cancelOrderItem(
-        orderId,
-        itemId,
-        reason
-      );
-
-      setOrder(data.order);
-
-      toast.success("Product cancelled successfully");
-    } catch (error) {
-      console.error(
-        "Failed to cancel product:",
-        error
-      );
-
-      toast.error(
-        error.message || "Failed to cancel product"
-      );
-    } finally {
-      setCancellingItem(null);
+    if (type === "order") {
+      try {
+        setCancelling(true);
+        const data = await cancelOrder(orderId, reason);
+        setOrder(data.order);
+        toast.success("Order cancelled successfully");
+      } catch (error) {
+        console.error("Failed to cancel order:", error);
+        toast.error(error.message || "Failed to cancel order");
+      } finally {
+        setCancelling(false);
+      }
+    } else if (type === "item" && itemId) {
+      try {
+        setCancellingItem(itemId);
+        const data = await cancelOrderItem(orderId, itemId, reason);
+        setOrder(data.order);
+        toast.success("Product cancelled successfully");
+      } catch (error) {
+        console.error("Failed to cancel product:", error);
+        toast.error(error.message || "Failed to cancel product");
+      } finally {
+        setCancellingItem(null);
+      }
     }
   };
 
@@ -802,6 +780,81 @@ function OrderDetails() {
           </div>
         </div>
       </main>
+
+      {/* CANCEL CONFIRMATION MODAL */}
+      {cancelModal.isOpen && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 px-4">
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-red-100 text-red-600 mb-4">
+              <svg
+                className="w-6 h-6"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                />
+              </svg>
+            </div>
+
+            <h3 className="text-center text-lg font-bold text-gray-900">
+              {cancelModal.type === "order" ? "Cancel Order" : "Cancel Product"}
+            </h3>
+
+            <p className="mt-2 text-center text-sm text-gray-500">
+              {cancelModal.type === "order"
+                ? "Are you sure you want to cancel this entire order? This action cannot be undone."
+                : "Are you sure you want to cancel this product from your order?"}
+            </p>
+
+            <div className="mt-4">
+              <label className="block text-xs font-semibold text-gray-700 mb-1">
+                Cancellation Reason (Optional)
+              </label>
+              <textarea
+                rows={3}
+                value={cancelModal.reason}
+                onChange={(e) =>
+                  setCancelModal((prev) => ({
+                    ...prev,
+                    reason: e.target.value,
+                  }))
+                }
+                placeholder="Please enter a reason..."
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500"
+              />
+            </div>
+
+            <div className="mt-6 flex gap-3">
+              <button
+                type="button"
+                onClick={() =>
+                  setCancelModal({
+                    isOpen: false,
+                    type: null,
+                    itemId: null,
+                    reason: "",
+                  })
+                }
+                className="flex-1 py-2.5 px-4 rounded-lg border border-gray-300 text-gray-700 text-sm font-semibold hover:bg-gray-50 transition cursor-pointer"
+              >
+                No, Keep It
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmCancel}
+                className="flex-1 py-2.5 px-4 rounded-lg bg-[#d90416] hover:bg-red-700 text-white text-sm font-semibold transition cursor-pointer shadow-sm"
+              >
+                Yes, Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <Footer />
     </div>

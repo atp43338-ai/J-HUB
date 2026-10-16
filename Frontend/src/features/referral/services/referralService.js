@@ -10,3 +10,17 @@ export const getReferralDetails = async () => {
     },
   });
 };
+
+export const getActiveReferralOffer = async () => {
+  const token = localStorage.getItem("token");
+
+  const headers = {};
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
+  return api("/referrals/active-offer", {
+    method: "GET",
+    headers,
+  });
+};
