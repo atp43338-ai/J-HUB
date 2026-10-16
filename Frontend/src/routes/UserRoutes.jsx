@@ -206,6 +206,11 @@ function UserRoutes() {
       />
 
       <Route
+        path="/payment-failed"
+        element={<OrderFailed />}
+      />
+
+      <Route
         path="/orders"
         element={
           <ProtectedRoute>

@@ -35,6 +35,29 @@ export const createCoupon = async (couponData) => {
     );
   }
 
+  if (
+    discountType === "fixed" ||
+    discountType === "flat" ||
+    discountType === "Fixed Amount"
+  ) {
+    if (Number(minimumPurchase) <= Number(discountValue)) {
+      throw new Error(
+        "Minimum purchase amount must be greater than the discount amount."
+      );
+    }
+  } else if (
+    discountType === "percentage" &&
+    maximumDiscount !== null &&
+    maximumDiscount !== "" &&
+    maximumDiscount !== undefined
+  ) {
+    if (Number(minimumPurchase) <= Number(maximumDiscount)) {
+      throw new Error(
+        "Minimum purchase amount must be strictly greater than the maximum discount cap."
+      );
+    }
+  }
+
   const coupon = await Coupon.create({
     code: code.toUpperCase(),
     discountType,
@@ -165,6 +188,28 @@ export const updateCoupon = async (id, couponData) => {
     throw new Error(
       "Percentage discount must be between 1 and 100"
     );
+  }
+
+  if (
+    coupon.discountType === "fixed" ||
+    coupon.discountType === "flat" ||
+    coupon.discountType === "Fixed Amount"
+  ) {
+    if (Number(coupon.minimumPurchase) <= Number(coupon.discountValue)) {
+      throw new Error(
+        "Minimum purchase amount must be greater than the discount amount."
+      );
+    }
+  } else if (
+    coupon.discountType === "percentage" &&
+    coupon.maximumDiscount !== null &&
+    coupon.maximumDiscount !== undefined
+  ) {
+    if (Number(coupon.minimumPurchase) <= Number(coupon.maximumDiscount)) {
+      throw new Error(
+        "Minimum purchase amount must be strictly greater than the maximum discount cap."
+      );
+    }
   }
 
   await coupon.save();

@@ -9,6 +9,7 @@ import {
   createFailedPaymentOrder,
   retryPaymentOrder,
   completeRetryPaymentOrder,
+  markOrderFailed,
 } from "../controllers/orderController.js";
 
 import authMiddleware from "../../auth/middleware/authMiddleware.js";
@@ -36,10 +37,30 @@ router.post(
   createFailedPaymentOrder
 );
 
+// RETRY PAYMENT ENDPOINTS (SUPPORT BOTH POST AND GET)
+router.post(
+  "/:orderId/retry-payment",
+  authMiddleware,
+  retryPaymentOrder
+);
+
 router.get(
   "/:orderId/retry-payment",
   authMiddleware,
   retryPaymentOrder
+);
+
+// MARK ORDER AS FAILED
+router.post(
+  "/mark-failed",
+  authMiddleware,
+  markOrderFailed
+);
+
+router.post(
+  "/:orderId/mark-failed",
+  authMiddleware,
+  markOrderFailed
 );
 
 router.patch(

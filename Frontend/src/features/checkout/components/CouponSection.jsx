@@ -14,6 +14,7 @@ function CouponSection({
   appliedCoupon,
   couponLoading,
   handleApplyCoupon,
+  handleRemoveCoupon,
   discountedSubtotal,
 }) {
   const [showCoupons, setShowCoupons] = useState(false);
@@ -71,6 +72,12 @@ function CouponSection({
 
   // SELECT COUPON
   const handleSelectCoupon = (coupon) => {
+    if (appliedCoupon && appliedCoupon !== coupon.code) {
+      if (typeof handleRemoveCoupon === "function") {
+        handleRemoveCoupon(true);
+      }
+    }
+
     setCouponCode(coupon.code);
 
     setShowCoupons(false);
@@ -99,25 +106,36 @@ function CouponSection({
           <input
             type="text"
             value={couponCode}
+            disabled={Boolean(appliedCoupon)}
             onChange={(e) =>
               setCouponCode(
                 e.target.value.toUpperCase()
               )
             }
             placeholder="Enter coupon code"
-            className="flex-1 rounded-lg border border-gray-300 px-4 py-3 text-sm outline-none focus:border-black"
+            className="flex-1 rounded-lg border border-gray-300 px-4 py-3 text-sm outline-none focus:border-black disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
           />
 
-          <button
-            type="button"
-            onClick={handleApplyCoupon}
-            disabled={couponLoading}
-            className="rounded-lg bg-black px-5 py-3 text-sm font-semibold text-white transition hover:bg-red-600 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {couponLoading
-              ? "Applying..."
-              : "APPLY"}
-          </button>
+          {appliedCoupon ? (
+            <button
+              type="button"
+              onClick={() => handleRemoveCoupon && handleRemoveCoupon()}
+              className="rounded-lg bg-red-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-red-700 cursor-pointer"
+            >
+              REMOVE
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={handleApplyCoupon}
+              disabled={couponLoading}
+              className="rounded-lg bg-black px-5 py-3 text-sm font-semibold text-white transition hover:bg-red-600 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
+            >
+              {couponLoading
+                ? "Applying..."
+                : "APPLY"}
+            </button>
+          )}
 
         </div>
 
@@ -164,9 +182,20 @@ function CouponSection({
 
             </div>
 
-            <span className="text-sm font-bold text-green-700">
-              -₹{couponDiscount}
-            </span>
+            <div className="flex items-center gap-3">
+              <span className="text-sm font-bold text-green-700">
+                -₹{couponDiscount}
+              </span>
+
+              <button
+                type="button"
+                onClick={() => handleRemoveCoupon && handleRemoveCoupon()}
+                className="text-xs font-semibold text-red-600 hover:text-red-700 hover:underline flex items-center gap-0.5 cursor-pointer"
+                title="Remove coupon"
+              >
+                ✕ Remove
+              </button>
+            </div>
 
           </div>
         )}
@@ -415,36 +444,49 @@ function CouponSection({
                           </p>
                         )}
 
-                        {/* APPLY BUTTON */}
-                        <button
-                          type="button"
-                          disabled={!applicable}
-                          onClick={() =>
-                            handleSelectCoupon(
-                              coupon
-                            )
-                          }
-                          className={`
-                            mt-4
-                            w-full
-                            rounded-lg
-                            px-4
-                            py-3
-                            text-sm
-                            font-semibold
-                            transition
-                            duration-200
-                            ${
-                              applicable
-                                ? "bg-black text-white hover:bg-red-600 hover:shadow-md"
-                                : "cursor-not-allowed bg-gray-200 text-gray-400"
+                        {/* APPLY / REMOVE BUTTON */}
+                        {appliedCoupon === coupon.code ? (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (handleRemoveCoupon) handleRemoveCoupon();
+                              setShowCoupons(false);
+                            }}
+                            className="mt-4 w-full rounded-lg border border-red-600 bg-red-50 px-4 py-3 text-sm font-semibold text-red-600 transition hover:bg-red-100 cursor-pointer"
+                          >
+                            REMOVE COUPON
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            disabled={!applicable}
+                            onClick={() =>
+                              handleSelectCoupon(
+                                coupon
+                              )
                             }
-                          `}
-                        >
-                          {applicable
-                            ? "APPLY COUPON"
-                            : "NOT APPLICABLE"}
-                        </button>
+                            className={`
+                              mt-4
+                              w-full
+                              rounded-lg
+                              px-4
+                              py-3
+                              text-sm
+                              font-semibold
+                              transition
+                              duration-200
+                              ${
+                                applicable
+                                  ? "bg-black text-white hover:bg-red-600 hover:shadow-md cursor-pointer"
+                                  : "cursor-not-allowed bg-gray-200 text-gray-400"
+                              }
+                            `}
+                          >
+                            {applicable
+                              ? "APPLY COUPON"
+                              : "NOT APPLICABLE"}
+                          </button>
+                        )}
 
                       </div>
                     );

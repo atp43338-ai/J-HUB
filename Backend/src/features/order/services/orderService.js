@@ -346,20 +346,17 @@ export const createOrderService = async (
       subtotal - discount;
 
     if (
-      couponDiscount >
+      couponDiscount >=
       discountedSubtotal
     ) {
-      couponDiscount =
-        discountedSubtotal;
+      couponDiscount = Math.max(0, discountedSubtotal - 1);
     }
-
 
     couponDiscount =
       Math.round(couponDiscount);
 
     appliedCoupon = coupon;
   }
-
 
   // PRICE CALCULATION
 
@@ -370,10 +367,12 @@ export const createOrderService = async (
   const discountedSubtotal =
     Math.round((subtotal - discount) * 100) / 100;
 
-  const finalPrice =
+  const finalPrice = Math.max(
+    1,
     Math.round(
       (discountedSubtotal - couponDiscount + tax + shipping) * 100
-    ) / 100;
+    ) / 100
+  );
 
   // VERIFY WALLET BALANCE IF PAYMENT METHOD IS WALLET
   let userWallet = null;
@@ -474,7 +473,10 @@ export const getOrderByIdService = async (
 ) => {
 
   const order = await Order.findOne({
-    orderId,
+    $or: [
+      { orderId },
+      { _id: mongoose.isValidObjectId(orderId) ? orderId : null },
+    ],
     user: userId,
   }).populate("items.product");
 
@@ -496,13 +498,22 @@ export const getOrdersService = async (userId) => {
 
   const now = new Date();
 
-  await Order.deleteMany({
-    user: userId,
-    paymentStatus: "failed",
-    paymentRetryExpiresAt: {
-      $lte: now,
+  await Order.updateMany(
+    {
+      user: userId,
+      paymentStatus: { $in: ["failed", "Payment Failed", "payment_failed"] },
+      $or: [
+        { paymentRetryExpiresAt: { $lte: now } },
+        { createdAt: { $lte: new Date(Date.now() - 5 * 60 * 1000) } },
+      ],
     },
-  });
+    {
+      $set: {
+        status: "Payment Failed",
+        paymentStatus: "Expired",
+      },
+    }
+  );
 
   const orders = await Order.find({
     user: userId,
@@ -1111,7 +1122,7 @@ export const createFailedPaymentOrderService = async (
     totalAmount: finalPrice,
     finalAmount: finalPrice,
 
-    status: "pending",
+    status: "Payment Failed",
   });
 
   return order;
@@ -1188,7 +1199,22 @@ export const completeRetryPaymentOrderService = async (
 
   // Payment successful
   order.paymentStatus = "paid";
+  order.status = "processing";
   order.paymentRetryExpiresAt = null;
+
+  // Deduct inventory now that payment succeeded
+  for (const item of order.items) {
+    if (!item.cancelled) {
+      const product = await Product.findById(item.product);
+      if (product) {
+        const variant = product.variants.find((v) => v.size === item.size);
+        if (variant) {
+          variant.stock = Math.max(0, variant.stock - item.quantity);
+          await product.save();
+        }
+      }
+    }
+  }
 
   await order.save();
 

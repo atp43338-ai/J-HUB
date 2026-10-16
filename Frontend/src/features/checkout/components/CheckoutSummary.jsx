@@ -1,10 +1,12 @@
 function CheckoutSummary({
   subtotal,
   discount,
+  couponDiscount = 0,
   tax,
   shipping,
   finalPrice,
   onPlaceOrder,
+  placingOrder,
 }) {
   return (
     <section className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 lg:sticky lg:top-24">
@@ -38,6 +40,19 @@ function CheckoutSummary({
             -₹{discount.toLocaleString("en-IN")}
           </span>
         </div>
+
+        {/* Coupon Discount */}
+        {couponDiscount > 0 && (
+          <div className="flex justify-between text-sm">
+            <span className="text-gray-600">
+              Coupon Discount
+            </span>
+
+            <span className="font-medium text-green-600">
+              -₹{couponDiscount.toLocaleString("en-IN")}
+            </span>
+          </div>
+        )}
 
         {/* Tax */}
         <div className="flex justify-between text-sm">

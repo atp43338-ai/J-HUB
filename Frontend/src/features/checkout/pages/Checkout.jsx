@@ -14,6 +14,7 @@ import {
   createOrder,
   createFailedPaymentOrder,
   completeRetryPaymentOrder,
+  markOrderFailed,
 } from "../../order/services/orderService";
 
 import {
@@ -53,6 +54,14 @@ function Checkout() {
     );
   });
 
+  const [retryPaymentExpiresAt] = useState(() => {
+    return (
+      location.state?.retryPaymentExpiresAt ||
+      sessionStorage.getItem("checkout_retry_expires_at") ||
+      null
+    );
+  });
+
   // ITEMS FOR CHECKOUT (PERSISTENT ON RELOAD / CTRL + F5)
   const [checkoutItems, setCheckoutItems] = useState(() => {
     // 1. Try location.state?.items
@@ -74,6 +83,12 @@ function Checkout() {
         }
         if (location.state.retryPayment) {
           sessionStorage.setItem("checkout_is_retry", "true");
+        }
+        if (location.state.retryPaymentExpiresAt) {
+          sessionStorage.setItem(
+            "checkout_retry_expires_at",
+            location.state.retryPaymentExpiresAt
+          );
         }
       } catch (e) {
         console.error("Failed to save checkout items to sessionStorage:", e);
@@ -144,6 +159,9 @@ function Checkout() {
   const [appliedCoupon, setAppliedCoupon] =
     useState("");
 
+  const [appliedCouponMinPurchase, setAppliedCouponMinPurchase] =
+    useState(0);
+
   const [couponLoading, setCouponLoading] =
     useState(false);
 
@@ -154,6 +172,7 @@ function Checkout() {
       sessionStorage.removeItem("checkout_selected_address");
       sessionStorage.removeItem("checkout_retry_order_id");
       sessionStorage.removeItem("checkout_is_retry");
+      sessionStorage.removeItem("checkout_retry_expires_at");
     } catch (e) {
       console.error("Storage cleanup error:", e);
     }
@@ -371,12 +390,17 @@ function Checkout() {
           couponCode.trim().toUpperCase()
       );
 
+      if (data.minimumPurchase !== undefined) {
+        setAppliedCouponMinPurchase(Number(data.minimumPurchase));
+      }
+
       toast.success(
         "Coupon applied successfully"
       );
     } catch (error) {
       setCouponDiscount(0);
       setAppliedCoupon("");
+      setAppliedCouponMinPurchase(0);
 
       toast.error(
         error.message ||
@@ -386,6 +410,32 @@ function Checkout() {
       setCouponLoading(false);
     }
   };
+
+  // REMOVE / CLEAR COUPON
+  const handleRemoveCoupon = (silent = false) => {
+    setAppliedCoupon("");
+    setCouponCode("");
+    setCouponDiscount(0);
+    setAppliedCouponMinPurchase(0);
+
+    if (!silent) {
+      toast.info("Coupon removed");
+    }
+  };
+
+  // AUTO-REMOVE COUPON IF SUBTOTAL DROPS BELOW MINIMUM PURCHASE
+  useEffect(() => {
+    if (
+      appliedCoupon &&
+      appliedCouponMinPurchase > 0 &&
+      discountedSubtotal < appliedCouponMinPurchase
+    ) {
+      handleRemoveCoupon(true);
+      toast.error(
+        "Coupon removed: minimum purchase requirement not met"
+      );
+    }
+  }, [discountedSubtotal, appliedCoupon, appliedCouponMinPurchase]);
 
   const removeOrderedItemsFromCart = async () => {
     try {
@@ -868,19 +918,36 @@ navigate("/order-success", {
             // PAYMENT VERIFICATION FAILED
             // ==============================
 
+            const failurePayload = {
+              orderId: isRetryPayment ? retryOrderId : undefined,
+              total: finalPrice,
+              paymentMethod: paymentMethod.toUpperCase(),
+              message:
+                error.message ||
+                "Payment verification failed. Please try again.",
+              errorMessage:
+                error.message ||
+                "Payment verification failed. Please try again.",
+              reason: "verification_failed",
+              source: "checkout",
+              items: checkoutItems,
+              paymentRetryExpiresAt:
+                retryPaymentExpiresAt ||
+                new Date(Date.now() + 5 * 60 * 1000).toISOString(),
+            };
+
+            try {
+              sessionStorage.setItem(
+                "paymentFailure",
+                JSON.stringify(failurePayload)
+              );
+            } catch (e) {
+              console.error("Failed to save payment failure to sessionStorage:", e);
+            }
+
             navigate("/order-failed", {
-              state: {
-                total: finalPrice,
-
-                paymentMethod:
-                  paymentMethod.toUpperCase(),
-
-                message:
-                  error.message ||
-                  "Payment verification failed. Please try again.",
-
-                items: checkoutItems,
-              },
+              replace: true,
+              state: failurePayload,
             });
           }
         },
@@ -900,12 +967,92 @@ navigate("/order-success", {
         // =================================
 
         modal: {
-          ondismiss: function () {
-            console.log(
-              "Razorpay modal dismissed"
-            );
+          ondismiss: async function () {
+            console.log("Razorpay modal dismissed");
+
+            // 1. Clean up lingering Razorpay container/backdrop and restore scroll
+            const rzpContainers =
+              document.querySelectorAll(".razorpay-container");
+            rzpContainers.forEach((el) => el.remove());
+            document.body.style.overflow = "unset";
 
             setPlacingOrder(false);
+
+            let failedOrderId = isRetryPayment ? retryOrderId : null;
+            let retryExpiry =
+              retryPaymentExpiresAt ||
+              new Date(Date.now() + 5 * 60 * 1000).toISOString();
+
+            if (!isRetryPayment) {
+              try {
+                const failedOrderData = {
+                  addressId: selectedAddress,
+                  paymentMethod: paymentMethod.toUpperCase(),
+                  couponCode: appliedCoupon || null,
+                  subtotal,
+                  discount,
+                  totalAmount: finalPrice,
+                  finalAmount: finalPrice,
+                  items: items.map((item) => ({
+                    productId: item.id,
+                    size: item.size,
+                    quantity: item.quantity,
+                    price: item.price,
+                    originalPrice: item.originalPrice,
+                    discount: item.originalPrice - item.price,
+                    unitDiscount: item.originalPrice - item.price,
+                  })),
+                };
+
+                const failedOrderResponse =
+                  await createFailedPaymentOrder(failedOrderData);
+
+                if (failedOrderResponse?.order?.orderId) {
+                  failedOrderId = failedOrderResponse.order.orderId;
+                }
+                if (failedOrderResponse?.order?.paymentRetryExpiresAt) {
+                  retryExpiry =
+                    failedOrderResponse.order.paymentRetryExpiresAt;
+                }
+              } catch (err) {
+                console.error("Failed order creation on modal dismiss error:", err);
+              }
+            } else if (retryOrderId) {
+              try {
+                await markOrderFailed(retryOrderId, {
+                  reason: "Payment dismissed by user",
+                });
+              } catch (err) {
+                console.error("Error updating order on dismiss:", err);
+              }
+            }
+
+            const failurePayload = {
+              orderId: failedOrderId,
+              total: finalPrice,
+              paymentMethod: paymentMethod.toUpperCase(),
+              paymentStatus: "failed",
+              paymentRetryExpiresAt: retryExpiry,
+              message: "Payment was cancelled before completion.",
+              errorMessage: "Payment was cancelled before completion.",
+              reason: "payment_cancelled",
+              source: "checkout",
+              items: checkoutItems,
+            };
+
+            try {
+              sessionStorage.setItem(
+                "paymentFailure",
+                JSON.stringify(failurePayload)
+              );
+            } catch (e) {
+              console.error("Failed to save payment failure to sessionStorage:", e);
+            }
+
+            navigate("/order-failed", {
+              replace: true,
+              state: failurePayload,
+            });
           },
         },
       };
@@ -929,104 +1076,109 @@ navigate("/order-success", {
             response
           );
 
-          // Close Razorpay failure modal
-          razorpay.close();
+          // 1. Force close the Razorpay modal iframe from DOM
+          try {
+            razorpay.close();
+          } catch (e) {
+            console.warn("Could not explicitly close Razorpay:", e);
+          }
+
+          // 2. Remove any lingering Razorpay backdrop/container elements if present:
+          const rzpContainers =
+            document.querySelectorAll(".razorpay-container");
+          rzpContainers.forEach((el) => el.remove());
+          document.body.style.overflow = "unset";
+
+          let failedOrderId = isRetryPayment ? retryOrderId : null;
+          let retryExpiry =
+            retryPaymentExpiresAt ||
+            new Date(Date.now() + 5 * 60 * 1000).toISOString();
 
           try {
-            const failedOrderData = {
-              addressId: selectedAddress,
+            if (!isRetryPayment) {
+              const failedOrderData = {
+                addressId: selectedAddress,
+                paymentMethod: paymentMethod.toUpperCase(),
+                couponCode: appliedCoupon || null,
+                subtotal,
+                discount,
+                totalAmount: finalPrice,
+                finalAmount: finalPrice,
+                items: items.map((item) => ({
+                  productId: item.id,
+                  size: item.size,
+                  quantity: item.quantity,
+                  price: item.price,
+                  originalPrice: item.originalPrice,
+                  discount: item.originalPrice - item.price,
+                  unitDiscount: item.originalPrice - item.price,
+                })),
+              };
 
-              paymentMethod:
-                paymentMethod.toUpperCase(),
+              const failedOrderResponse =
+                await createFailedPaymentOrder(
+                  failedOrderData
+                );
 
-              subtotal,
-              discount,
-              totalAmount: finalPrice,
-              finalAmount: finalPrice,
-
-              items: items.map((item) => ({
-                productId: item.id,
-                size: item.size,
-                quantity: item.quantity,
-                price: item.price,
-                originalPrice: item.originalPrice,
-                discount: item.originalPrice - item.price,
-                unitDiscount: item.originalPrice - item.price,
-              })),
-            };
-
-            const failedOrderResponse =
-              await createFailedPaymentOrder(
-                failedOrderData
+              console.log(
+                "Failed payment order created:",
+                failedOrderResponse
               );
 
-            console.log(
-              "Failed payment order created:",
-              failedOrderResponse
-            );
-
-            setPlacingOrder(false);
-
-            navigate("/order-failed", {
-              state: {
-                orderId:
-                  failedOrderResponse.order
-                    .orderId,
-
-                total:
-                  failedOrderResponse.order
-                    .total,
-
-                paymentMethod:
-                  failedOrderResponse.order
-                    .paymentMethod,
-
-                paymentStatus:
-                  failedOrderResponse.order
-                    .paymentStatus,
-
-                paymentRetryExpiresAt:
-                  failedOrderResponse.order
-                    .paymentRetryExpiresAt,
-
-                message:
-                  response.error?.description ||
-                  "Your payment could not be completed. You can retry the payment within 5 minutes.",
-
-                items: checkoutItems,
-              },
-            });
+              if (failedOrderResponse?.order?.orderId) {
+                failedOrderId = failedOrderResponse.order.orderId;
+              }
+              if (failedOrderResponse?.order?.paymentRetryExpiresAt) {
+                retryExpiry =
+                  failedOrderResponse.order.paymentRetryExpiresAt;
+              }
+            } else if (retryOrderId) {
+              try {
+                await markOrderFailed(retryOrderId, {
+                  reason:
+                    response.error?.description || "Transaction declined",
+                });
+              } catch (err) {
+                console.error("Error marking retry order failed:", err);
+              }
+            }
           } catch (error) {
             console.error(
               "Failed payment order creation error:",
               error
             );
-
+          } finally {
             setPlacingOrder(false);
 
-            // IMPORTANT:
-            // Even if failed-order creation fails,
-            // still go to the failed page.
+            const failurePayload = {
+              orderId: failedOrderId,
+              total: finalPrice,
+              paymentMethod: paymentMethod.toUpperCase(),
+              paymentStatus: "failed",
+              paymentRetryExpiresAt: retryExpiry,
+              message:
+                response.error?.description ||
+                "Payment was declined by the bank.",
+              errorMessage:
+                response.error?.description ||
+                "Payment was declined by the bank.",
+              reason: response.error?.reason || "payment_failed",
+              source: "checkout",
+              items: checkoutItems,
+            };
+
+            try {
+              sessionStorage.setItem(
+                "paymentFailure",
+                JSON.stringify(failurePayload)
+              );
+            } catch (e) {
+              console.error("Failed to save payment failure to sessionStorage:", e);
+            }
 
             navigate("/order-failed", {
-              state: {
-                total: finalPrice,
-
-                paymentMethod:
-                  paymentMethod.toUpperCase(),
-
-                message:
-                  response.error?.description ||
-                  "Your payment could not be completed. Please try again.",
-
-                items: checkoutItems,
-
-                paymentRetryExpiresAt:
-                  new Date(
-                    Date.now() +
-                      5 * 60 * 1000
-                  ).toISOString(),
-              },
+              replace: true,
+              state: failurePayload,
             });
           }
         }
@@ -1142,6 +1294,7 @@ navigate("/order-success", {
                   appliedCoupon={appliedCoupon}
                   couponLoading={couponLoading}
                   handleApplyCoupon={handleApplyCoupon}
+                  handleRemoveCoupon={handleRemoveCoupon}
                   discountedSubtotal={discountedSubtotal}
                 />
 
@@ -1149,6 +1302,7 @@ navigate("/order-success", {
                 <CheckoutSummary
                   subtotal={subtotal}
                   discount={discount}
+                  couponDiscount={couponDiscount}
                   tax={tax}
                   shipping={shipping}
                   finalPrice={finalPrice}

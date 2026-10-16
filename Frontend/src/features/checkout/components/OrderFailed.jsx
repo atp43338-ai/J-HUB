@@ -5,9 +5,11 @@ import Navbar from "../../home/components/Navbar";
 import Footer from "../../home/components/Footer";
 
 import {
+  getOrderById,
   retryPaymentOrder,
   completeRetryPaymentOrder,
 } from "../../order/services/orderService";
+import { verifyPayment } from "../../payment/services/paymentService";
 import toast from "react-hot-toast";
 
 function OrderFailed() {
@@ -18,14 +20,12 @@ function OrderFailed() {
   // STATES
   // =================================
 
-  const [remainingTime, setRemainingTime] =
-    useState(0);
-
-  const [retryLoading, setRetryLoading] =
-    useState(false);
+  const [remainingTime, setRemainingTime] = useState(300);
+  const [retryLoading, setRetryLoading] = useState(false);
+  const [fetchedOrder, setFetchedOrder] = useState(null);
 
   // =================================
-  // SCROLL TO TOP WHEN PAGE OPENS
+  // SCROLL TO TOP & CLEANUP RAZORPAY DOM ON MOUNT
   // =================================
 
   useEffect(() => {
@@ -34,7 +34,31 @@ function OrderFailed() {
       left: 0,
       behavior: "instant",
     });
+
+    const strayContainers = document.querySelectorAll(".razorpay-container");
+    strayContainers.forEach((el) => el.remove());
+    document.body.style.overflow = "unset"; // Restore scroll if Razorpay locked it
+
+    return () => {
+      const remaining = document.querySelectorAll(".razorpay-container");
+      remaining.forEach((el) => el.remove());
+      document.body.style.overflow = "unset";
+    };
   }, []);
+
+  // Save router state to sessionStorage for refresh safety
+  useEffect(() => {
+    if (location.state && Object.keys(location.state).length > 0) {
+      try {
+        sessionStorage.setItem(
+          "paymentFailure",
+          JSON.stringify(location.state)
+        );
+      } catch (error) {
+        console.error("Failed to save payment failure data to sessionStorage:", error);
+      }
+    }
+  }, [location.state]);
 
   // =================================
   // GET PAYMENT FAILURE DATA
@@ -71,51 +95,87 @@ function OrderFailed() {
     total,
     paymentMethod,
     message,
+    errorMessage,
+    reason,
+    source,
     items,
+    createdAt,
     paymentRetryExpiresAt,
   } = orderData;
 
+  const displayMessage =
+    errorMessage ||
+    message ||
+    (source === "wallet"
+      ? "Wallet recharge could not be completed. You can try again from your wallet."
+      : "Unfortunately, your payment could not be completed. You can retry the payment within 5 minutes.");
+
+  // Effective Order Values (synchronized if user reloads)
+  const effectiveOrderId =
+    fetchedOrder?.orderId || orderId || fetchedOrder?._id;
+  const effectiveCreatedAt =
+    fetchedOrder?.createdAt || createdAt || orderData.createdAt;
+  const effectiveExpiresAt =
+    fetchedOrder?.paymentRetryExpiresAt || paymentRetryExpiresAt;
+  const effectiveTotal =
+    fetchedOrder?.finalPrice ??
+    fetchedOrder?.totalAmount ??
+    fetchedOrder?.finalAmount ??
+    total ??
+    0;
+  const effectivePaymentMethod =
+    fetchedOrder?.paymentMethod || paymentMethod || "Online Payment";
+
   // =================================
-  // 5 MINUTE COUNTDOWN
+  // RE-SYNCHRONIZE ON RELOAD BY FETCHING ORDER DETAILS
+  // =================================
+  useEffect(() => {
+    const idToFetch = orderId || storedFailure?.orderId;
+    if (!idToFetch || source === "wallet") return;
+
+    const fetchOrderDetails = async () => {
+      try {
+        const res = await getOrderById(idToFetch);
+        if (res?.order) {
+          setFetchedOrder(res.order);
+        }
+      } catch (err) {
+        console.warn("Could not fetch order details on OrderFailed page:", err);
+      }
+    };
+
+    fetchOrderDetails();
+  }, [orderId]);
+
+  // =================================
+  // 5 MINUTE COUNTDOWN TIMER (FROM CREATEDAT OR 300s DEFAULT)
   // =================================
 
   useEffect(() => {
-    if (!paymentRetryExpiresAt) {
-      setRemainingTime(0);
-      return;
-    }
-
-    const expiryTime = new Date(
-      paymentRetryExpiresAt
-    ).getTime();
-
-    const updateTimer = () => {
-      const now = Date.now();
-
-      const difference =
-        expiryTime - now;
-
-      if (difference <= 0) {
-        setRemainingTime(0);
-        return;
+    const calculateTime = () => {
+      if (effectiveCreatedAt) {
+        const createdMs = new Date(effectiveCreatedAt).getTime();
+        const elapsedSec = Math.floor((Date.now() - createdMs) / 1000);
+        return Math.max(0, 300 - elapsedSec);
       }
-
-      setRemainingTime(
-        Math.floor(difference / 1000)
-      );
+      if (effectiveExpiresAt) {
+        const expiryMs = new Date(effectiveExpiresAt).getTime();
+        const remainingSec = Math.floor((expiryMs - Date.now()) / 1000);
+        return Math.max(0, remainingSec);
+      }
+      return 300;
     };
 
-    updateTimer();
+    setRemainingTime(calculateTime());
 
-    const timer = setInterval(
-      updateTimer,
-      1000
-    );
+    const timer = setInterval(() => {
+      setRemainingTime(calculateTime());
+    }, 1000);
 
     return () => {
       clearInterval(timer);
     };
-  }, [paymentRetryExpiresAt]);
+  }, [effectiveCreatedAt, effectiveExpiresAt]);
 
   // =================================
   // FORMAT COUNTDOWN
@@ -135,48 +195,146 @@ function OrderFailed() {
   ).padStart(2, "0")}`;
 
   // =================================
-  // RETRY PAYMENT
+  // RETRY PAYMENT (CALLS POST /api/orders/:orderId/retry-payment & TRIGGERS RAZORPAY)
   // =================================
 
-const handleRetryPayment = async () => {
-  if (!orderId) {
-    return;
-  }
+  const handleRetryPayment = async () => {
+    if (source === "wallet") {
+      sessionStorage.removeItem("paymentFailure");
+      navigate("/wallet");
+      return;
+    }
 
-  if (remainingTime <= 0) {
-    return;
-  }
+    if (!effectiveOrderId) {
+      navigate("/checkout");
+      return;
+    }
 
-  try {
-    setRetryLoading(true);
+    if (remainingTime <= 0) {
+      toast.error("Payment retry window has expired. Please place a new order.");
+      return;
+    }
 
-    // Check whether retry is still available
-    const data = await retryPaymentOrder(orderId);
+    try {
+      setRetryLoading(true);
 
-    console.log("Retry payment allowed:", data);
+      // Call POST /api/orders/:orderId/retry-payment
+      const data = await retryPaymentOrder(effectiveOrderId);
 
-    // Go to checkout with the existing failed order
-    navigate("/checkout", {
-      state: {
-        items: items || [],
-        retryOrderId: orderId,
-        retryPayment: true,
-        retryTotal: total,
-        retryPaymentMethod: paymentMethod,
-        retryPaymentExpiresAt: paymentRetryExpiresAt,
-      },
-    });
-  } catch (error) {
-    console.error("Retry payment error:", error);
+      if (!data || !data.order) {
+        throw new Error(data?.message || "Failed to initialize payment retry");
+      }
 
-    toast.error(
-      error.message ||
-        "Payment retry is no longer available"
-    );
-  } finally {
-    setRetryLoading(false);
-  }
-};
+      if (!window.Razorpay) {
+        toast.error("Razorpay SDK not loaded. Please refresh the page.");
+        return;
+      }
+
+      const razorpayKey =
+        data.razorpayKeyId ||
+        data.order.key_id ||
+        import.meta.env.VITE_RAZORPAY_KEY_ID;
+
+      const options = {
+        key: razorpayKey,
+        amount: data.order.amount,
+        currency: data.order.currency || "INR",
+        name: "J-HUB",
+        description: `Payment Retry for Order #${effectiveOrderId}`,
+        order_id: data.order.id,
+        handler: async function (response) {
+          try {
+            setRetryLoading(true);
+
+            const verificationData = {
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
+            };
+
+            const token = localStorage.getItem("token");
+            const verifyRes = await verifyPayment(verificationData, token);
+
+            if (verifyRes.success) {
+              try {
+                rzp.close();
+              } catch (e) {}
+              const strayContainers =
+                document.querySelectorAll(".razorpay-container");
+              strayContainers.forEach((el) => el.remove());
+              document.body.style.overflow = "unset";
+
+              const completeRes = await completeRetryPaymentOrder(effectiveOrderId);
+              toast.success("Payment completed successfully!");
+              sessionStorage.removeItem("paymentFailure");
+
+              navigate("/order-success", {
+                replace: true,
+                state: {
+                  orderId: completeRes?.order?.orderId || effectiveOrderId,
+                  total: completeRes?.order?.total || data.order.amount / 100,
+                  finalAmount: completeRes?.order?.total || data.order.amount / 100,
+                  totalAmount: completeRes?.order?.total || data.order.amount / 100,
+                  finalPrice: completeRes?.order?.total || data.order.amount / 100,
+                  status: completeRes?.order?.status || "processing",
+                  paymentStatus: "paid",
+                  paymentMethod: completeRes?.order?.paymentMethod || "CARD",
+                },
+              });
+            }
+          } catch (vErr) {
+            console.error("Verification error during retry:", vErr);
+            toast.error(vErr.message || "Payment verification failed.");
+          } finally {
+            setRetryLoading(false);
+          }
+        },
+        modal: {
+          ondismiss: function () {
+            try {
+              rzp.close();
+            } catch (e) {}
+            const strayContainers =
+              document.querySelectorAll(".razorpay-container");
+            strayContainers.forEach((el) => el.remove());
+            document.body.style.overflow = "unset";
+
+            toast("Payment retry cancelled.", { icon: "⚠️" });
+            setRetryLoading(false);
+          },
+        },
+        theme: {
+          color: "#d90416",
+        },
+      };
+
+      const rzp = new window.Razorpay(options);
+      rzp.on("payment.failed", function (resp) {
+        console.error("Razorpay retry payment failed:", resp);
+        try {
+          rzp.close();
+        } catch (e) {}
+        const strayContainers =
+          document.querySelectorAll(".razorpay-container");
+        strayContainers.forEach((el) => el.remove());
+        document.body.style.overflow = "unset";
+
+        toast.error(resp.error?.description || "Payment failed.");
+        setRetryLoading(false);
+      });
+
+      rzp.open();
+    } catch (error) {
+      console.error("Retry payment error:", error);
+
+      toast.error(
+        error.message ||
+          "Payment retry is no longer available"
+      );
+    } finally {
+      setRetryLoading(false);
+    }
+  };
 
   // =================================
   // CONTINUE SHOPPING
@@ -294,7 +452,9 @@ const handleRetryPayment = async () => {
                 mb-4
               "
             >
-              Payment Unsuccessful
+              {source === "wallet"
+                ? "Wallet Top-Up Failed"
+                : "Payment Unsuccessful"}
             </h1>
 
             {/* DESCRIPTION */}
@@ -306,14 +466,23 @@ const handleRetryPayment = async () => {
                 leading-relaxed
               "
             >
-              {message ||
-                "Unfortunately, your payment could not be completed. You can retry the payment within 5 minutes."}
+              {displayMessage}
             </p>
+
+            {/* REASON BADGE */}
+            {reason && (
+              <div className="mt-3">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-700">
+                  <span>Reason:</span>
+                  <span className="capitalize">{String(reason).replace(/_/g, " ")}</span>
+                </span>
+              </div>
+            )}
 
           </section>
 
           {/* RETRY TIMER */}
-          {orderId && (
+          {effectiveOrderId && (
             <section
               className="
                 bg-red-50
@@ -369,7 +538,7 @@ const handleRetryPayment = async () => {
                     mt-2
                   "
                 >
-                  Payment retry time has expired.
+                  Payment window expired. Please place a new order.
                 </p>
               )}
 
@@ -424,7 +593,7 @@ const handleRetryPayment = async () => {
                     break-all
                   "
                 >
-                  {orderId || "N/A"}
+                  {effectiveOrderId || "N/A"}
                 </p>
 
               </div>
@@ -456,7 +625,7 @@ const handleRetryPayment = async () => {
                     text-gray-900
                   "
                 >
-                  ₹{total || 0}
+                  ₹{effectiveTotal || 0}
                 </p>
 
               </div>
@@ -487,9 +656,9 @@ const handleRetryPayment = async () => {
                     text-gray-900
                   "
                 >
-                  {paymentMethod === "COD"
+                  {effectivePaymentMethod === "COD"
                     ? "Cash on Delivery"
-                    : paymentMethod ||
+                    : effectivePaymentMethod ||
                       "Online Payment"}
                 </p>
 
@@ -515,34 +684,62 @@ const handleRetryPayment = async () => {
             <button
               onClick={handleRetryPayment}
               disabled={
-                remainingTime <= 0 ||
-                retryLoading ||
-                !orderId
+                source === "wallet"
+                  ? false
+                  : remainingTime <= 0 ||
+                    retryLoading ||
+                    !effectiveOrderId
               }
               className={`
-                px-10
+                px-8
                 py-3.5
                 rounded-lg
                 font-semibold
                 transition-all
                 duration-200
                 ${
-                  remainingTime > 0 &&
+                  source === "wallet" ||
+                  (remainingTime > 0 &&
                   !retryLoading &&
-                  orderId
-                    ? "bg-[#d90416] hover:bg-red-700 text-white hover:shadow-lg hover:shadow-red-200"
+                  effectiveOrderId)
+                    ? "bg-[#d90416] hover:bg-red-700 text-white hover:shadow-lg hover:shadow-red-200 cursor-pointer"
                     : "bg-gray-300 text-gray-500 cursor-not-allowed"
                 }
               `}
             >
               {retryLoading
-                ? "Checking..."
-                : remainingTime > 0
+                ? "Processing..."
+                : source === "wallet" || remainingTime > 0
                 ? "Retry Payment"
-                : "Retry Expired"}
+                : "Payment Expired"}
             </button>
 
-            {/* CONTINUE SHOPPING */}
+            {/* GO TO ORDERS / WALLET */}
+            <button
+              onClick={() => {
+                sessionStorage.removeItem("paymentFailure");
+                navigate(source === "wallet" ? "/wallet" : "/orders");
+              }}
+              className="
+                border
+                border-gray-300
+                hover:border-gray-400
+                hover:bg-gray-50
+                text-gray-900
+                px-8
+                py-3.5
+                rounded-lg
+                font-semibold
+                transition-all
+                duration-200
+                active:scale-[0.98]
+                cursor-pointer
+              "
+            >
+              {source === "wallet" ? "Go to Wallet" : "Go to Orders"}
+            </button>
+
+            {/* GO TO HOME / CONTINUE SHOPPING */}
             <button
               onClick={
                 handleContinueShopping
@@ -553,16 +750,17 @@ const handleRetryPayment = async () => {
                 hover:border-gray-400
                 hover:bg-gray-50
                 text-gray-900
-                px-10
+                px-8
                 py-3.5
                 rounded-lg
                 font-semibold
                 transition-all
                 duration-200
                 active:scale-[0.98]
+                cursor-pointer
               "
             >
-              Continue Shopping
+              Go to Home
             </button>
 
           </section>

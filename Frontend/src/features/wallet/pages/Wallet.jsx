@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate, useLocation } from "react-router";
 import toast from "react-hot-toast";
 
 import ProfileLayout from "../../profile/components/ProfileLayout";
@@ -26,6 +27,8 @@ const loadRazorpayScript = () => {
 };
 
 function Wallet() {
+  const navigate = useNavigate();
+  const location = useLocation();
   const [wallet, setWallet] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -161,6 +164,11 @@ function Wallet() {
         modal: {
           ondismiss: function () {
             setIsProcessing(false);
+            const strayContainers =
+              document.querySelectorAll(".razorpay-container");
+            strayContainers.forEach((el) => el.remove());
+            document.body.style.overflow = "unset";
+            toast("Wallet recharge cancelled.", { icon: "⚠️" });
           },
         },
       };
@@ -168,8 +176,44 @@ function Wallet() {
       const razorpayInstance = new window.Razorpay(options);
       razorpayInstance.on("payment.failed", function (resp) {
         console.error("Top-up payment failed:", resp);
-        toast.error(resp.error?.description || "Payment failed");
+        const errMsg =
+          resp.error?.description || "Wallet recharge payment failed.";
         setIsProcessing(false);
+        try {
+          razorpayInstance.close();
+        } catch (e) {
+          console.warn("Could not close razorpay instance:", e);
+        }
+        const strayContainers =
+          document.querySelectorAll(".razorpay-container");
+        strayContainers.forEach((el) => el.remove());
+        document.body.style.overflow = "unset";
+
+        const failurePayload = {
+          orderId: orderData.order.id,
+          total: numericAmount,
+          paymentMethod: "Razorpay (Wallet Top-Up)",
+          message: errMsg,
+          errorMessage: errMsg,
+          reason: resp.error?.reason || "wallet_topup_failed",
+          source: "wallet",
+        };
+
+        try {
+          sessionStorage.setItem(
+            "paymentFailure",
+            JSON.stringify(failurePayload)
+          );
+        } catch (e) {
+          console.error("Failed to save payment failure to sessionStorage:", e);
+        }
+
+        toast.error(errMsg);
+
+        navigate("/order-failed", {
+          replace: true,
+          state: failurePayload,
+        });
       });
 
       razorpayInstance.open();

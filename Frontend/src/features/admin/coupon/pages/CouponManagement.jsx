@@ -58,6 +58,39 @@ function CouponManagement() {
     fetchCoupons();
   }, []);
 
+  // MINIMUM PURCHASE VALIDATION
+  const getMinPurchaseError = (data) => {
+    const minPurchase = Number(data.minimumPurchase);
+    const discountVal = Number(data.discountValue);
+    const maxDiscount = Number(data.maximumDiscount);
+
+    if (data.discountType === "fixed") {
+      if (
+        data.discountValue !== "" &&
+        data.minimumPurchase !== "" &&
+        Number.isFinite(minPurchase) &&
+        Number.isFinite(discountVal)
+      ) {
+        if (minPurchase <= discountVal) {
+          return `Minimum purchase amount must be greater than the discount amount (e.g., minimum purchase > ₹${discountVal})`;
+        }
+      }
+    } else if (data.discountType === "percentage") {
+      if (
+        data.maximumDiscount !== "" &&
+        data.minimumPurchase !== "" &&
+        Number.isFinite(minPurchase) &&
+        Number.isFinite(maxDiscount) &&
+        maxDiscount > 0
+      ) {
+        if (minPurchase <= maxDiscount) {
+          return `Minimum purchase amount must be greater than the maximum discount cap (e.g., minimum purchase > ₹${maxDiscount})`;
+        }
+      }
+    }
+    return "";
+  };
+
   // HANDLE INPUT
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -150,6 +183,12 @@ function CouponManagement() {
       return;
     }
 
+    const minPurchaseError = getMinPurchaseError(formData);
+    if (minPurchaseError) {
+      toast.error(minPurchaseError);
+      return;
+    }
+
     let maximumDiscount = null;
 
     if (formData.maximumDiscount !== "") {
@@ -233,9 +272,13 @@ function CouponManagement() {
         error
       );
 
-      toast.error(
-        error.message || "Failed to create coupon"
-      );
+      const serverMessage =
+        error.response?.data?.message ||
+        error.data?.message ||
+        error.message ||
+        "Failed to create coupon";
+
+      toast.error(serverMessage);
     } finally {
       setCreating(false);
     }
@@ -329,6 +372,8 @@ function CouponManagement() {
   const inactiveCoupons = coupons.filter(
     (coupon) => coupon.status === false
   ).length;
+
+  const addMinPurchaseError = getMinPurchaseError(formData);
 
   return (
     <div className="min-h-screen bg-[#f6f6f6] p-6">
@@ -794,8 +839,18 @@ function CouponManagement() {
                     onChange={handleChange}
                     min="0"
                     placeholder="Example: 1000"
-                    className="w-full h-12 px-4 border border-gray-300 rounded-xl outline-none focus:border-[#d90416] focus:ring-2 focus:ring-red-100"
+                    className={`w-full h-12 px-4 border rounded-xl outline-none focus:ring-2 ${
+                      addMinPurchaseError
+                        ? "border-red-500 focus:border-red-500 focus:ring-red-100"
+                        : "border-gray-300 focus:border-[#d90416] focus:ring-red-100"
+                    }`}
                   />
+
+                  {addMinPurchaseError && (
+                    <p className="mt-1.5 text-xs font-semibold text-red-600 flex items-center gap-1">
+                      <span>⚠️</span> {addMinPurchaseError}
+                    </p>
+                  )}
 
                 </div>
 
@@ -926,8 +981,8 @@ function CouponManagement() {
 
                   <button
                     type="submit"
-                    disabled={creating}
-                    className="flex-1 h-12 bg-[#d90416] hover:bg-[#b90312] text-white rounded-xl font-semibold transition disabled:opacity-50"
+                    disabled={creating || Boolean(addMinPurchaseError)}
+                    className="flex-1 h-12 bg-[#d90416] hover:bg-[#b90312] text-white rounded-xl font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {creating
                       ? "Creating..."

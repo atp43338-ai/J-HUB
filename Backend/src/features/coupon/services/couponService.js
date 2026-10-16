@@ -74,22 +74,24 @@ export const applyCouponService = async (
     couponDiscount = coupon.discountValue;
   }
 
-  // DISCOUNT CANNOT BE MORE THAN SUBTOTAL
-  if (couponDiscount > subtotal) {
-    couponDiscount = subtotal;
+  // DISCOUNT CANNOT REDUCE FINAL PAYABLE AMOUNT TO ZERO OR NEGATIVE
+  if (couponDiscount >= subtotal) {
+    throw new Error(
+      "Coupon discount cannot exceed or match the order subtotal"
+    );
   }
 
   couponDiscount = Math.round(couponDiscount);
 
-  // FINAL AMOUNT
-  const finalAmount =
-    subtotal - couponDiscount;
+  // FINAL AMOUNT - ENSURE PAYABLE AMOUNT NEVER DROPS TO ZERO OR NEGATIVE
+  const finalAmount = Math.max(1, subtotal - couponDiscount);
 
   return {
     couponId: coupon._id,
     couponCode: coupon.code,
     couponDiscount,
     finalAmount,
+    minimumPurchase: coupon.minimumPurchase,
   };
 };
 

@@ -135,7 +135,17 @@ const orderSchema = new mongoose.Schema(
 
     paymentStatus: {
       type: String,
-      enum: ["pending", "paid", "failed", "refunded", "partially_refunded"],
+      enum: [
+        "pending",
+        "paid",
+        "failed",
+        "Payment Failed",
+        "payment_failed",
+        "Expired",
+        "expired",
+        "refunded",
+        "partially_refunded",
+      ],
       default: "pending",
     },
 
@@ -145,10 +155,15 @@ const orderSchema = new mongoose.Schema(
     },
 
     // Payment retry
-paymentRetryExpiresAt: {
-  type: Date,
-  default: null,
-},
+    paymentRetryExpiresAt: {
+      type: Date,
+      default: null,
+    },
+
+    razorpayOrderId: {
+      type: String,
+      default: null,
+    },
 
     // Price details
     subtotal: {
@@ -207,6 +222,8 @@ paymentRetryExpiresAt: {
         "delivered",
         "cancelled",
         "returned",
+        "Payment Failed",
+        "payment_failed",
       ],
       default: "pending",
     },
@@ -236,8 +253,19 @@ paymentRetryExpiresAt: {
 
   {
     timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true },
   }
 );
+
+orderSchema
+  .virtual("orderStatus")
+  .get(function () {
+    return this.status;
+  })
+  .set(function (val) {
+    this.status = val;
+  });
 
 const Order = mongoose.model("Order", orderSchema);
 

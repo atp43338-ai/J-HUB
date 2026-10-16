@@ -26,6 +26,25 @@ function OrderCard({ order }) {
 
   const firstItem = order.items?.[0];
 
+  const isPaymentFailed =
+    order.status === "Payment Failed" ||
+    order.orderStatus === "Payment Failed" ||
+    order.status === "payment_failed" ||
+    order.paymentStatus === "failed" ||
+    order.paymentStatus === "Payment Failed" ||
+    order.paymentStatus === "Expired";
+
+  const orderTime = order.createdAt
+    ? new Date(order.createdAt).getTime()
+    : order.date
+    ? new Date(order.date).getTime()
+    : 0;
+
+  const isWithin5Minutes =
+    orderTime > 0 &&
+    Date.now() - orderTime <= 5 * 60 * 1000 &&
+    order.paymentStatus !== "Expired";
+
   return (
     <div className="w-full min-w-0 bg-white border border-gray-200 rounded-xl p-6 md:p-8 shadow-sm hover:shadow-md transition">
 
@@ -38,7 +57,13 @@ function OrderCard({ order }) {
             <p className="text-sm text-gray-500">
               Order ID
             </p>
-            <OrderStatusBadge status={order.status} />
+            <OrderStatusBadge
+              status={
+                isPaymentFailed && (!isWithin5Minutes || order.paymentStatus === "Expired")
+                  ? "Payment Expired"
+                  : order.status
+              }
+            />
           </div>
 
           <h2 className="font-bold text-black text-lg break-all mt-1">
@@ -46,8 +71,8 @@ function OrderCard({ order }) {
           </h2>
         </div>
 
-        {/* Total and View Details */}
-        <div className="flex items-center justify-between sm:justify-end gap-4">
+        {/* Total and Actions */}
+        <div className="flex items-center justify-between sm:justify-end gap-3 flex-wrap">
 
           <div>
             <p className="text-xs text-gray-500">
@@ -60,13 +85,51 @@ function OrderCard({ order }) {
             </p>
           </div>
 
-          <button
-            type="button"
-            onClick={() => navigate(`/orders/${order.id}`)}
-            className="px-4 py-2.5 bg-[#d90416] text-white rounded-lg text-sm font-semibold hover:bg-red-700 transition whitespace-nowrap"
-          >
-            View Details →
-          </button>
+          {isPaymentFailed ? (
+            <div className="flex items-center gap-2">
+              {isWithin5Minutes ? (
+                <button
+                  type="button"
+                  onClick={() =>
+                    navigate("/order-failed", {
+                      state: {
+                        orderId: order.id || order.orderId,
+                        total: order.totalAmount || order.finalPrice,
+                        paymentMethod: order.paymentMethod,
+                        paymentStatus: order.paymentStatus,
+                        createdAt: order.createdAt || order.date,
+                        items: order.items,
+                        source: "checkout",
+                      },
+                    })
+                  }
+                  className="px-4 py-2.5 bg-[#d90416] text-white rounded-lg text-sm font-semibold hover:bg-red-700 transition whitespace-nowrap cursor-pointer shadow-sm"
+                >
+                  Retry Payment
+                </button>
+              ) : (
+                <span className="px-3.5 py-2 bg-gray-100 text-gray-500 border border-gray-300 rounded-lg text-sm font-medium whitespace-nowrap select-none cursor-not-allowed">
+                  Payment Expired
+                </span>
+              )}
+
+              <button
+                type="button"
+                onClick={() => navigate(`/orders/${order.id}`)}
+                className="px-4 py-2.5 border border-gray-300 hover:bg-gray-50 text-gray-700 rounded-lg text-sm font-semibold transition whitespace-nowrap"
+              >
+                View Details →
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => navigate(`/orders/${order.id}`)}
+              className="px-4 py-2.5 bg-[#d90416] text-white rounded-lg text-sm font-semibold hover:bg-red-700 transition whitespace-nowrap"
+            >
+              View Details →
+            </button>
+          )}
 
         </div>
       </div>

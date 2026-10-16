@@ -108,6 +108,7 @@ export const api = async (endpoint, options = {}) => {
     const error = new Error(errorMessage);
     error.status = response.status;
     error.data = data;
+    error.response = { status: response.status, data };
     error.isBlocked = isBlocked;
     throw error;
   }

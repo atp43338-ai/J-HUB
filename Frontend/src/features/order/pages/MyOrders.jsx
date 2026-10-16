@@ -137,7 +137,11 @@ function MyOrders() {
                 ...order,
                 id: order.orderId,
                 date: order.createdAt,
+                createdAt: order.createdAt,
                 status: order.status,
+                orderStatus: order.status,
+                paymentStatus: order.paymentStatus,
+                paymentMethod: order.paymentMethod,
                 totalAmount: order.finalPrice,
                 items: order.items?.map((item) => ({
                   ...item,

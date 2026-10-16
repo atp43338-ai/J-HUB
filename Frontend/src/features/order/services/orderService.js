@@ -121,10 +121,25 @@ export const retryPaymentOrder = async (orderId) => {
   const token = getToken();
 
   return api(`/orders/${orderId}/retry-payment`, {
-    method: "GET",
+    method: "POST",
     headers: {
+      "Content-Type": "application/json",
       Authorization: `Bearer ${token}`,
     },
+  });
+};
+
+// MARK ORDER AS PAYMENT FAILED
+export const markOrderFailed = async (orderId, errorDetails = {}) => {
+  const token = getToken();
+
+  return api(`/orders/${orderId}/mark-failed`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(errorDetails),
   });
 };
 
