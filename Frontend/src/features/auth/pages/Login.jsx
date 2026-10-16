@@ -319,6 +319,8 @@ function Login() {
               console.log("Google Login Failed");
               toast.error("Google login failed");
             }}
+            ux_mode="popup"
+            useOneTap={false}
           />
 
         </div>

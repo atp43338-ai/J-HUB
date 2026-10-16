@@ -86,6 +86,12 @@ app.use((req, res, next) => {
   next();
 });
 
+// Cross-Origin-Opener-Policy header to allow Google OAuth and payment authentication popups
+app.use((req, res, next) => {
+  res.setHeader("Cross-Origin-Opener-Policy", "same-origin-allow-popups");
+  next();
+});
+
 
 app.use(express.json());
 
