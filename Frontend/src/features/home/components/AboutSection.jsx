@@ -6,13 +6,18 @@ function AboutSection() {
     <section
       id="about"
       className="
-        min-h-[600px]
+        min-h-[500px]
+        sm:min-h-[600px]
         bg-white
         flex
         items-center
-        px-6
+        px-4
+        sm:px-6
         md:px-10
         lg:px-20
+        py-12
+        sm:py-20
+        overflow-x-hidden
       "
     >
       <div className="max-w-[1400px] w-full mx-auto">
@@ -69,7 +74,7 @@ function AboutSection() {
             </motion.p>
 
             {/* Highlights */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mt-10">
+            <div className="grid grid-cols-3 gap-2 sm:gap-6 mt-8 sm:mt-10 text-center sm:text-left">
 
               {/* Premium Jerseys */}
               <motion.div
@@ -81,15 +86,15 @@ function AboutSection() {
                 }}
                 viewport={{ once: true }}
               >
-                <div className="w-12 h-12 rounded-lg bg-[#d90416] text-white flex items-center justify-center text-xl">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-[#d90416] text-white flex items-center justify-center text-lg sm:text-xl mx-auto sm:mx-0 shadow-sm">
                   ⚽
                 </div>
 
-                <h3 className="mt-4 font-bold text-black">
+                <h3 className="mt-2.5 sm:mt-4 font-bold text-black text-xs sm:text-base leading-tight">
                   Premium Jerseys
                 </h3>
 
-                <p className="mt-2 text-sm text-gray-500 leading-6">
+                <p className="mt-1 sm:mt-2 text-[10px] sm:text-sm text-gray-500 leading-4 sm:leading-6">
                   Quality jerseys for every fan.
                 </p>
               </motion.div>
@@ -104,16 +109,16 @@ function AboutSection() {
                 }}
                 viewport={{ once: true }}
               >
-                <div className="w-12 h-12 rounded-lg bg-[#d90416] text-white flex items-center justify-center text-xl">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-[#d90416] text-white flex items-center justify-center text-lg sm:text-xl mx-auto sm:mx-0 shadow-sm">
                   🚚
                 </div>
 
-                <h3 className="mt-4 font-bold text-black">
+                <h3 className="mt-2.5 sm:mt-4 font-bold text-black text-xs sm:text-base leading-tight">
                   Fast Delivery
                 </h3>
 
-                <p className="mt-2 text-sm text-gray-500 leading-6">
-                  Get your favourite jersey delivered to your door.
+                <p className="mt-1 sm:mt-2 text-[10px] sm:text-sm text-gray-500 leading-4 sm:leading-6">
+                  Delivered straight to your door.
                 </p>
               </motion.div>
 
@@ -127,16 +132,16 @@ function AboutSection() {
                 }}
                 viewport={{ once: true }}
               >
-                <div className="w-12 h-12 rounded-lg bg-[#d90416] text-white flex items-center justify-center text-xl">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-[#d90416] text-white flex items-center justify-center text-lg sm:text-xl mx-auto sm:mx-0 shadow-sm">
                   🔒
                 </div>
 
-                <h3 className="mt-4 font-bold text-black">
+                <h3 className="mt-2.5 sm:mt-4 font-bold text-black text-xs sm:text-base leading-tight">
                   Secure Shopping
                 </h3>
 
-                <p className="mt-2 text-sm text-gray-500 leading-6">
-                  Safe and simple online shopping experience.
+                <p className="mt-1 sm:mt-2 text-[10px] sm:text-sm text-gray-500 leading-4 sm:leading-6">
+                  Safe and simple online experience.
                 </p>
               </motion.div>
 

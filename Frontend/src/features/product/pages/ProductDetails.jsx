@@ -130,16 +130,16 @@ function ProductDetails() {
   }
 
   return (
-    <div className="min-h-screen bg-white text-black">
+    <div className="min-h-screen bg-white text-black overflow-x-hidden">
 
       {/* Navbar */}
       <Navbar />
 
       {/* Page Content */}
-      <div className="pt-22 ps-8">
+      <div className="pt-24 sm:pt-28 px-4 sm:px-6 md:px-10 max-w-[1400px] mx-auto">
 
         {/* Breadcrumb */}
-        <div className="mb-7 text-gray-500">
+        <div className="mb-6 sm:mb-7 text-xs sm:text-sm text-gray-500 overflow-x-auto whitespace-nowrap py-1">
           <button
             type="button"
             onClick={() => navigate("/")}
@@ -166,12 +166,12 @@ function ProductDetails() {
         </div>
 
         {/* Product Details */}
-        <section className="px-6 md:px-10 pb-16">
+        <section className="pb-16">
 
-          <div className="max-w-[1400px] mx-auto">
+          <div>
 
             {/* Product Image + Product Information */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
 
               <ProductImages
                 key={product._id}

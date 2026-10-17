@@ -7,10 +7,10 @@ function ProductSearchSort({
   setCurrentPage,
 }) {
   return (
-    <div className="flex flex-col lg:flex-row gap-5 justify-between mb-10">
+    <div className="flex flex-col md:flex-row gap-4 justify-between mb-4 md:mb-10">
 
       {/* Search */}
-      <div className="flex w-full lg:max-w-[650px]">
+      <div className="flex w-full md:max-w-[650px]">
 
         <input
           type="text"
@@ -33,8 +33,12 @@ function ProductSearchSort({
             border
             border-gray-300
             rounded-l-lg
-            px-5
-            py-3
+            px-3.5
+            sm:px-5
+            py-2.5
+            sm:py-3
+            text-sm
+            sm:text-base
             outline-none
             focus:border-[#d90416]
           "
@@ -49,13 +53,17 @@ function ProductSearchSort({
             setCurrentPage(1);
           }}
           className="
-            px-5
-            py-3
+            px-3.5
+            sm:px-5
+            py-2.5
+            sm:py-3
             bg-gray-100
             border
             border-l-0
             border-gray-300
             rounded-r-lg
+            text-xs
+            sm:text-sm
             text-gray-600
             hover:text-[#d90416]
           "
@@ -65,7 +73,7 @@ function ProductSearchSort({
 
       </div>
 
-      {/* Sort */}
+      {/* Sort - Desktop */}
       <select
         value={sort}
         onChange={(e) => {
@@ -73,6 +81,8 @@ function ProductSearchSort({
           setCurrentPage(1);
         }}
         className="
+          hidden
+          md:block
           border
           border-gray-300
           rounded-lg

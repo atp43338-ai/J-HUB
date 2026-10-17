@@ -162,7 +162,7 @@ function FeaturedProducts() {
   return (
     <section
       id="shop"
-      className="py-24 px-1 md:px-4 bg-white"
+      className="py-12 sm:py-24 px-3 sm:px-6 md:px-10 bg-white overflow-x-hidden"
     >
       <div className="max-w-[1400px] mx-auto">
 
@@ -261,7 +261,7 @@ function FeaturedProducts() {
         </motion.div>
 
         {/* Products */}
-        <div className="grid grid-cols-1 sm:grid-cols-1 lg:grid-cols-4 gap-8">
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4">
 
           {products
             .slice(0, 4)
@@ -302,29 +302,12 @@ function FeaturedProducts() {
                   whileHover={{
                     y: -8,
                   }}
-                  className="
-                    bg-white
-                    border
-                    border-gray-200
-                    rounded-xl
-                    overflow-hidden
-                    shadow-sm
-                    hover:shadow-xl
-                    transition-shadow
-                    max-w-[250px]
-                    mx-auto
-                    w-full
-                  "
+                  className="bg-white rounded-2xl shadow-sm hover:shadow-md transition-shadow duration-300 p-4 flex flex-col justify-between w-full"
                 >
 
-                  {/* Product Image */}
+                  {/* Product Image Frame */}
                   <div
-                    className="
-                      relative
-                      w-full
-                      overflow-hidden
-                      cursor-pointer
-                    "
+                    className="relative w-full aspect-[4/5] bg-black rounded-xl overflow-hidden mb-4 flex items-center justify-center cursor-pointer"
                     onClick={() =>
                       navigate(
                         `/products/${product._id}`
@@ -334,7 +317,7 @@ function FeaturedProducts() {
 
                     {/* Discount Corner Badge */}
                     {hasDiscount && (
-                      <div className="absolute top-3 left-3 bg-[#d90416] text-white text-[11px] font-bold px-2 py-0.5 rounded-full z-10 shadow-sm tracking-wide">
+                      <div className="absolute top-3 left-3 bg-[#d90416] text-white text-[10px] sm:text-[11px] font-bold px-2 py-0.5 rounded-full z-10 shadow-sm tracking-wide">
                         {discount}% OFF
                       </div>
                     )}
@@ -352,11 +335,7 @@ function FeaturedProducts() {
                       transition={{
                         duration: 0.5,
                       }}
-                      className="
-                        w-full
-                        h-full
-                        object-contain
-                      "
+                      className="w-full h-full object-contain"
                     />
 
                     {/* Wishlist Heart */}
@@ -368,20 +347,7 @@ function FeaturedProducts() {
                           product
                         )
                       }
-                      className="
-                        absolute
-                        top-3
-                        right-3
-                        z-10
-                        p-1
-                        bg-transparent
-                        border-none
-                        outline-none
-                        cursor-pointer
-                        hover:scale-110
-                        transition-transform
-                        duration-200
-                      "
+                      className="absolute top-3 right-3 text-white hover:text-[#d90416] transition-colors p-1 z-10 cursor-pointer"
                       title={
                         isInWishlist
                           ? "Remove from wishlist"
@@ -390,18 +356,14 @@ function FeaturedProducts() {
                     >
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
-                        className="
-                          w-5
-                          h-5
-                          drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)]
-                        "
+                        className="w-5 h-5 drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)]"
                         viewBox="0 0 24 24"
                         fill={
                           isInWishlist
                             ? "#d90416"
                             : "none"
                         }
-                        stroke="white"
+                        stroke={isInWishlist ? "#d90416" : "white"}
                         strokeWidth="2"
                       >
                         <path
@@ -415,81 +377,52 @@ function FeaturedProducts() {
                   </div>
 
                   {/* Product Details */}
-                  <div className="p-5">
+                  <div className="flex flex-col flex-1 justify-between">
 
-                    <h3 className="text-lg font-semibold text-black">
-                      {product.name}
-                    </h3>
+                    <div>
+                      <h3
+                        className="font-medium text-gray-900 text-base mb-1 truncate cursor-pointer"
+                        title={product.name}
+                        onClick={() =>
+                          navigate(`/products/${product._id}`)
+                        }
+                      >
+                        {product.name}
+                      </h3>
 
-                    {/* Price & Offer Display */}
-                    <div className="mt-2">
-                      <div className="flex items-baseline gap-2 flex-wrap">
-                        {/* Selling Price */}
-                        <span className="text-xl font-bold text-gray-900">
-                          ₹{sellingPrice}
-                        </span>
-
-                        {/* Original Price / MRP (if discount exists) */}
-                        {hasDiscount && originalPrice && originalPrice > sellingPrice && (
-                          <>
-                            <span className="text-sm text-gray-400 line-through">
-                              ₹{originalPrice}
-                            </span>
-                            <span className="text-xs font-semibold text-emerald-600 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded">
-                              {discount}% OFF
-                            </span>
-                          </>
-                        )}
+                      {/* Price */}
+                      <div className="text-lg font-bold text-gray-900 mb-3">
+                        ₹{sellingPrice}
                       </div>
                     </div>
 
-                    {/* Buy Now */}
-                    <button
-                      type="button"
-                      onClick={() =>
-                        navigate(
-                          `/products/${product._id}`
-                        )
-                      }
-                      className="
-                        mt-4
-                        w-full
-                        py-2
-                        rounded-lg
-                        bg-black
-                        hover:bg-[#b90312]
-                        text-white
-                        font-semibold
-                        transition
-                        duration-300
-                      "
-                    >
-                      Buy Now
-                    </button>
+                    <div>
+                      {/* Buy Now */}
+                      <button
+                        type="button"
+                        onClick={() =>
+                          navigate(
+                            `/products/${product._id}`
+                          )
+                        }
+                        className="w-full bg-black hover:bg-neutral-800 text-white font-medium py-2.5 rounded-lg mb-2 transition text-sm sm:text-base"
+                      >
+                        Buy Now
+                      </button>
 
-                    {/* Add to Cart */}
-                    <button
-                      type="button"
-                      onClick={() =>
-                        navigate(
-                          `/products/${product._id}`
-                        )
-                      }
-                      className="
-                        mt-3
-                        w-full
-                        py-2
-                        rounded-lg
-                        bg-[#d90416]
-                        hover:bg-[#b90312]
-                        text-white
-                        font-semibold
-                        transition
-                        duration-300
-                      "
-                    >
-                      Add to Cart
-                    </button>
+                      {/* Add to Cart */}
+                      <button
+                        type="button"
+                        onClick={() =>
+                          navigate(
+                            `/products/${product._id}`
+                          )
+                        }
+                        className="w-full bg-[#d90416] hover:bg-[#b90312] text-white font-medium py-2.5 rounded-lg transition text-sm sm:text-base"
+                      >
+                        Add to Cart
+                      </button>
+                    </div>
 
                   </div>
 

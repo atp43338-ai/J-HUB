@@ -270,7 +270,7 @@ function ProductInfo({ product }) {
               Select Size
             </h3>
 
-            <div className="flex gap-3 mt-3 flex-wrap">
+            <div className="flex flex-wrap gap-2 sm:gap-3 mt-3">
               {product.variants.map((variant) => (
                 <button
                   type="button"
@@ -281,10 +281,14 @@ function ProductInfo({ product }) {
                   }}
                   disabled={variant.stock === 0}
                   className={`
-                    px-5
+                    px-3.5
+                    sm:px-5
                     py-2
                     border
                     rounded-lg
+                    text-xs
+                    sm:text-sm
+                    font-semibold
                     transition
                     ${
                       selectedSize === variant.size
@@ -376,7 +380,7 @@ function ProductInfo({ product }) {
         )}
 
         {/* Actions */}
-        <div className="mt-8 flex flex-col gap-3">
+        <div className="mt-6 sm:mt-8 flex flex-col gap-3">
           {/* Add to Cart - BIG */}
           <button
             type="button"
@@ -387,13 +391,15 @@ function ProductInfo({ product }) {
             }
             className="
               w-full
-              py-4
+              py-3
+              sm:py-4
               rounded-lg
               bg-[#d90416]
               hover:bg-[#b90312]
               text-white
               font-semibold
-              text-lg
+              text-base
+              sm:text-lg
               transition
               disabled:opacity-50
               disabled:cursor-not-allowed
@@ -403,7 +409,7 @@ function ProductInfo({ product }) {
           </button>
 
           {/* Buy Now + Wishlist */}
-          <div className="flex gap-3">
+          <div className="flex gap-2.5 sm:gap-3">
             {/* Buy Now */}
             <button
               type="button"
@@ -414,13 +420,15 @@ function ProductInfo({ product }) {
               }
               className="
                 flex-1
-                py-4
+                py-3
+                sm:py-4
                 rounded-lg
                 border
                 border-black
                 text-black
                 font-semibold
-                text-lg
+                text-base
+                sm:text-lg
                 hover:bg-black
                 hover:text-white
                 transition
@@ -441,12 +449,15 @@ function ProductInfo({ product }) {
                   : "Add to wishlist"
               }
               className="
-                w-14
+                w-12
+                sm:w-14
+                shrink-0
                 rounded-lg
                 border
                 border-[#d90416]
                 text-[#d90416]
-                text-2xl
+                text-xl
+                sm:text-2xl
                 flex
                 items-center
                 justify-center

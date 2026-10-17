@@ -88,8 +88,11 @@ function ProductListing() {
     { name: "New Season", image: "/new-img.png" },
   ];
 
+  const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
+  const activeFilterCount = [category, subCategory, minPrice, maxPrice, brand, sort].filter(Boolean).length;
+
   return (
-    <div className="min-h-screen bg-white text-black">
+    <div className="min-h-screen bg-white text-black overflow-x-hidden">
       <Navbar />
 
       <ProductHero />
@@ -101,7 +104,7 @@ function ProductListing() {
         setCurrentPage={setCurrentPage}
       />
 
-      <section className="pb-16 px-6 md:px-10">
+      <section className="pb-16 px-3 sm:px-6 md:px-10">
         <div className="max-w-[1400px] mx-auto">
 
           <ProductSearchSort
@@ -113,22 +116,234 @@ function ProductListing() {
             setCurrentPage={setCurrentPage}
           />
 
-          <div className="grid grid-cols-1 lg:grid-cols-[240px_1fr] gap-10">
+          {/* Mobile Filter & Sort Bar */}
+          <div className="md:hidden mb-5 flex items-center gap-2.5">
+            <button
+              type="button"
+              onClick={() => setIsMobileFilterOpen(true)}
+              className="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 bg-gray-900 hover:bg-black text-white rounded-xl text-xs sm:text-sm font-semibold shadow-sm active:scale-95 transition"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="w-4 h-4 text-[#d90416]"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"
+                />
+              </svg>
+              <span>Filter &amp; Sort</span>
+              {activeFilterCount > 0 && (
+                <span className="bg-[#d90416] text-white text-[11px] px-1.5 py-0.5 rounded-full font-bold ml-1">
+                  {activeFilterCount}
+                </span>
+              )}
+            </button>
 
-            <ProductFilters
-              category={category}
-              setCategory={setCategory}
-              subCategory={subCategory}
-              setSubCategory={setSubCategory}
-              minPrice={minPrice}
-              setMinPrice={setMinPrice}
-              maxPrice={maxPrice}
-              setMaxPrice={setMaxPrice}
-              brand={brand}
-              setBrand={setBrand}
-              setCurrentPage={setCurrentPage}
-              clearFilters={clearFilters}
-            />
+            {activeFilterCount > 0 && (
+              <button
+                type="button"
+                onClick={clearFilters}
+                className="text-xs text-[#d90416] font-semibold px-3 py-2.5 border border-red-200 rounded-xl hover:bg-red-50 transition"
+              >
+                Clear
+              </button>
+            )}
+          </div>
+
+          {/* Mobile Filter Slide-Over Drawer */}
+          {isMobileFilterOpen && (
+            <div className="fixed inset-0 z-50 md:hidden flex justify-end">
+              {/* Backdrop */}
+              <div
+                className="fixed inset-0 bg-black/50 transition-opacity"
+                onClick={() => setIsMobileFilterOpen(false)}
+              />
+
+              {/* Drawer Container */}
+              <div className="relative w-full max-w-xs sm:max-w-sm bg-white h-full shadow-2xl flex flex-col z-10">
+                {/* Drawer Header */}
+                <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200">
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-base sm:text-lg font-bold text-gray-900">
+                      Filter &amp; Sort
+                    </h2>
+                    {activeFilterCount > 0 && (
+                      <span className="bg-[#d90416] text-white text-[11px] px-2 py-0.5 rounded-full font-bold">
+                        {activeFilterCount}
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    {activeFilterCount > 0 && (
+                      <button
+                        type="button"
+                        onClick={clearFilters}
+                        className="text-xs text-[#d90416] font-semibold hover:underline"
+                      >
+                        Clear All
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => setIsMobileFilterOpen(false)}
+                      className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 hover:text-black font-semibold"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                </div>
+
+                {/* Drawer Body */}
+                <div className="flex-1 overflow-y-auto px-5 py-4 space-y-5 text-left">
+                  {/* Sort By */}
+                  <div>
+                    <h3 className="font-semibold text-xs sm:text-sm text-gray-900 mb-1.5">
+                      Sort By
+                    </h3>
+                    <select
+                      value={sort}
+                      onChange={(e) => {
+                        setSort(e.target.value);
+                        setCurrentPage(1);
+                      }}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs sm:text-sm outline-none focus:border-[#d90416]"
+                    >
+                      <option value="">Default</option>
+                      <option value="priceLow">Price: Low to High</option>
+                      <option value="priceHigh">Price: High to Low</option>
+                      <option value="nameAZ">Name: A-Z</option>
+                      <option value="nameZA">Name: Z-A</option>
+                    </select>
+                  </div>
+
+                  {/* Category */}
+                  <div>
+                    <h3 className="font-semibold text-xs sm:text-sm text-gray-900 mb-1.5">
+                      Category
+                    </h3>
+                    <select
+                      value={category}
+                      onChange={(e) => {
+                        setCategory(e.target.value);
+                        setCurrentPage(1);
+                      }}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs sm:text-sm outline-none focus:border-[#d90416]"
+                    >
+                      <option value="">All Categories</option>
+                      <option value="Unisex">Unisex</option>
+                    </select>
+                  </div>
+
+                  {/* Collection */}
+                  <div>
+                    <h3 className="font-semibold text-xs sm:text-sm text-gray-900 mb-1.5">
+                      Collection
+                    </h3>
+                    <select
+                      value={subCategory}
+                      onChange={(e) => {
+                        setSubCategory(e.target.value);
+                        setCurrentPage(1);
+                      }}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs sm:text-sm outline-none focus:border-[#d90416]"
+                    >
+                      <option value="">All Collections</option>
+                      <option value="Club">Club</option>
+                      <option value="National">National</option>
+                      <option value="Legends">Legends</option>
+                      <option value="New Season">New Season</option>
+                    </select>
+                  </div>
+
+                  {/* Price Range */}
+                  <div>
+                    <h3 className="font-semibold text-xs sm:text-sm text-gray-900 mb-1.5">
+                      Price Range
+                    </h3>
+                    <div className="flex gap-2">
+                      <input
+                        type="number"
+                        value={minPrice}
+                        onChange={(e) => {
+                          setMinPrice(e.target.value);
+                          setCurrentPage(1);
+                        }}
+                        placeholder="Min ₹"
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs sm:text-sm outline-none focus:border-[#d90416]"
+                      />
+                      <input
+                        type="number"
+                        value={maxPrice}
+                        onChange={(e) => {
+                          setMaxPrice(e.target.value);
+                          setCurrentPage(1);
+                        }}
+                        placeholder="Max ₹"
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs sm:text-sm outline-none focus:border-[#d90416]"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Brand */}
+                  <div>
+                    <h3 className="font-semibold text-xs sm:text-sm text-gray-900 mb-1.5">
+                      Brand
+                    </h3>
+                    <select
+                      value={brand}
+                      onChange={(e) => {
+                        setBrand(e.target.value);
+                        setCurrentPage(1);
+                      }}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs sm:text-sm outline-none focus:border-[#d90416]"
+                    >
+                      <option value="">All Brands</option>
+                      <option value="Adidas">Adidas</option>
+                      <option value="Nike">Nike</option>
+                      <option value="Puma">Puma</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Drawer Footer */}
+                <div className="p-4 border-t border-gray-200 bg-gray-50">
+                  <button
+                    type="button"
+                    onClick={() => setIsMobileFilterOpen(false)}
+                    className="w-full py-2.5 bg-[#d90416] hover:bg-[#b90312] text-white font-semibold rounded-xl text-xs sm:text-sm transition shadow-sm"
+                  >
+                    Apply Filters
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 md:grid-cols-[240px_1fr] gap-8 lg:gap-10">
+
+            <div className="hidden md:block">
+              <ProductFilters
+                category={category}
+                setCategory={setCategory}
+                subCategory={subCategory}
+                setSubCategory={setSubCategory}
+                minPrice={minPrice}
+                setMinPrice={setMinPrice}
+                maxPrice={maxPrice}
+                setMaxPrice={setMaxPrice}
+                brand={brand}
+                setBrand={setBrand}
+                setCurrentPage={setCurrentPage}
+                clearFilters={clearFilters}
+              />
+            </div>
 
             <div>
 
@@ -203,7 +418,7 @@ function ProductListing() {
                   )}
                 </div>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-2 lg:grid-cols-3">
 
                   {products.map((product) => (
                     <ProductCard

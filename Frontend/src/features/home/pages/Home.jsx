@@ -8,7 +8,7 @@ import Footer from "../components/Footer";
 
 function Home() {
   return (
-    <div className="w-full bg-white text-black">
+    <div className="w-full bg-white text-black overflow-x-hidden">
       
       <Navbar />
 
