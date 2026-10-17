@@ -178,19 +178,28 @@ export const updateCartItemService = async (
     throw new Error("Selected size is not available");
   }
 
-  // Check stock
-  if (quantity > variant.stock) {
-    throw new Error("Not enough stock");
-  }
+  const currentQuantity = cartItem.quantity;
+  const newQuantity = Number(quantity);
 
-  if (quantity < 1) {
+  if (newQuantity < 1) {
     throw new Error("Quantity must be at least 1");
   }
 
+  if (newQuantity > 5) {
+    throw new Error("Maximum 5 units allowed per item");
+  }
+
+  // Only reject with "Quantity exceeds available stock" when attempting to increase beyond stock
+  if (newQuantity > currentQuantity && newQuantity > variant.stock) {
+    throw new Error("Quantity exceeds available stock");
+  }
+
   // Update quantity
-  cartItem.quantity = quantity;
+  cartItem.quantity = newQuantity;
 
   await cart.save();
+
+  await cart.populate("items.product");
 
   return cart;
 };

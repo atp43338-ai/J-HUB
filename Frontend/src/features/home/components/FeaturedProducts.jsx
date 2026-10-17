@@ -252,7 +252,7 @@ function FeaturedProducts() {
           className="text-center mb-12"
         >
           <h2 className="text-4xl md:text-5xl font-extrabold !text-black">
-            Featured Jerseys
+            NEW ARRIVALS
           </h2>
 
           <p className="mt-3 text-gray-500">

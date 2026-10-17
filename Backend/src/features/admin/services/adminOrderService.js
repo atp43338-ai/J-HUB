@@ -6,6 +6,7 @@ import { addMoneyToWallet } from "../../wallet/services/walletService.js";
 import {
   applyReferralRewardService,
 } from "../../referral/services/referralService.js";
+import { recordPaymentCredit } from "../../order/services/orderService.js";
 
 
 // GET ALL ORDERS FOR ADMIN
@@ -176,9 +177,50 @@ export const updateOrderStatusForAdminService = async (
     order.finalAmount = 0;
   } else if (targetStatus === "delivered") {
     order.cancelledAt = null;
-    // When COD order is delivered, it is paid in cash
-    if (order.paymentMethod === "COD") {
-      order.paymentStatus = "paid";
+
+    const isCod =
+      String(order.paymentMethod || "").toUpperCase() === "COD" ||
+      String(order.paymentMethod || "").toLowerCase() === "cash on delivery";
+
+    if (isCod) {
+      const isAlreadyCompleted =
+        ["completed", "paid"].includes(String(order.paymentStatus || "").toLowerCase());
+
+      // Idempotency check: only credit and mark Completed once when COD is Delivered
+      if (!isAlreadyCompleted) {
+        order.paymentStatus = "Completed";
+        order.paidAt = new Date();
+        order.revenueCredited = true;
+        order.revenueCreditedAt = new Date();
+
+        // Credit revenue / process payment settlement logic
+        await recordPaymentCredit(
+          order._id,
+          order.finalPrice || order.finalAmount || order.totalAmount || 0,
+          "COD Payment Received on Delivery"
+        );
+      }
+    } else {
+      // Online Payment (Razorpay / Prepaid / Wallet)
+      // Idempotency check: If order.paymentMethod !== 'COD' and order.paymentStatus === 'Completed',
+      // do NOT trigger additional payment crediting or balance increments.
+      const isAlreadyCompleted =
+        ["completed", "paid"].includes(String(order.paymentStatus || "").toLowerCase());
+
+      if (!isAlreadyCompleted) {
+        order.paymentStatus = "Completed";
+        if (!order.paidAt) {
+          order.paidAt = new Date();
+        }
+        order.revenueCredited = true;
+        order.revenueCreditedAt = new Date();
+
+        await recordPaymentCredit(
+          order._id,
+          order.finalPrice || order.finalAmount || order.totalAmount || 0,
+          "Online Payment Settlement"
+        );
+      }
     }
   } else {
     order.cancelledAt = null;

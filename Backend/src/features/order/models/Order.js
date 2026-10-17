@@ -145,8 +145,27 @@ const orderSchema = new mongoose.Schema(
         "expired",
         "refunded",
         "partially_refunded",
+        "Completed",
+        "completed",
+        "Pending",
+        "Paid",
       ],
       default: "pending",
+    },
+
+    paidAt: {
+      type: Date,
+      default: null,
+    },
+
+    revenueCredited: {
+      type: Boolean,
+      default: false,
+    },
+
+    revenueCreditedAt: {
+      type: Date,
+      default: null,
     },
 
     isRefunded: {
@@ -176,9 +195,30 @@ const orderSchema = new mongoose.Schema(
       default: 0,
     },
 
+    coupon: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Coupon",
+      default: null,
+    },
+
+    couponCode: {
+      type: String,
+      default: null,
+    },
+
     couponDiscount: {
       type: Number,
       default: 0,
+    },
+
+    couponMinPurchase: {
+      type: Number,
+      default: 0,
+    },
+
+    couponRevoked: {
+      type: Boolean,
+      default: false,
     },
 
     tax: {

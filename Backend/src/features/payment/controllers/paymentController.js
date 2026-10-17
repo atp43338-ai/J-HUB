@@ -1,7 +1,10 @@
+import mongoose from "mongoose";
 import {
   createRazorpayOrder,
   verifyRazorpayPayment,
 } from "../services/razorpayService.js";
+import Order from "../../order/models/Order.js";
+import { recordPaymentCredit } from "../../order/services/orderService.js";
 
 export const createPaymentOrder = async (
   req,
@@ -83,6 +86,42 @@ export const verifyPayment = async (
         success: false,
         message: "Payment verification failed",
       });
+    }
+
+    // If an existing order is associated with this Razorpay order, mark Completed and credit revenue immediately
+    const targetOrderId = req.body.orderId;
+    const queryConditions = [];
+    if (targetOrderId && mongoose.Types.ObjectId.isValid(targetOrderId)) {
+      queryConditions.push({ _id: targetOrderId });
+    }
+    if (targetOrderId) {
+      queryConditions.push({ orderId: targetOrderId });
+    }
+    if (razorpay_order_id) {
+      queryConditions.push({ razorpayOrderId: razorpay_order_id });
+    }
+
+    if (queryConditions.length > 0) {
+      const order = await Order.findOne({ $or: queryConditions });
+      if (order) {
+        const isAlreadyPaid = ["completed", "paid"].includes(String(order.paymentStatus || "").toLowerCase());
+        if (!isAlreadyPaid) {
+          order.paymentStatus = "Completed";
+          order.paidAt = new Date();
+          order.revenueCredited = true;
+          order.revenueCreditedAt = new Date();
+          if (["pending", "failed", "payment failed", "payment_failed"].includes(String(order.status || "").toLowerCase())) {
+            order.status = "processing";
+          }
+          await order.save();
+
+          await recordPaymentCredit(
+            order._id,
+            order.finalPrice || order.finalAmount || order.totalAmount || 0,
+            "Razorpay Payment Verified & Credited"
+          );
+        }
+      }
     }
 
     return res.status(200).json({

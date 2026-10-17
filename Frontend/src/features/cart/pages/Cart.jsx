@@ -19,6 +19,7 @@ import Footer from "../../home/components/Footer";
 function Cart() {
   const [cart, setCart] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [updatingItemId, setUpdatingItemId] = useState(null);
 
   const { refreshCartCount } = useCart();
 
@@ -27,6 +28,7 @@ function Cart() {
   // -----------------------------
   const handleQuantityChange = async (itemId, quantity) => {
     try {
+      setUpdatingItemId(itemId);
       await updateCartItem(itemId, quantity);
 
       const data = await getCart();
@@ -36,6 +38,8 @@ function Cart() {
       await refreshCartCount();
     } catch (error) {
       toast.error(error.message);
+    } finally {
+      setUpdatingItemId(null);
     }
   };
 
@@ -44,6 +48,7 @@ function Cart() {
   // -----------------------------
   const handleRemove = async (itemId) => {
     try {
+      setUpdatingItemId(itemId);
       await removeCartItem(itemId);
 
       const data = await getCart();
@@ -55,6 +60,8 @@ function Cart() {
       toast.success("Item removed from cart");
     } catch (error) {
       toast.error(error.message);
+    } finally {
+      setUpdatingItemId(null);
     }
   };
 
@@ -125,7 +132,7 @@ function Cart() {
       (variant) => variant.size === item.size
     );
 
-    const stock = variant?.stock ?? 0;
+    const stock = variant?.stock ?? item.product?.stock ?? 0;
 
     return stock === 0 || item.quantity > stock;
   });
@@ -204,6 +211,7 @@ function Cart() {
                 <CartItem
                   key={item._id}
                   item={item}
+                  loading={updatingItemId === item._id}
                   onQuantityChange={handleQuantityChange}
                   onRemove={handleRemove}
                 />

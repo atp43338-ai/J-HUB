@@ -1,25 +1,23 @@
-function CartItem({ item, onQuantityChange, onRemove }) {
+function CartItem({ item, onQuantityChange, onRemove, loading = false }) {
 
   const selectedVariant = item.product?.variants?.find(
     (variant) => variant.size === item.size
   );
 
-  const stock = selectedVariant?.stock ?? 0;
+  const stock = selectedVariant?.stock ?? item.product?.stock ?? 0;
 
   const isOutOfStock = stock === 0;
 
   const quantityExceeded = item.quantity > stock;
 
-  const unavailable = isOutOfStock || quantityExceeded;
-
   const handleDecrease = () => {
-    if (!unavailable && item.quantity > 1) {
+    if (item.quantity > 1 && !loading) {
       onQuantityChange(item._id, item.quantity - 1);
     }
   };
 
   const handleIncrease = () => {
-    if (!unavailable && item.quantity < stock) {
+    if (item.quantity < stock && item.quantity < 5 && !loading) {
       onQuantityChange(item._id, item.quantity + 1);
     }
   };
@@ -103,7 +101,7 @@ function CartItem({ item, onQuantityChange, onRemove }) {
             type="button"
             onClick={handleDecrease}
             disabled={
-              unavailable || item.quantity === 1
+              item.quantity <= 1 || loading
             }
             className="
               w-8 h-8
@@ -112,6 +110,7 @@ function CartItem({ item, onQuantityChange, onRemove }) {
               text-black
               disabled:opacity-40
               disabled:cursor-not-allowed
+              hover:bg-gray-100
             "
           >
             -
@@ -125,7 +124,7 @@ function CartItem({ item, onQuantityChange, onRemove }) {
             type="button"
             onClick={handleIncrease}
             disabled={
-              unavailable || item.quantity >= 5
+              item.quantity >= stock || item.quantity >= 5 || loading
             }
             className="
               w-8 h-8
@@ -134,6 +133,7 @@ function CartItem({ item, onQuantityChange, onRemove }) {
               text-black
               disabled:opacity-40
               disabled:cursor-not-allowed
+              hover:bg-gray-100
             "
           >
             +
@@ -147,7 +147,8 @@ function CartItem({ item, onQuantityChange, onRemove }) {
       <button
         type="button"
         onClick={() => onRemove(item._id)}
-        className="text-red-600 hover:text-red-800"
+        disabled={loading}
+        className="text-red-600 hover:text-red-800 disabled:opacity-40 disabled:cursor-not-allowed"
       >
         Remove
       </button>

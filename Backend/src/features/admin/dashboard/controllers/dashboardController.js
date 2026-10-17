@@ -11,7 +11,17 @@ export const getDashboardStats = async (req, res) => {
     const validOrderFilter = {
       status: { $nin: ["cancelled", "returned"] },
       $or: [
-        { paymentStatus: { $in: ["paid", "partially_refunded"] } },
+        {
+          paymentStatus: {
+            $in: [
+              "paid",
+              "Completed",
+              "completed",
+              "Paid",
+              "partially_refunded",
+            ],
+          },
+        },
         { status: "delivered" },
       ],
     };

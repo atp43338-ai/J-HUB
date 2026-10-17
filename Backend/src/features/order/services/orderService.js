@@ -410,32 +410,56 @@ export const createOrderService = async (
   }
 
 
+  // CHECK IF ONLINE PAYMENT OR COD
+  const isOnlinePayment = ["WALLET", "UPI", "CARD"].includes(normalizedPaymentMethod);
+
+  const initialPaymentStatus = isOnlinePayment ? "Completed" : "Pending";
+  const paidAtDate = isOnlinePayment ? new Date() : null;
+  const initialRevenueCredited = isOnlinePayment;
+  const initialRevenueCreditedAt = isOnlinePayment ? new Date() : null;
+
   // CREATE ORDER
-const order = await Order.create({
-  user: userId,
-  orderId,
-  items: orderItems,
-  address: {
-    name: address.name,
-    phone: address.phone,
-    address: address.address,
-    city: address.city,
-    state: address.state,
-    pincode: address.pincode,
-  },
-  paymentMethod: normalizedPaymentMethod,
-  paymentStatus: normalizedPaymentMethod === "WALLET" ? "paid" : "pending",
-  subtotal,
-  discount,
-  couponDiscount,
-  tax,
-  shipping,
-  shippingFee: shipping,
-  finalPrice,
-  totalAmount: finalPrice,
-  finalAmount: finalPrice,
-  status: "pending",
-});
+  const order = await Order.create({
+    user: userId,
+    orderId,
+    items: orderItems,
+    address: {
+      name: address.name,
+      phone: address.phone,
+      address: address.address,
+      city: address.city,
+      state: address.state,
+      pincode: address.pincode,
+    },
+    paymentMethod: normalizedPaymentMethod,
+    paymentStatus: initialPaymentStatus,
+    paidAt: paidAtDate,
+    revenueCredited: initialRevenueCredited,
+    revenueCreditedAt: initialRevenueCreditedAt,
+    subtotal,
+    discount,
+    coupon: appliedCoupon?._id || null,
+    couponCode: appliedCoupon?.code || (couponCode ? couponCode.toUpperCase() : null),
+    couponDiscount,
+    couponMinPurchase: appliedCoupon?.minimumPurchase || 0,
+    couponRevoked: false,
+    tax,
+    shipping,
+    shippingFee: shipping,
+    finalPrice,
+    totalAmount: finalPrice,
+    finalAmount: finalPrice,
+    status: isOnlinePayment ? "processing" : "pending",
+  });
+
+  // Credit online payment immediately
+  if (isOnlinePayment) {
+    await recordPaymentCredit(
+      order._id,
+      finalPrice,
+      `Online Payment (${normalizedPaymentMethod}) Verified & Credited Immediately`
+    );
+  }
 
 // ATOMIC WALLET DEBIT
 if (normalizedPaymentMethod === "WALLET" && userWallet) {
@@ -507,12 +531,35 @@ export const getOrderByIdService = async (identifier, userId) => {
 
   const order = await Order.findOne(query)
     .populate('items.product')
-    .populate('user', 'name email phone');
+    .populate('user', 'name email phone')
+    .populate('coupon');
 
   if (!order) {
     const error = new Error('Order not found');
     error.statusCode = 404;
     throw error;
+  }
+
+  // Ensure couponMinPurchase is available for older orders
+  if (!order.couponMinPurchase && order.coupon?.minimumPurchase) {
+    order.couponMinPurchase = order.coupon.minimumPurchase;
+  } else if (!order.couponMinPurchase && order.couponCode) {
+    const cp = await Coupon.findOne({ code: order.couponCode.toUpperCase() });
+    if (cp) {
+      order.couponMinPurchase = cp.minimumPurchase;
+      if (!order.coupon) order.coupon = cp._id;
+    }
+  } else if (!order.couponMinPurchase && Number(order.couponDiscount || 0) > 0) {
+    const cp = await Coupon.findOne({
+      $or: [
+        { discountValue: order.couponDiscount },
+        { maximumDiscount: order.couponDiscount },
+      ],
+    });
+    if (cp) {
+      order.couponMinPurchase = cp.minimumPurchase;
+      if (!order.couponCode) order.couponCode = cp.code;
+    }
   }
 
   return order;
@@ -574,7 +621,7 @@ export const cancelOrderService = async (
   }
 
   // CHECK ORDER STATUS
-  if (order.status !== "pending") {
+  if (!["pending", "processing"].includes(String(order.status).toLowerCase())) {
     throw new Error(
       "This order cannot be cancelled"
     );
@@ -697,10 +744,10 @@ export const cancelOrderItemService = async (
     throw new Error("Order not found");
   }
 
-  // 2. Allow cancellation only while the order is pending
-  if (order.status !== "pending") {
+  // 2. Allow cancellation while the order is pending or processing
+  if (!["pending", "processing"].includes(String(order.status).toLowerCase())) {
     throw new Error(
-      "Products can only be cancelled while the order is pending"
+      "Products can only be cancelled while the order is pending or processing"
     );
   }
 
@@ -719,43 +766,16 @@ export const cancelOrderItemService = async (
     throw new Error("Refund for this product has already been processed");
   }
 
-  // 4. Calculate the item paid total and refund independently
-  const itemPrice = Number(item.price || 0);
-  const itemQty = Number(item.quantity || 1);
-  const itemTotal =
-    Number(item.total) > 0
-      ? Number(item.total)
-      : Math.round(itemPrice * itemQty * 100) / 100;
-
+  // 4. Identify active items before and after this cancellation
   const activeItemsBefore = order.items.filter(
     (orderItem) => !orderItem.cancelled
   );
 
-  const activeItemsTotalBefore = activeItemsBefore.reduce(
-    (total, orderItem) => {
-      const itPrice = Number(orderItem.price || 0);
-      const itQty = Number(orderItem.quantity || 1);
-      const itTotal =
-        Number(orderItem.total) > 0
-          ? Number(orderItem.total)
-          : Math.round(itPrice * itQty * 100) / 100;
-      return total + itTotal;
-    },
-    0
+  const activeItemsAfter = activeItemsBefore.filter(
+    (orderItem) => orderItem._id.toString() !== itemId.toString()
   );
 
-  const currentCouponDiscount = Number(order.couponDiscount || 0);
-
-  // Allocate coupon discount proportionally to this item
-  let couponShare = 0;
-  if (activeItemsTotalBefore > 0 && currentCouponDiscount > 0) {
-    couponShare =
-      (itemTotal / activeItemsTotalBefore) * currentCouponDiscount;
-    couponShare = Math.round(couponShare * 100) / 100;
-    couponShare = Math.min(couponShare, itemTotal);
-  }
-
-  // STRICT COD vs PREPAID REFUND RULES:
+  // 5. Payment status:
   // For COD orders cancelled before delivery, customer has NOT handed over any cash yet.
   // Balance change must strictly be ₹0. Bypass wallet crediting completely.
   const isCod =
@@ -763,42 +783,184 @@ export const cancelOrderItemService = async (
     String(order.paymentMethod || "").toLowerCase() === "cash on delivery";
   const isDelivered =
     String(order.status).toLowerCase() === "delivered";
-
-  // Only prepaid orders or delivered orders qualify for wallet refund
   const isPaid = !isCod || isDelivered;
 
-  const refundAmount = isPaid
-    ? Math.max(0, Math.round((itemTotal - couponShare) * 100) / 100)
-    : 0;
+  // 6. Look up coupon details if applicable
+  let coupon = null;
+  if (order.coupon) {
+    coupon = await Coupon.findById(order.coupon);
+  } else if (order.couponCode) {
+    coupon = await Coupon.findOne({ code: order.couponCode.toUpperCase() });
+  } else if (Number(order.couponDiscount || 0) > 0) {
+    coupon = await Coupon.findOne({
+      $or: [
+        { discountValue: order.couponDiscount },
+        { maximumDiscount: order.couponDiscount },
+      ],
+    });
+  }
 
-  // Unique identifier for this item's refund
-  const refundReason = `Product cancellation refund (${order.orderId} - ${item._id})`;
+  const couponMinPurchase = Number(
+    order.couponMinPurchase || coupon?.minimumPurchase || 0
+  );
+  const hadCoupon =
+    (Number(order.couponDiscount || 0) > 0 || order.couponRevoked) &&
+    (couponMinPurchase > 0 || !!coupon || !!order.couponCode);
 
-  // 5. Prevent duplicate wallet credit for this item
-  let shouldRefund = isPaid && refundAmount > 0;
-  if (shouldRefund) {
-    const wallet = await getOrCreateWallet(userId);
+  let refundAmount = 0;
+  let hasCouponAdjustment = false;
 
-    const existingRefund = wallet.transactions.find(
-      (transaction) =>
-        transaction.type === "credit" &&
-        transaction.order?.toString() === order._id.toString() &&
-        (transaction.reason === refundReason ||
-          transaction.description === refundReason ||
-          transaction.reason === `Product cancellation refund (${item._id})` ||
-          transaction.description === `Product cancellation refund (${item._id})`)
+  // 7. Calculate cancellation and refund
+  if (activeItemsAfter.length === 0) {
+    // --- FULL CANCELLATION VIA ALL ITEMS CANCELLED ---
+    // Refund 100% of remaining paid amount
+    const remainingPaid = Math.max(
+      0,
+      Number(order.totalAmount || order.finalPrice || 0)
     );
+    refundAmount = isPaid ? Math.round(remainingPaid * 100) / 100 : 0;
 
-    if (existingRefund) {
-      item.isRefunded = true;
-      item.refundAmount = refundAmount;
-      shouldRefund = false;
+    order.subtotal = 0;
+    order.discount = 0;
+    order.couponDiscount = 0;
+    order.finalPrice = 0;
+    order.totalAmount = 0;
+    order.finalAmount = 0;
+    order.status = "cancelled";
+    order.cancelledAt = new Date();
+    order.cancellationReason =
+      "All products in the order were cancelled";
+    if (isPaid) {
+      order.paymentStatus = "refunded";
+      order.isRefunded = true;
+    } else {
+      order.isRefunded = false;
+    }
+  } else {
+    // --- PARTIAL CANCELLATION ---
+    const cancelledItemPrice = Number(item.price || 0);
+    const cancelledItemQty = Number(item.quantity || 1);
+    const cancelledItemTotal = cancelledItemPrice * cancelledItemQty;
+
+    // Remaining subtotal of uncancelled items
+    const remainingSubtotal = Math.round(
+      activeItemsAfter.reduce((sum, orderItem) => {
+        const p = Number(orderItem.price || 0);
+        const q = Number(orderItem.quantity || 1);
+        return sum + p * q;
+      }, 0) * 100
+    ) / 100;
+
+    const activeSubtotalBefore = Math.round(
+      activeItemsBefore.reduce((sum, orderItem) => {
+        const p = Number(orderItem.price || 0);
+        const q = Number(orderItem.quantity || 1);
+        return sum + p * q;
+      }, 0) * 100
+    ) / 100;
+
+    const totalPaidAmount = Number(
+      order.totalAmount || order.finalPrice || 0
+    );
+    const tax = Number(order.tax || 0);
+    const shipping = Number(order.shippingFee ?? order.shipping ?? 0);
+
+    // CASE A: Remaining Subtotal drops below Coupon's minPurchase
+    if (
+      hadCoupon &&
+      !order.couponRevoked &&
+      remainingSubtotal < couponMinPurchase
+    ) {
+      hasCouponAdjustment = true;
+      order.couponRevoked = true;
+      order.couponDiscount = 0;
+
+      const remainingItemsCost = Math.round(
+        (remainingSubtotal + tax + shipping) * 100
+      ) / 100;
+      const rawRefund = Math.max(0, totalPaidAmount - remainingItemsCost);
+      refundAmount = isPaid ? Math.round(rawRefund * 100) / 100 : 0;
+
+      order.subtotal = remainingSubtotal;
+      order.totalAmount = remainingItemsCost;
+      order.finalPrice = remainingItemsCost;
+      order.finalAmount = remainingItemsCost;
+    }
+    // CASE B: Remaining Subtotal STILL meets Coupon's minPurchase
+    else if (
+      hadCoupon &&
+      !order.couponRevoked &&
+      remainingSubtotal >= couponMinPurchase
+    ) {
+      hasCouponAdjustment = true;
+      const currentCouponDiscount = Number(order.couponDiscount || 0);
+      const subtotalBase =
+        activeSubtotalBefore > 0
+          ? activeSubtotalBefore
+          : Number(order.subtotal || 1);
+      const itemShare =
+        (cancelledItemPrice * cancelledItemQty) / subtotalBase;
+      const itemCouponDiscount =
+        Math.round(currentCouponDiscount * itemShare * 100) / 100;
+
+      const rawRefund = Math.max(
+        0,
+        cancelledItemPrice * cancelledItemQty - itemCouponDiscount
+      );
+      refundAmount = isPaid ? Math.round(rawRefund * 100) / 100 : 0;
+
+      const remainingCouponDiscount = Math.max(
+        0,
+        Math.round((currentCouponDiscount - itemCouponDiscount) * 100) / 100
+      );
+
+      order.couponDiscount = remainingCouponDiscount;
+      order.subtotal = remainingSubtotal;
+
+      const newOrderTotal = Math.max(
+        0,
+        Math.round(
+          (remainingSubtotal -
+            remainingCouponDiscount +
+            tax +
+            shipping) *
+            100
+        ) / 100
+      );
+      order.totalAmount = newOrderTotal;
+      order.finalPrice = newOrderTotal;
+      order.finalAmount = newOrderTotal;
+    }
+    // STANDARD PARTIAL CANCELLATION (No coupon or coupon already revoked)
+    else {
+      const rawRefund = Math.max(0, cancelledItemTotal);
+      refundAmount = isPaid ? Math.round(rawRefund * 100) / 100 : 0;
+
+      order.subtotal = remainingSubtotal;
+      const newOrderTotal = Math.max(
+        0,
+        Math.round(
+          (remainingSubtotal -
+            Number(order.couponDiscount || 0) +
+            tax +
+            shipping) *
+            100
+        ) / 100
+      );
+      order.totalAmount = newOrderTotal;
+      order.finalPrice = newOrderTotal;
+      order.finalAmount = newOrderTotal;
+    }
+
+    // Keep status as pending/processing for remaining items
+    order.status = "pending";
+    if (isPaid) {
+      order.paymentStatus = "paid";
     }
   }
 
-  // 6. Restore the product stock
+  // 8. Restore the product stock
   const product = await Product.findById(item.product);
-
   if (product) {
     const variant = product.variants.find(
       (variant) => variant.size === item.size
@@ -810,7 +972,7 @@ export const cancelOrderItemService = async (
     }
   }
 
-  // 7. Mark the item as cancelled and track refund status per item
+  // 9. Mark the item as cancelled
   item.cancelled = true;
   item.cancellationReason = reason || "";
   item.cancelledAt = new Date();
@@ -822,85 +984,36 @@ export const cancelOrderItemService = async (
     item.refundAmount = 0;
   }
 
-  // 8. Calculate the remaining items
-  const activeItemsAfter = order.items.filter(
-    (orderItem) => !orderItem.cancelled
-  );
-
-  const remainingItemsTotal = activeItemsAfter.reduce(
-    (total, orderItem) => {
-      const itPrice = Number(orderItem.price || 0);
-      const itQty = Number(orderItem.quantity || 1);
-      const itTotal =
-        Number(orderItem.total) > 0
-          ? Number(orderItem.total)
-          : Math.round(itPrice * itQty * 100) / 100;
-      return total + itTotal;
-    },
-    0
-  );
-
-  const remainingCouponDiscount = Math.max(
-    0,
-    Math.round((currentCouponDiscount - couponShare) * 100) / 100
-  );
-
-  order.subtotal = remainingItemsTotal;
-  order.discount = 0;
-  order.couponDiscount = activeItemsAfter.length
-    ? remainingCouponDiscount
-    : 0;
-
-  order.finalPrice = Math.max(
-    0,
-    Math.round(
-      (
-        remainingItemsTotal -
-        Number(order.couponDiscount || 0) +
-        Number(order.tax || 0) +
-        Number(order.shipping || 0)
-      ) * 100
-    ) / 100
-  );
-  order.totalAmount = order.finalPrice;
-  order.finalAmount = order.finalPrice;
-
-  // 9. Status transition:
-  // Only transition order to "cancelled" when ALL items are cancelled.
-  // While active items remain, keep order.status as "pending" so remaining items can still be cancelled in UI.
-  if (activeItemsAfter.length === 0) {
-    order.status = "cancelled";
-    order.cancelledAt = new Date();
-    order.cancellationReason =
-      "All products in the order were cancelled";
-    order.finalPrice = 0;
-    order.totalAmount = 0;
-    order.finalAmount = 0;
-    if (isPaid) {
-      order.paymentStatus = "refunded";
-      order.isRefunded = true;
-    } else {
-      order.isRefunded = false;
-    }
-  } else {
-    order.status = "pending";
-    if (isPaid) {
-      // Keep order paymentStatus as paid so it is never prematurely marked as refunded
-      order.paymentStatus = "paid";
-    }
-  }
-
   // 10. Save the order
   await order.save();
 
-  // 11. Credit the refund to wallet
-  if (shouldRefund && refundAmount > 0) {
-    await addMoneyToWallet(
-      userId,
-      refundAmount,
-      refundReason,
-      order._id
+  // 11. Credit the refund to wallet with transparent note
+  if (isPaid && refundAmount > 0) {
+    const refundNote = hasCouponAdjustment
+      ? `Refund of ₹${refundAmount} for cancelled item ${item.name} (adjusted for coupon terms)`
+      : `Refund of ₹${refundAmount} for cancelled item ${item.name}`;
+
+    const wallet = await getOrCreateWallet(userId);
+    const existingRefund = wallet.transactions.find(
+      (transaction) =>
+        transaction.type === "credit" &&
+        transaction.order?.toString() === order._id.toString() &&
+        (transaction.reason === refundNote ||
+          transaction.description === refundNote ||
+          transaction.reason ===
+            `Product cancellation refund (${order.orderId} - ${item._id})`)
     );
+
+    if (!existingRefund) {
+      await addMoneyToWallet(
+        userId,
+        refundAmount,
+        refundNote,
+        order._id,
+        null,
+        refundNote
+      );
+    }
   }
 
   return order;
@@ -1229,7 +1342,10 @@ export const completeRetryPaymentOrderService = async (
   }
 
   // Payment successful
-  order.paymentStatus = "paid";
+  order.paymentStatus = "Completed";
+  order.paidAt = new Date();
+  order.revenueCredited = true;
+  order.revenueCreditedAt = new Date();
   order.status = "processing";
   order.paymentRetryExpiresAt = null;
 
@@ -1249,7 +1365,43 @@ export const completeRetryPaymentOrderService = async (
 
   await order.save();
 
+  await recordPaymentCredit(
+    order._id,
+    order.finalPrice || order.finalAmount || order.totalAmount || 0,
+    "Retry Payment Verified & Credited"
+  );
+
   return order;
 };
+
+// ======================================================
+// REVENUE / FINANCIAL LEDGER CREDIT HANDLER
+// ======================================================
+
+export const recordPaymentCredit = async (orderId, amount, description) => {
+  try {
+    const order = await Order.findById(orderId);
+    if (!order) {
+      console.warn(`[Revenue Credit] Order not found for ID: ${orderId}`);
+      return { success: false, message: "Order not found" };
+    }
+
+    console.log(
+      `[Revenue Credit Log] Order #${order.orderId || order._id} | Method: ${order.paymentMethod} | Amount: ₹${amount} | Description: ${description} | PaidAt: ${order.paidAt ? order.paidAt.toISOString() : new Date().toISOString()}`
+    );
+
+    return {
+      success: true,
+      orderId: order._id,
+      amount,
+      description,
+      creditedAt: new Date(),
+    };
+  } catch (error) {
+    console.error(`[Revenue Credit Error] Failed to record credit for order ${orderId}:`, error);
+    return { success: false, message: error.message };
+  }
+};
+
 
 

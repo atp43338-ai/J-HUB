@@ -13,6 +13,7 @@ import {
 } from "../services/orderService";
 
 import { createReturn } from "../services/returnService";
+import OrderStatus from "../components/OrderStatus";
 import OrderStatusBadge from "../components/OrderStatusBadge";
 
 function OrderDetails() {
@@ -200,7 +201,7 @@ function OrderDetails() {
       <div className="min-h-screen bg-gray-50">
         <Navbar />
 
-        <div className="flex justify-center items-center min-h-[60vh]">
+        <div className="flex justify-center items-center min-h-[60vh] pt-28">
           <p style={{ color: "#6b7280" }}>
             Loading order...
           </p>
@@ -217,8 +218,8 @@ function OrderDetails() {
       <div className="min-h-screen bg-gray-50">
         <Navbar />
 
-        <div className="flex justify-center items-center min-h-[60vh] px-4">
-          <div className="bg-white border border-gray-200 rounded-xl p-8 text-center max-w-md w-full">
+        <div className="flex justify-center items-center min-h-[60vh] px-4 pt-28">
+          <div className="bg-white border border-gray-200 rounded-2xl p-8 text-center max-w-md w-full">
             <h1
               className="text-2xl font-bold mb-3"
               style={{ color: "#111827" }}
@@ -247,6 +248,35 @@ function OrderDetails() {
     );
   }
 
+  const handleOpenCancelModal = handleCancelOrder;
+  const normalizedStatus = String(order?.status || order?.orderStatus || "").toLowerCase();
+  const canCancelOrder = ["pending", "processing"].includes(normalizedStatus);
+
+  const couponMinPurchase = Number(
+    order?.couponMinPurchase ||
+    order?.coupon?.minimumPurchase ||
+    0
+  );
+
+  const activeItems = (order?.items || []).filter((i) => !i.cancelled);
+  const remainingActiveItemsIfCancelled = activeItems.filter(
+    (i) => String(i._id) !== String(cancelModal.itemId)
+  );
+
+  const remainingSubtotalIfCancelled = remainingActiveItemsIfCancelled.reduce(
+    (sum, i) => sum + Number(i.price || 0) * Number(i.quantity || 1),
+    0
+  );
+
+  const willRevokeCoupon =
+    cancelModal.isOpen &&
+    cancelModal.type === "item" &&
+    Number(order?.couponDiscount || 0) > 0 &&
+    !order?.couponRevoked &&
+    couponMinPurchase > 0 &&
+    remainingActiveItemsIfCancelled.length > 0 &&
+    remainingSubtotalIfCancelled < couponMinPurchase;
+
   return (
     <div
       className="min-h-screen bg-gray-50"
@@ -254,7 +284,7 @@ function OrderDetails() {
     >
       <Navbar />
 
-      <main className="px-4 sm:px-6 lg:px-10 py-10">
+      <main className="pt-28 pb-10 px-4 sm:px-6 lg:px-10">
         <div className="max-w-6xl mx-auto">
 
           {/* HEADER */}
@@ -295,7 +325,7 @@ function OrderDetails() {
             <div className="lg:col-span-2 space-y-6">
 
               {/* ORDER STATUS */}
-              <div className="bg-white border border-gray-200 rounded-xl p-6">
+              <div className="bg-white border border-gray-200 rounded-2xl p-6">
 
                 <h2
                   className="text-xl font-semibold mb-5"
@@ -307,16 +337,16 @@ function OrderDetails() {
                 <div className="flex items-center justify-between">
 
                   <div>
-                    <p
+                    {/* <p
                       className="text-sm"
                       style={{ color: "#6b7280" }}
                     >
                       Current Status
-                    </p>
+                    </p> */}
 
-                    <div className="mt-1">
+                    {/* <div className="mt-1">
                       <OrderStatusBadge status={order.status} />
-                    </div>
+                    </div> */}
                   </div>
 
                   <div className="text-right">
@@ -340,10 +370,13 @@ function OrderDetails() {
                   </div>
 
                 </div>
+
+                {/* Complete order stepper / tracker */}
+                <OrderStatus status={order.status} />
               </div>
 
               {/* PRODUCTS */}
-              <div className="bg-white border border-gray-200 rounded-xl p-6">
+              <div className="bg-white border border-gray-200 rounded-2xl p-6">
 
                 <h2
                   className="text-xl font-semibold mb-5"
@@ -422,7 +455,7 @@ function OrderDetails() {
                         )}
 
                         {/* CANCEL PRODUCT */}
-                        {order.status === "pending" &&
+                        {canCancelOrder &&
                           !item.cancelled && (
                             <button
                               type="button"
@@ -461,7 +494,7 @@ function OrderDetails() {
               </div>
 
               {/* DELIVERY ADDRESS */}
-              <div className="bg-white border border-gray-200 rounded-xl p-6">
+              <div className="bg-white border border-gray-200 rounded-2xl p-6">
 
                 <h2
                   className="text-xl font-semibold mb-5"
@@ -504,7 +537,7 @@ function OrderDetails() {
             {/* RIGHT */}
             <div className="lg:col-span-1">
 
-              <div className="bg-white border border-gray-200 rounded-xl p-6 sticky top-24">
+              <div className="bg-white border border-gray-200 rounded-2xl p-6 sticky top-28">
 
                 <h2
                   className="text-xl font-semibold mb-6"
@@ -626,12 +659,12 @@ function OrderDetails() {
                 </div>
 
                 {/* CANCEL ORDER */}
-                {order.status === "pending" && (
+                {canCancelOrder && (
                   <button
                     type="button"
-                    onClick={handleCancelOrder}
+                    onClick={handleOpenCancelModal}
                     disabled={cancelling}
-                    className="w-full mt-4 border border-red-500 text-red-600 hover:bg-red-50 py-3 rounded-lg font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full mt-3 border border-red-600 text-red-600 hover:bg-red-50 font-semibold py-3 px-4 rounded-xl transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                   >
                     {cancelling
                       ? "Cancelling..."
@@ -810,6 +843,14 @@ function OrderDetails() {
                 ? "Are you sure you want to cancel this entire order? This action cannot be undone."
                 : "Are you sure you want to cancel this product from your order?"}
             </p>
+
+            {willRevokeCoupon && (
+              <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-lg text-amber-800 text-xs sm:text-sm text-left">
+                <p>
+                  Cancelling this item reduces your order below the minimum purchase requirement of ₹{couponMinPurchase}. The coupon discount will no longer apply to remaining items.
+                </p>
+              </div>
+            )}
 
             <div className="mt-4">
               <label className="block text-xs font-semibold text-gray-700 mb-1">
